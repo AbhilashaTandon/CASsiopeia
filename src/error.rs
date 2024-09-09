@@ -34,7 +34,7 @@ impl fmt::Display for CASError{
 
 }
 
-pub(crate) fn get_error(line: String, line_num: u32, kind: CASErrorKind) -> Result<(), CASError>{
+pub(crate) fn get_error(line: String, line_num: u32, kind: CASErrorKind) -> Result<String, CASError>{
     Err(CASError{line: line, line_num: line_num, message: kind.to_string(), kind: kind})
 }
 
