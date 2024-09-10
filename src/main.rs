@@ -21,24 +21,20 @@ fn main() {
         println!("arg #{}: {}", idx, arg);
     }
 
-    let path = Path::new(&args[1]);
-    let display = path.display();
+    let path: &Path = Path::new(&args[1]);
+    let display: std::path::Display<'_> = path.display();
 
-    let mut file = match File::open(&path){
+    let mut file: File = match File::open(&path){
         Err(why) => panic!("Error: couldn't open {}. {}", display, why),
-        Ok(file) => file,
+        Ok(file) => file, //TODO: auto format this 
     };
 
-    let mut s = String::new();
+    let mut s: String = String::new();
 
     match file.read_to_string(&mut s){
         Err(why) => panic!("Error: couldn't read {}. {}", display, why),
         Ok(_) => run(&s),
     };
-}
-
-fn run(code : &String){
-    println!("{}", code);
 }
 
 pub fn trim_whitespace(s: &str) -> String {
@@ -57,24 +53,27 @@ fn prompt(){
             println!("Error: {message}");
         }
 
-        let line = trim_whitespace(&buffer.as_str());
-        println!("'{}'", line);
+        let line: String = trim_whitespace(&buffer.as_str());
         
-        let result: Result<String, error::CASError> = match line.as_str(){
-            "exit" => return,
-            "syntax error" => error::get_error(buffer, 0, error::CASErrorKind::SyntaxError),
-            _ => Ok(buffer),
-        };
-
-        run_line(result);
+        run_line(line);
         
     }
 }
 
-fn run_line(line: Result<String, error::CASError> ){
-    match line{
+fn run(code : &String){
+    for line in code.lines(){ //TODO: split on semicolon
+        run_line(String::from(line));
+    }
+}
+
+fn run_line(line: String ) -> Result<String, error::CASError>{
+    //add 
+
+    let output : Result<String, error::CASError> = Ok(line); //replace this with actually running the code
+
+    match output{
         Ok(code) => 
-    println!("> {}", code),
-    Err(error) => println!("{}", error),
+        return Ok(code), 
+    Err(error) => return ,
     };
 }
