@@ -1,79 +1,83 @@
+use std::env;
 use std::fs::File;
+use std::io;
 use std::io::prelude::*;
 use std::path::Path;
-use std::env;
-use std::io;
 
-mod error;
+pub mod error;
+pub mod scanner;
+pub mod spec;
 
 fn main() {
-    let args : Vec<String> = env::args().collect();
-    
-    if args.len() > 2{
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() > 2 {
+        writeln!(io::stderr(), "Usage: {} <filename> for compilation, or run without any arguments to start an interpreter session.", args[0]).unwrap();
         return;
     }
 
-    if args.len() == 1{
-        prompt();
-    }
+    // if args.len() == 1 {
+    //     prompt();
+    // }
 
-    for (idx, arg) in args.iter().enumerate(){
+    for (idx, arg) in args.iter().enumerate() {
         println!("arg #{}: {}", idx, arg);
     }
 
     let path: &Path = Path::new(&args[1]);
     let display: std::path::Display<'_> = path.display();
 
-    let mut file: File = match File::open(&path){
+    let mut file = match File::open(&path) {
         Err(why) => panic!("Error: couldn't open {}. {}", display, why),
-        Ok(file) => file, //TODO: auto format this 
+        Ok(f) => f,
     };
 
     let mut s: String = String::new();
 
-    match file.read_to_string(&mut s){
+    match file.read_to_string(&mut s) {
         Err(why) => panic!("Error: couldn't read {}. {}", display, why),
-        Ok(_) => run(&s),
+        Ok(_) => run(s),
     };
 }
 
-pub fn trim_whitespace(s: &str) -> String {
-    // first attempt: allocates a vector and a string
-    let words: Vec<_> = s.split_whitespace().collect();
-    words.join(" ")
-}
+fn run(code: String) {
+    let result = scanner::scanner::tokenize(code);
+    if result.error_code == 0 {
+        for token in result.tokens {
+            match token {
+                scanner::scanner::TokenItem::Token {
+                    token_name,
+                    token_text,
+                    token_value,
+                } => println!(
+                    "{} {} {}",
+                    token_name,
+                    token_text,
+                    match token_value {
+                        Some(value) => value.to_string(),
+                        None => String::from("None"),
+                    }
+                ),
 
-fn prompt(){
-    loop{
-        let mut buffer: String = String::new();
-        let stdin: io::Stdin = io::stdin();
-        let mut handle: io::StdinLock<'_> = stdin.lock();
-
-        if let Err(message) = handle.read_line(&mut buffer){
-            println!("Error: {message}");
+                scanner::scanner::TokenItem::TokenError { .. } => (),
+            }
         }
+    } else {
+        for token in result.tokens {
+            match token {
+                scanner::scanner::TokenItem::Token { .. } => (),
 
-        let line: String = trim_whitespace(&buffer.as_str());
-        
-        run_line(line);
-        
+                scanner::scanner::TokenItem::TokenError {
+                    line_num,
+                    error_code,
+                    error_value,
+                } => println!(
+                    "[line {}] Error code {}: {}",
+                    line_num + 1,
+                    error_code,
+                    error_value
+                ),
+            }
+        }
     }
-}
-
-fn run(code : &String){
-    for line in code.lines(){ //TODO: split on semicolon
-        run_line(String::from(line));
-    }
-}
-
-fn run_line(line: String ) -> Result<String, error::CASError>{
-    //add 
-
-    let output : Result<String, error::CASError> = Ok(line); //replace this with actually running the code
-
-    match output{
-        Ok(code) => 
-        return Ok(code), 
-    Err(error) => return ,
-    };
 }
