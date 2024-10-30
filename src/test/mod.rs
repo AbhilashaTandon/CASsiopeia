@@ -6,12 +6,12 @@ pub(crate) mod test {
 
     fn make_token(
         token_name: TokenType,
-        token_text: &str,
+        // token_text: &str,
         token_value: Option<Value>,
     ) -> TokenItem {
         return TokenItem::Token {
             token_name,
-            token_text: String::from(token_text),
+            // token_text: String::from(token_text),
             token_value,
         };
     }
@@ -20,10 +20,10 @@ pub(crate) mod test {
     fn variable_declarations() {
         let computed_tokens: Tokenization = tokenize(String::from("var x = 2"));
         let desired_tokens: Vec<TokenItem> = vec![
-            make_token(TokenType::Var, &"var", None),
-            make_token(TokenType::Name, &"x", None),
-            make_token(TokenType::Equal, &"=", None),
-            make_token(TokenType::Int, &"int", Some(Value::Int(2))),
+            make_token(TokenType::Var, None),
+            make_token(TokenType::Name, None),
+            make_token(TokenType::Equal, None),
+            make_token(TokenType::Int, Some(Value::Int(2))),
         ];
         let desired_output: Tokenization = Tokenization {
             tokens: desired_tokens,
@@ -36,21 +36,21 @@ pub(crate) mod test {
     fn function_declarations() {
         let computed_tokens: Tokenization = tokenize(String::from("fun f(x,y) = 2 * x + 3 * y"));
         let desired_tokens: Vec<TokenItem> = vec![
-            make_token(TokenType::Fun, &"fun", None),
-            make_token(TokenType::Name, &"f", None),
-            make_token(TokenType::LeftParen, &"(", None),
-            make_token(TokenType::Name, &"x", None),
-            make_token(TokenType::Comma, &",", None),
-            make_token(TokenType::Name, &"y", None),
-            make_token(TokenType::RightParen, &")", None),
-            make_token(TokenType::Equal, &"=", None),
-            make_token(TokenType::Int, &"int", Some(Value::Int(2))),
-            make_token(TokenType::Mult, &"*", None),
-            make_token(TokenType::Name, &"x", None),
-            make_token(TokenType::Add, &"+", None),
-            make_token(TokenType::Int, &"int", Some(Value::Int(3))),
-            make_token(TokenType::Mult, &"*", None),
-            make_token(TokenType::Name, &"y", None),
+            make_token(TokenType::Fun, None),
+            make_token(TokenType::Name, None),
+            make_token(TokenType::LeftParen, None),
+            make_token(TokenType::Name, None),
+            make_token(TokenType::Comma, None),
+            make_token(TokenType::Name, None),
+            make_token(TokenType::RightParen, None),
+            make_token(TokenType::Equal, None),
+            make_token(TokenType::Int, Some(Value::Int(2))),
+            make_token(TokenType::Mult, None),
+            make_token(TokenType::Name, None),
+            make_token(TokenType::Add, None),
+            make_token(TokenType::Int, Some(Value::Int(3))),
+            make_token(TokenType::Mult, None),
+            make_token(TokenType::Name, None),
         ];
         let desired_output: Tokenization = Tokenization {
             tokens: desired_tokens,

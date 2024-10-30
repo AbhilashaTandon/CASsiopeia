@@ -26,7 +26,7 @@ pub(crate) mod scanner {
         //stores each token or error we find in file
         Token {
             token_name: TokenType,
-            token_text: String,
+            // token_text: String,
             token_value: Option<Value>,
         },
         TokenError {
@@ -76,7 +76,7 @@ pub(crate) mod scanner {
         if iter.peek().is_none() {
             return TokenItem::Token {
                 token_name: TokenType::Eof,
-                token_text: String::from(""),
+                // token_text: String::from(""),
                 token_value: None,
             };
         }
@@ -113,7 +113,7 @@ pub(crate) mod scanner {
 
         return TokenItem::Token {
             token_name: to_token_name(String::from(next_char).to_lowercase().as_str()),
-            token_text: next_char.to_string(),
+            // token_text: next_char.to_string(),
             token_value: None,
         };
     }
@@ -126,14 +126,14 @@ pub(crate) mod scanner {
                 Ok(Value::Float(float)) => {
                     return Some(TokenItem::Token {
                         token_name: TokenType::Float,
-                        token_text: String::from("float"),
+                        // token_text: String::from("float"),
                         token_value: Some(Value::Float(float)),
                     });
                 }
                 Ok(Value::Int(int)) => {
                     return Some(TokenItem::Token {
                         token_name: TokenType::Int,
-                        token_text: String::from("int"),
+                        // token_text: String::from("int"),
                         token_value: Some(Value::Int(int)),
                     });
                 }
@@ -181,7 +181,7 @@ pub(crate) mod scanner {
                 //at end of file
                 return Some(TokenItem::Token {
                     token_name: TokenType::Eof,
-                    token_text: String::from(""),
+                    // token_text: String::from(""),
                     token_value: None,
                 });
             }
@@ -201,7 +201,7 @@ pub(crate) mod scanner {
                         '!' => TokenType::NotEqual,
                         _ => TokenType::Error,
                     },
-                    token_text: next_char.to_string() + "=",
+                    // token_text: next_char.to_string() + "=",
                     token_value: None,
                 });
             }
@@ -214,7 +214,7 @@ pub(crate) mod scanner {
         if spec::spec::OPERATORS.contains(&next_char) {
             return Some(TokenItem::Token {
                 token_name: to_token_name(String::from(next_char).to_lowercase().as_str()),
-                token_text: next_char.to_string(),
+                // token_text: next_char.to_string(),
                 token_value: None,
             });
         }
@@ -228,25 +228,25 @@ pub(crate) mod scanner {
             if spec::spec::KEYWORDS.contains(&word.as_str()) {
                 return Some(TokenItem::Token {
                     token_name: to_token_name(word.to_lowercase().as_str()),
-                    token_text: word,
+                    // token_text: word,
                     token_value: None,
                 });
             } else if spec::spec::RESERVED_FUNCTIONS.contains(&word.as_str()) {
                 return Some(TokenItem::Token {
                     token_name: TokenType::ResFun,
-                    token_text: word,
+                    // token_text: word,
                     token_value: None,
                 });
             } else if spec::spec::RESERVED_CONSTANTS.contains(&word.as_str()) {
                 return Some(TokenItem::Token {
                     token_name: TokenType::Const,
-                    token_text: word,
+                    // token_text: word,
                     token_value: None,
                 });
             } else {
                 return Some(TokenItem::Token {
                     token_name: TokenType::Name,
-                    token_text: word,
+                    // token_text: word,
                     token_value: None,
                 });
             }

@@ -46,8 +46,6 @@ fn main() {
     };
 }
 
-
-
 fn run(code: String) {
     //TODO: change this to iterate over each line of input, that way we can print the whole line out in case of an error
     //and just add the tokens to a growing vec<token> for each line
@@ -61,12 +59,13 @@ fn run(code: String) {
                 match token {
                     scanner::scanner::TokenItem::Token {
                         token_name,
-                        token_text,
+                        // token_text,
                         token_value,
                     } => println!(
-                        "{} {} {}",
+                        // "{} {} {}",
+                        "{} {}",
                         token_name.to_string(),
-                        token_text,
+                        // token_text,
                         match token_value {
                             Some(value) => value.to_string(),
                             None => String::from("None"),
