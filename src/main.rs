@@ -4,11 +4,17 @@ use std::io;
 use std::io::prelude::*;
 use std::path::Path;
 
+use scanner::scanner::TokenItem;
+
 pub mod error;
 pub mod scanner;
 pub mod spec;
+pub mod test;
+
+//TODO: write tests for scanner
 
 fn main() {
+    //cli stuff
     let args: Vec<String> = env::args().collect();
 
     if args.len() > 2 {
@@ -40,43 +46,53 @@ fn main() {
     };
 }
 
+
+
 fn run(code: String) {
-    let result = scanner::scanner::tokenize(code);
-    if result.error_code == 0 {
-        for token in result.tokens {
-            match token {
-                scanner::scanner::TokenItem::Token {
-                    token_name,
-                    token_text,
-                    token_value,
-                } => println!(
-                    "{} {} {}",
-                    token_name,
-                    token_text,
-                    match token_value {
-                        Some(value) => value.to_string(),
-                        None => String::from("None"),
-                    }
-                ),
+    //TODO: change this to iterate over each line of input, that way we can print the whole line out in case of an error
+    //and just add the tokens to a growing vec<token> for each line
 
-                scanner::scanner::TokenItem::TokenError { .. } => (),
+    let mut tokens: Vec<TokenItem> = vec![];
+
+    for (line_num, line) in code.lines().enumerate() {
+        let result = scanner::scanner::tokenize(line.to_string());
+        if result.error_code == 0 {
+            for token in &result.tokens {
+                match token {
+                    scanner::scanner::TokenItem::Token {
+                        token_name,
+                        token_text,
+                        token_value,
+                    } => println!(
+                        "{} {} {}",
+                        token_name.to_string(),
+                        token_text,
+                        match token_value {
+                            Some(value) => value.to_string(),
+                            None => String::from("None"),
+                        }
+                    ),
+
+                    scanner::scanner::TokenItem::TokenError { .. } => (),
+                }
             }
-        }
-    } else {
-        for token in result.tokens {
-            match token {
-                scanner::scanner::TokenItem::Token { .. } => (),
+            tokens.extend(result.tokens);
+        } else {
+            //if theres any error print it out
+            for token in result.tokens {
+                match token {
+                    scanner::scanner::TokenItem::Token { .. } => (),
 
-                scanner::scanner::TokenItem::TokenError {
-                    line_num,
-                    error_code,
-                    error_value,
-                } => println!(
-                    "[line {}] Error code {}: {}",
-                    line_num + 1,
-                    error_code,
-                    error_value
-                ),
+                    scanner::scanner::TokenItem::TokenError {
+                        error_code,
+                        error_value,
+                    } => println!(
+                        "[line {}] Error code {}: {}",
+                        line_num + 1,
+                        error_code,
+                        error_value
+                    ),
+                }
             }
         }
     }

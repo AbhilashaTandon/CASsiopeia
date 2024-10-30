@@ -46,9 +46,9 @@ pub(crate) fn get_error(
     kind: CASErrorKind,
 ) -> Result<String, CASError> {
     Err(CASError {
-        line: line,
-        line_num: line_num,
+        line,
+        line_num,
         message: kind.to_string(),
-        kind: kind,
+        kind,
     })
 }

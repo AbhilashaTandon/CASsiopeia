@@ -1,4 +1,6 @@
 pub mod spec {
+    use std::fmt;
+
     pub(crate) const KEYWORDS: [&'static str; 6] = [
         "var", // for declaring a variable,
         "fun", //for declaring a function
@@ -13,12 +15,102 @@ pub mod spec {
         // integrates, indefinite
     ];
 
-    const RESERVED_FUNCTIONS: [&'static str; 17] = [
+    pub(crate) const RESERVED_FUNCTIONS: [&'static str; 17] = [
         "sqrt", "cbrt", "log2", "log10", "ln", "sin", "cos", "tan", "csc", "sec", "cot", "asin",
         "acos", "atan", "acsc", "asec", "acot",
     ];
 
-    const RESERVED_CONSTANTS: [&'static str; 4] = ["pi", "e", "phi", "tau"];
+    pub(crate) const RESERVED_CONSTANTS: [&'static str; 4] = ["pi", "e", "phi", "tau"];
     pub const OPERATORS: [char; 11] = ['+', '-', '*', '/', '^', '(', ')', ',', '<', '=', '>'];
     pub const COMP: [&'static str; 3] = ["!=", "<=", ">="];
+
+    #[derive(PartialEq, Debug)]
+    pub(crate) enum TokenType {
+        Name,  //variable name
+        Int,   //integer literal
+        Float, //floating point literal
+        Eof,   //end of file
+        //operators
+        Add,
+        Sub,
+        Mult,
+        Div,
+        Exp,
+        LeftParen,
+        RightParen,
+        Comma,
+        Less,
+        Greater,
+        Equal,
+        NotEqual,
+        LessEqual,
+        GreaterEqual,
+        Var,
+        Fun,
+        Calc,
+        Sim,
+        Der,
+        Integral,
+        Const,  //constants like pi, e, etc.
+        ResFun, //reserved function
+        Error,
+    }
+
+    impl fmt::Display for TokenType {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            let display: &str = match self {
+                TokenType::Name => "NAME",
+                TokenType::Int => "INT",
+                TokenType::Float => "FLOAT",
+                TokenType::Eof => "EOF",
+                TokenType::Add => "ADD",
+                TokenType::Sub => "SUB",
+                TokenType::Mult => "MULT",
+                TokenType::Div => "DIV",
+                TokenType::Exp => "EXP",
+                TokenType::LeftParen => "LEFT_PAREN",
+                TokenType::RightParen => "RIGHT_PAREN",
+                TokenType::Comma => "COMMA",
+                TokenType::Less => "LESS",
+                TokenType::Greater => "GREATER",
+                TokenType::Equal => "EQUAL",
+                TokenType::NotEqual => "NOT_EQUAL",
+                TokenType::LessEqual => "LESS_EQUAL",
+                TokenType::GreaterEqual => "GREATER_EQUAL",
+                TokenType::Var => "VAR",
+                TokenType::Fun => "FUN",
+                TokenType::Calc => "CALC",
+                TokenType::Sim => "SIM",
+                TokenType::Der => "DER",
+                TokenType::Integral => "INTEGRAL",
+                TokenType::Const => "CONST",
+                TokenType::ResFun => "RESERVED_FUNCTION",
+                TokenType::Error => "ERR",
+            };
+            write!(f, "{}", display)
+        }
+    }
+
+    pub(crate) fn to_token_name(symbol: &str) -> TokenType {
+        match symbol {
+            "+" => TokenType::Add,
+            "-" => TokenType::Sub,
+            "*" => TokenType::Mult,
+            "/" => TokenType::Div,
+            "^" => TokenType::Exp,
+            "(" => TokenType::LeftParen,
+            ")" => TokenType::RightParen,
+            "," => TokenType::Comma,
+            "<" => TokenType::Less,
+            ">" => TokenType::Greater,
+            "=" => TokenType::Equal,
+            "var" => TokenType::Var,
+            "fun" => TokenType::Fun,
+            "calc" => TokenType::Calc,
+            "sim" => TokenType::Sim,
+            "der" => TokenType::Der,
+            "int" => TokenType::Integral,
+            _ => TokenType::Error,
+        }
+    }
 }

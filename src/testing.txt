@@ -1,8 +1,2 @@
-kfadj09t34jtOM)(#RI-k[,pl;O_(#TJ)m
-#TN)(_GJM
-MGN()$MP{M_BWN I)_N )IN(N_$GO{ [ OM{B OM_{L : _N(N I) _=]
-" I)N )IM
- }
-  I)N OI_ NO{}
-  
-  }}]})})])
+var x = 2
+fun f(x, y) = x^2 + y
