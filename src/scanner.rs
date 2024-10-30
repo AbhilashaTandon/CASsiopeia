@@ -10,6 +10,7 @@ pub(crate) mod scanner {
         //for numerical literals
         Int(i64),
         Float(f64), //TODO: replace these with arbitrary precision types, either custom or in some crate
+        String(String),
     }
 
     impl fmt::Display for Value {
@@ -17,6 +18,7 @@ pub(crate) mod scanner {
             match self {
                 Value::Int(int) => write!(f, "{}", int),
                 Value::Float(float) => write!(f, "{}", float),
+                Value::String(string) => write!(f, "{}", string),
             }
         }
     }
@@ -120,7 +122,7 @@ pub(crate) mod scanner {
 
     fn parse_number(next_char: char, iter: &mut Peekable<str::Chars<'_>>) -> Option<TokenItem> {
         //parses numerical literals like 3.4, 1234, -1523
-        if next_char.is_numeric() || next_char == '.' || next_char == '-' {
+        if next_char.is_numeric() || next_char == '.' {
             match get_next_number(next_char, iter) {
                 //check if its a float, int, or something that cant be either
                 Ok(Value::Float(float)) => {
@@ -136,6 +138,12 @@ pub(crate) mod scanner {
                         // token_text: String::from("int"),
                         token_value: Some(Value::Int(int)),
                     });
+                }
+                Ok(Value::String(string)) => {
+                    return Some(TokenItem::TokenError {
+                        error_code: 1,
+                        error_value: string,
+                    })
                 }
                 Err(malformed_lit) => {
                     return Some(TokenItem::TokenError {
@@ -247,7 +255,7 @@ pub(crate) mod scanner {
                 return Some(TokenItem::Token {
                     token_name: TokenType::Name,
                     // token_text: word,
-                    token_value: None,
+                    token_value: Some(Value::String(word)),
                 });
             }
         }
