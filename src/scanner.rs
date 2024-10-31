@@ -7,7 +7,7 @@ pub(crate) mod scanner {
 
     #[derive(PartialEq, Debug)]
     pub(crate) enum Value {
-        //for numerical literals
+        //for numerical literals and variable names
         Int(i64),
         Float(f64), //TODO: replace these with arbitrary precision types, either custom or in some crate
         String(String),
@@ -231,6 +231,7 @@ pub(crate) mod scanner {
 
     fn parse_names(next_char: char, iter: &mut Peekable<str::Chars<'_>>) -> Option<TokenItem> {
         //parses variable or function names or constants (alphabetic chars)
+
         if next_char.is_alphabetic() {
             let word: String = next_char.to_string() + &get_next_word(iter);
             if spec::spec::KEYWORDS.contains(&word.as_str()) {
@@ -258,6 +259,13 @@ pub(crate) mod scanner {
                     token_value: Some(Value::String(word)),
                 });
             }
+        } else if next_char == '_' {
+            let word: String = next_char.to_string() + &get_next_word(iter);
+            //if variable name starts with _ or -
+            return Some(TokenItem::TokenError {
+                error_code: 1,
+                error_value: word,
+            });
         }
         None
     }

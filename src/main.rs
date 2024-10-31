@@ -11,8 +11,6 @@ pub mod scanner;
 pub mod spec;
 pub mod test;
 
-//TODO: write tests for scanner
-
 fn main() {
     //cli stuff
     let args: Vec<String> = env::args().collect();

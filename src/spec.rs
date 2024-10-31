@@ -1,9 +1,7 @@
 pub mod spec {
     use std::fmt;
 
-    pub(crate) const KEYWORDS: [&'static str; 6] = [
-        "var", // for declaring a variable,
-        "fun", //for declaring a function
+    pub(crate) const KEYWORDS: [&'static str; 4] = [
         //for calculating the value of an expression, uses variable values from symbol table
         "calc", //calculates value of expression, gives arbitrary precision fp
         "sim",
@@ -45,8 +43,6 @@ pub mod spec {
         NotEqual,
         LessEqual,
         GreaterEqual,
-        Var,
-        Fun,
         Calc,
         Sim,
         Der,
@@ -77,8 +73,6 @@ pub mod spec {
                 TokenType::NotEqual => "NOT_EQUAL",
                 TokenType::LessEqual => "LESS_EQUAL",
                 TokenType::GreaterEqual => "GREATER_EQUAL",
-                TokenType::Var => "VAR",
-                TokenType::Fun => "FUN",
                 TokenType::Calc => "CALC",
                 TokenType::Sim => "SIM",
                 TokenType::Der => "DER",
@@ -104,8 +98,6 @@ pub mod spec {
             "<" => TokenType::Less,
             ">" => TokenType::Greater,
             "=" => TokenType::Equal,
-            "var" => TokenType::Var,
-            "fun" => TokenType::Fun,
             "calc" => TokenType::Calc,
             "sim" => TokenType::Sim,
             "der" => TokenType::Der,
@@ -113,4 +105,6 @@ pub mod spec {
             _ => TokenType::Error,
         }
     }
+
+    //TODO: specify error codes
 }
