@@ -1,54 +1,39 @@
-use std::fmt;
-use std::string::ToString;
+pub(crate) mod error {
 
-#[derive(Debug)]
-pub(crate) enum CASErrorKind {
-    SyntaxError,
-    TypeError,
-}
+    use std::string::ToString;
 
-impl ToString for CASErrorKind {
-    fn to_string(&self) -> String {
-        return match self {
-            CASErrorKind::SyntaxError => String::from("Syntax Error"),
-            CASErrorKind::TypeError => String::from("Type Error"),
-        };
+    #[derive(Clone, PartialEq, Debug)]
+    pub(crate) enum CASErrorKind {
+        NoError,
+        SyntaxError,
+        TypeError,
     }
-}
 
-#[derive(Debug)]
-pub(crate) struct CASError {
-    line: String,
-    line_num: u32,
-    message: String,
-    kind: CASErrorKind,
-}
-
-impl fmt::Display for CASError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.line_num {
-            0 => write!(f, "{}: {}", self.kind.to_string(), self.message),
-            _ => write!(
-                f,
-                "{} on line {}: {}\n\t{}",
-                self.kind.to_string(),
-                self.line_num,
-                self.message,
-                self.line
-            ),
+    impl ToString for CASErrorKind {
+        fn to_string(&self) -> String {
+            return match self {
+                CASErrorKind::NoError => String::from("No Error"),
+                CASErrorKind::SyntaxError => String::from("Syntax Error"),
+                CASErrorKind::TypeError => String::from("Type Error"),
+            };
         }
     }
-}
 
-pub(crate) fn get_error(
-    line: String,
-    line_num: u32,
-    kind: CASErrorKind,
-) -> Result<String, CASError> {
-    Err(CASError {
-        line,
-        line_num,
-        message: kind.to_string(),
-        kind,
-    })
+    impl Copy for CASErrorKind {
+        todo!();
+    }
+
+    #[derive(PartialEq, Debug)]
+    pub(crate) struct CASError {
+        pub(crate) line_pos: usize,
+        pub(crate) kind: CASErrorKind,
+    }
+
+    fn get_message(err_kind: &CASErrorKind) -> String {
+        todo!();
+    }
+
+    pub(crate) fn print_error(err: CASError, line: &str, line_num: usize) {
+        todo!();
+    }
 }

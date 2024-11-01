@@ -1,7 +1,8 @@
 pub(crate) mod scanner {
-    use std::iter::Peekable;
-    use std::{cmp, fmt, str};
+    use std::iter::{Enumerate, Peekable};
+    use std::{fmt, str};
 
+    use crate::error::error::{CASError, CASErrorKind};
     use crate::spec;
     use crate::spec::spec::{to_token_name, TokenType};
 
@@ -31,9 +32,9 @@ pub(crate) mod scanner {
             // token_text: String,
             token_value: Option<Value>,
         },
-        TokenError {
-            error_code: i32, //TODO: change this to an error type enum, only convert to error code when we print them out at the end
-            error_value: String,
+
+        Error {
+            err: CASErrorKind,
         },
     }
 
@@ -41,39 +42,35 @@ pub(crate) mod scanner {
     pub struct Tokenization {
         //result of tokenizing code
         pub tokens: Vec<TokenItem>,
-        pub error_code: i32,
+        pub errors: Vec<CASError>,
     }
 
     pub(crate) fn tokenize(line_of_code: String) -> Tokenization {
         //splits file into tokens
-        let mut err_code: i32 = 0;
-        let mut char_iter: Peekable<str::Chars<'_>> = line_of_code.chars().peekable(); //peekable to look forward for multichar tokens
+        let mut char_iter: Peekable<Enumerate<str::Chars>> =
+            line_of_code.chars().enumerate().peekable(); //peekable to look forward for multichar tokens
 
         let mut tokens: Vec<TokenItem> = vec![];
+        let mut errors: Vec<CASError> = vec![];
 
         while let Some(_) = char_iter.peek() {
             //while not at the end of file
 
-            let current_token = get_token(&mut char_iter);
+            let current_token: TokenItem = get_token(&mut char_iter);
             match current_token {
-                TokenItem::Token { .. } => (),
-                TokenItem::TokenError { error_code, .. } => {
-                    err_code = cmp::max(err_code, error_code)
-                    //define error codes so that most serious error is highest
-                    //we'll still show all the errors but the code will be the one for the most severe error
-                }
+                TokenItem::Token { .. } => tokens.push(current_token),
+                TokenItem::Error { err } => errors.push(CASError {
+                    line_pos: char_iter.peek().unwrap().0,
+                    kind: err,
+                }),
             }
-            tokens.push(current_token);
         }
         //add token for end of file if not already present
 
-        return Tokenization {
-            tokens,
-            error_code: err_code,
-        };
+        return Tokenization { tokens, errors };
     }
 
-    fn get_token(iter: &mut Peekable<str::Chars>) -> TokenItem {
+    fn get_token(iter: &mut Peekable<Enumerate<str::Chars>>) -> TokenItem {
         //END OF FILE
         if iter.peek().is_none() {
             return TokenItem::Token {
@@ -83,7 +80,7 @@ pub(crate) mod scanner {
             };
         }
 
-        let mut next_char = iter.next().unwrap();
+        let mut next_char = iter.next().unwrap().1;
 
         //what we're doing here is trying to parse these, if we succeed we return the token, if we fail it must be something else
 
@@ -120,7 +117,10 @@ pub(crate) mod scanner {
         };
     }
 
-    fn parse_number(next_char: char, iter: &mut Peekable<str::Chars<'_>>) -> Option<TokenItem> {
+    fn parse_number(
+        next_char: char,
+        iter: &mut Peekable<Enumerate<str::Chars>>,
+    ) -> Option<TokenItem> {
         //parses numerical literals like 3.4, 1234, -1523
         if next_char.is_numeric() || next_char == '.' {
             match get_next_number(next_char, iter) {
@@ -139,16 +139,14 @@ pub(crate) mod scanner {
                         token_value: Some(Value::Int(int)),
                     });
                 }
-                Ok(Value::String(string)) => {
-                    return Some(TokenItem::TokenError {
-                        error_code: 1,
-                        error_value: string,
+                Ok(Value::String(_)) => {
+                    return Some(TokenItem::Error {
+                        err: CASErrorKind::SyntaxError,
                     })
                 }
-                Err(malformed_lit) => {
-                    return Some(TokenItem::TokenError {
-                        error_code: 1,
-                        error_value: malformed_lit,
+                Err(_) => {
+                    return Some(TokenItem::Error {
+                        err: CASErrorKind::SyntaxError,
                     })
                 }
             }
@@ -156,13 +154,16 @@ pub(crate) mod scanner {
         None
     }
 
-    fn get_next_number(chr: char, iter: &mut Peekable<str::Chars>) -> Result<Value, String> {
+    fn get_next_number(
+        chr: char,
+        iter: &mut Peekable<Enumerate<str::Chars>>,
+    ) -> Result<Value, String> {
         let mut num: String = String::from(chr);
-        while let Some(chr) = iter.peek() {
-            if !chr.is_numeric() && *chr != '.' {
+        while let Some(&(_, chr)) = iter.peek() {
+            if !chr.is_numeric() && chr != '.' {
                 break;
             }
-            num.push(*chr);
+            num.push(chr);
             iter.next();
         }
         let int_parse = num.parse::<i64>();
@@ -178,12 +179,12 @@ pub(crate) mod scanner {
 
     fn skip_over_whitespace(
         next_char: &mut char,
-        iter: &mut Peekable<str::Chars<'_>>,
+        iter: &mut Peekable<Enumerate<str::Chars>>,
     ) -> Option<TokenItem> {
         while next_char.is_whitespace() {
             //should never be '\n' or '\r' since we parse one line at a time
             assert!(*next_char != '\n' && *next_char != '\r');
-            if let Some(chr) = iter.next() {
+            if let Some((_, chr)) = iter.next() {
                 *next_char = chr;
             } else {
                 //at end of file
@@ -197,21 +198,26 @@ pub(crate) mod scanner {
         None //we return none once we reach a non whitespace char
     }
 
-    fn parse_comp_ops(next_char: char, iter: &mut Peekable<str::Chars<'_>>) -> Option<TokenItem> {
+    fn parse_comp_ops(
+        next_char: char,
+        iter: &mut Peekable<Enumerate<str::Chars>>,
+    ) -> Option<TokenItem> {
         //gets comparison operators
         if "<>!".contains(next_char) {
-            if iter.peek() == Some(&'=') {
-                iter.next();
-                return Some(TokenItem::Token {
-                    token_name: match next_char {
-                        '<' => TokenType::LessEqual,
-                        '>' => TokenType::GreaterEqual,
-                        '!' => TokenType::NotEqual,
-                        _ => TokenType::Error,
-                    },
-                    // token_text: next_char.to_string() + "=",
-                    token_value: None,
-                });
+            if iter.peek().is_some() {
+                if iter.peek().unwrap().1 == '=' {
+                    iter.next();
+                    return Some(TokenItem::Token {
+                        token_name: match next_char {
+                            '<' => TokenType::LessEqual,
+                            '>' => TokenType::GreaterEqual,
+                            '!' => TokenType::NotEqual,
+                            _ => TokenType::Error,
+                        },
+                        // token_text: next_char.to_string() + "=",
+                        token_value: None,
+                    });
+                }
             }
         }
         None
@@ -229,7 +235,10 @@ pub(crate) mod scanner {
         None
     }
 
-    fn parse_names(next_char: char, iter: &mut Peekable<str::Chars<'_>>) -> Option<TokenItem> {
+    fn parse_names(
+        next_char: char,
+        iter: &mut Peekable<Enumerate<str::Chars>>,
+    ) -> Option<TokenItem> {
         //parses variable or function names or constants (alphabetic chars)
 
         if next_char.is_alphabetic() {
@@ -260,23 +269,21 @@ pub(crate) mod scanner {
                 });
             }
         } else if next_char == '_' {
-            let word: String = next_char.to_string() + &get_next_word(iter);
             //if variable name starts with _ or -
-            return Some(TokenItem::TokenError {
-                error_code: 1,
-                error_value: word,
+            return Some(TokenItem::Error {
+                err: CASErrorKind::SyntaxError,
             });
         }
         None
     }
 
-    fn get_next_word(iter: &mut Peekable<str::Chars>) -> String {
+    fn get_next_word(iter: &mut Peekable<Enumerate<str::Chars>>) -> String {
         let mut word: String = String::from("");
-        while let Some(chr) = iter.peek() {
-            if !chr.is_alphabetic() && *chr != '_' && *chr != '-' {
+        while let Some(&(_, chr)) = iter.peek() {
+            if !chr.is_alphabetic() && chr != '_' && chr != '-' {
                 return word;
             }
-            word.push(*chr);
+            word.push(chr);
             iter.next();
         }
         return word;

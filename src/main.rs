@@ -4,6 +4,7 @@ use std::io;
 use std::io::prelude::*;
 use std::path::Path;
 
+use error::error::print_error;
 use scanner::scanner::TokenItem;
 
 pub mod error;
@@ -52,7 +53,7 @@ fn run(code: String) {
 
     for (line_num, line) in code.lines().enumerate() {
         let result = scanner::scanner::tokenize(line.to_string());
-        if result.error_code == 0 {
+        if result.errors.len() == 0 {
             for token in &result.tokens {
                 match token {
                     scanner::scanner::TokenItem::Token {
@@ -69,27 +70,14 @@ fn run(code: String) {
                             None => String::from("None"),
                         }
                     ),
-
-                    scanner::scanner::TokenItem::TokenError { .. } => (),
+                    _ => (),
                 }
             }
             tokens.extend(result.tokens);
         } else {
             //if theres any error print it out
-            for token in result.tokens {
-                match token {
-                    scanner::scanner::TokenItem::Token { .. } => (),
-
-                    scanner::scanner::TokenItem::TokenError {
-                        error_code,
-                        error_value,
-                    } => println!(
-                        "[line {}] Error code {}: {}",
-                        line_num + 1,
-                        error_code,
-                        error_value
-                    ),
-                }
+            for error in result.errors {
+                print_error(error, line, line_num);
             }
         }
     }
