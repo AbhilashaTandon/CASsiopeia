@@ -2,7 +2,11 @@
 pub(crate) mod test {
     use scanner::{tokenize, TokenItem, Tokenization, Value};
 
-    use crate::{scanner::*, spec::spec::TokenType, spec::spec::TokenType::*};
+    use crate::{
+        error::error::CASError,
+        scanner::*,
+        spec::TokenType::{self, *},
+    };
 
     fn make_token(
         token_name: TokenType,
@@ -91,12 +95,14 @@ pub(crate) mod test {
 
         let computed_tokens: Tokenization = tokenize(String::from("der 3 * x - 5, x"));
         let desired_tokens: Vec<TokenItem> = vec![
-            make_token(Calc, None),
+            make_token(Der, None),
             make_token(Int, Some(Value::Int(3))),
             make_token(Mult, None),
             make_token(Name, Some(Value::String(String::from("x")))),
             make_token(Sub, None),
             make_token(Int, Some(Value::Int(5))),
+            make_token(Comma, None),
+            make_token(Name, Some(Value::String(String::from("x")))),
         ];
         let desired_output: Tokenization = Tokenization {
             tokens: desired_tokens,
@@ -131,20 +137,25 @@ pub(crate) mod test {
     #[test]
     fn invalid_names() {
         //variable names can't begin w underscore
-        // let computed_tokens: Tokenization = tokenize(String::from("_x = 2"));
-        // let desired_tokens: Vec<TokenItem> = vec![
-        //     TokenItem::TokenError {
-        //         error_code: 1,
-        //         error_value: String::from("_x"),
-        //     },
-        //     make_token(Equal, None),
-        //     make_token(Int, Some(Value::Int(2))),
-        // ];
-        // let desired_output: Tokenization = Tokenization {
-        //     tokens: desired_tokens,
-        //     error_code: 1,
-        // };
-        // assert_eq!(computed_tokens, desired_output);
+        // let mut tokens: Vec<TokenItem> = vec![];
+        // process_line("_x = 2", &mut tokens, 0);
+
+        let computed_tokens = tokenize(String::from("_x = 2"));
+
+        let desired_tokens: Vec<TokenItem> = vec![
+            make_token(Name, Some(Value::String(String::from("x")))),
+            make_token(Equal, None),
+            make_token(Int, Some(Value::Int(2))),
+        ];
+        let desired_errors: Vec<CASError> = vec![CASError {
+            line_pos: 1,
+            kind: crate::error::error::CASErrorKind::MalformedVariableName,
+        }];
+        let desired_output: Tokenization = Tokenization {
+            tokens: desired_tokens,
+            errors: desired_errors,
+        };
+        assert_eq!(computed_tokens, desired_output);
 
         let computed_tokens: Tokenization = tokenize(String::from("-x = 2"));
         let desired_tokens: Vec<TokenItem> = vec![

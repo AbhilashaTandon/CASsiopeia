@@ -4,8 +4,7 @@ use std::io;
 use std::io::prelude::*;
 use std::path::Path;
 
-use error::error::print_error;
-use scanner::scanner::TokenItem;
+use scanner::scanner::{process_line, TokenItem};
 
 pub mod error;
 pub mod scanner;
@@ -24,6 +23,9 @@ fn main() {
     // if args.len() == 1 {
     //     prompt();
     // }
+
+    let mut tokens: Vec<TokenItem> = vec![];
+    process_line("y = .10.2342", &mut tokens, 0);
 
     for (idx, arg) in args.iter().enumerate() {
         println!("arg #{}: {}", idx, arg);
@@ -52,33 +54,6 @@ fn run(code: String) {
     let mut tokens: Vec<TokenItem> = vec![];
 
     for (line_num, line) in code.lines().enumerate() {
-        let result = scanner::scanner::tokenize(line.to_string());
-        if result.errors.len() == 0 {
-            for token in &result.tokens {
-                match token {
-                    scanner::scanner::TokenItem::Token {
-                        token_name,
-                        // token_text,
-                        token_value,
-                    } => println!(
-                        // "{} {} {}",
-                        "{} {}",
-                        token_name.to_string(),
-                        // token_text,
-                        match token_value {
-                            Some(value) => value.to_string(),
-                            None => String::from("None"),
-                        }
-                    ),
-                    _ => (),
-                }
-            }
-            tokens.extend(result.tokens);
-        } else {
-            //if theres any error print it out
-            for error in result.errors {
-                print_error(error, line, line_num);
-            }
-        }
+        process_line(line, &mut tokens, line_num);
     }
 }

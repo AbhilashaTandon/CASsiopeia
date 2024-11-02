@@ -2,9 +2,9 @@ pub(crate) mod scanner {
     use std::iter::{Enumerate, Peekable};
     use std::{fmt, str};
 
-    use crate::error::error::{CASError, CASErrorKind};
+    use crate::error::error::{print_error, CASError, CASErrorKind};
     use crate::spec;
-    use crate::spec::spec::{to_token_name, TokenType};
+    use crate::spec::{to_token_name, TokenType};
 
     #[derive(PartialEq, Debug)]
     pub(crate) enum Value {
@@ -45,6 +45,37 @@ pub(crate) mod scanner {
         pub errors: Vec<CASError>,
     }
 
+    pub(crate) fn process_line(line: &str, tokens: &mut Vec<TokenItem>, line_num: usize) {
+        let result = tokenize(line.to_string());
+        if result.errors.len() == 0 {
+            for token in &result.tokens {
+                match token {
+                    TokenItem::Token {
+                        token_name,
+                        // token_text,
+                        token_value,
+                    } => println!(
+                        // "{} {} {}",
+                        "{} {}",
+                        token_name.to_string(),
+                        // token_text,
+                        match token_value {
+                            Some(value) => value.to_string(),
+                            None => String::from("None"),
+                        }
+                    ),
+                    _ => (),
+                }
+            }
+            tokens.extend(result.tokens);
+        } else {
+            //if theres any error print it out
+            for error in result.errors {
+                print_error(error, line, line_num);
+            }
+        }
+    }
+
     pub(crate) fn tokenize(line_of_code: String) -> Tokenization {
         //splits file into tokens
         let mut char_iter: Peekable<Enumerate<str::Chars>> =
@@ -59,10 +90,19 @@ pub(crate) mod scanner {
             let current_token: TokenItem = get_token(&mut char_iter);
             match current_token {
                 TokenItem::Token { .. } => tokens.push(current_token),
-                TokenItem::Error { err } => errors.push(CASError {
-                    line_pos: char_iter.peek().unwrap().0,
-                    kind: err,
-                }),
+                TokenItem::Error { err } => {
+                    if let Some(&(line_pos, _)) = char_iter.peek() {
+                        errors.push(CASError {
+                            line_pos,
+                            kind: err,
+                        });
+                    } else {
+                        errors.push(CASError {
+                            line_pos: line_of_code.len(),
+                            kind: err,
+                        })
+                    }
+                }
             }
         }
         //add token for end of file if not already present
@@ -141,12 +181,12 @@ pub(crate) mod scanner {
                 }
                 Ok(Value::String(_)) => {
                     return Some(TokenItem::Error {
-                        err: CASErrorKind::SyntaxError,
+                        err: CASErrorKind::MalformedNumericLiteral,
                     })
                 }
                 Err(_) => {
                     return Some(TokenItem::Error {
-                        err: CASErrorKind::SyntaxError,
+                        err: CASErrorKind::MalformedNumericLiteral,
                     })
                 }
             }
@@ -225,7 +265,7 @@ pub(crate) mod scanner {
 
     fn parse_ops(next_char: char) -> Option<TokenItem> {
         //parses operators that are one character
-        if spec::spec::OPERATORS.contains(&next_char) {
+        if spec::OPERATORS.contains(&next_char) {
             return Some(TokenItem::Token {
                 token_name: to_token_name(String::from(next_char).to_lowercase().as_str()),
                 // token_text: next_char.to_string(),
@@ -243,19 +283,19 @@ pub(crate) mod scanner {
 
         if next_char.is_alphabetic() {
             let word: String = next_char.to_string() + &get_next_word(iter);
-            if spec::spec::KEYWORDS.contains(&word.as_str()) {
+            if spec::KEYWORDS.contains(&word.as_str()) {
                 return Some(TokenItem::Token {
                     token_name: to_token_name(word.to_lowercase().as_str()),
                     // token_text: word,
                     token_value: None,
                 });
-            } else if spec::spec::RESERVED_FUNCTIONS.contains(&word.as_str()) {
+            } else if spec::RESERVED_FUNCTIONS.contains(&word.as_str()) {
                 return Some(TokenItem::Token {
                     token_name: TokenType::ResFun,
                     // token_text: word,
                     token_value: None,
                 });
-            } else if spec::spec::RESERVED_CONSTANTS.contains(&word.as_str()) {
+            } else if spec::RESERVED_CONSTANTS.contains(&word.as_str()) {
                 return Some(TokenItem::Token {
                     token_name: TokenType::Const,
                     // token_text: word,
@@ -271,7 +311,7 @@ pub(crate) mod scanner {
         } else if next_char == '_' {
             //if variable name starts with _ or -
             return Some(TokenItem::Error {
-                err: CASErrorKind::SyntaxError,
+                err: CASErrorKind::MalformedVariableName,
             });
         }
         None
@@ -280,7 +320,7 @@ pub(crate) mod scanner {
     fn get_next_word(iter: &mut Peekable<Enumerate<str::Chars>>) -> String {
         let mut word: String = String::from("");
         while let Some(&(_, chr)) = iter.peek() {
-            if !chr.is_alphabetic() && chr != '_' && chr != '-' {
+            if !chr.is_alphabetic() && chr != '_' && chr != '-' && !chr.is_numeric() {
                 return word;
             }
             word.push(chr);
