@@ -1,13 +1,13 @@
-
 use std::string::ToString;
 
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub(crate) enum CASErrorKind {
     NoError,
     SyntaxError,
     TypeError,
     MalformedNumericLiteral,
     MalformedVariableName,
+    AssignmentInExpression,
 }
 
 impl ToString for CASErrorKind {
@@ -18,6 +18,7 @@ impl ToString for CASErrorKind {
             | CASErrorKind::MalformedNumericLiteral
             | CASErrorKind::MalformedVariableName => "Syntax Error",
             CASErrorKind::TypeError => "Type Error",
+            CASErrorKind::AssignmentInExpression => "Assignment in expression",
         });
     }
 }
@@ -35,6 +36,8 @@ fn get_message(err_kind: CASErrorKind) -> String {
             CASErrorKind::TypeError => "unspecified type error.",
             CASErrorKind::MalformedNumericLiteral => "malformed numerical literal.",
             CASErrorKind::MalformedVariableName => "variable names must begin with an alphabetic character, and must only contain alphanumeric characters, _, or -.",
+                    CASErrorKind::AssignmentInExpression => "variable or function assignments cannot be made inside expressions. Perhaps you meant to use the equality operator '=='?",
+            
         });
 }
 

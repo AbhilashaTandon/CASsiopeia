@@ -5,7 +5,7 @@ use crate::error::{print_error, CASError, CASErrorKind};
 use crate::spec;
 use crate::spec::{to_token_name, TokenType};
 
-#[derive(PartialEq, Debug)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub(crate) enum Value {
     //for numerical literals and variable names
     Int(i64),
@@ -23,7 +23,7 @@ impl fmt::Display for Value {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub(crate) enum TokenItem {
     //stores each token or error we find in file
     Token {
@@ -236,7 +236,7 @@ fn parse_comp_ops(
     iter: &mut Peekable<Enumerate<str::Chars>>,
 ) -> Option<TokenItem> {
     //gets comparison operators
-    if "<>!".contains(next_char) {
+    if "=<>!".contains(next_char) {
         if iter.peek().is_some() {
             if iter.peek().unwrap().1 == '=' {
                 iter.next();
@@ -245,6 +245,7 @@ fn parse_comp_ops(
                         '<' => TokenType::LessEqual,
                         '>' => TokenType::GreaterEqual,
                         '!' => TokenType::NotEqual,
+                        '=' => TokenType::Equal,
                         _ => TokenType::Error,
                     },
                     // token_text: next_char.to_string() + "=",

@@ -23,13 +23,14 @@ pub const OPERATORS: [char; 13] = [
 ];
 pub const COMP: [&'static str; 3] = ["!=", "<=", ">="];
 
-#[derive(PartialEq, Debug)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub(crate) enum TokenType {
     Name,  //variable name
     Int,   //integer literal
     Float, //floating point literal
     Eof,   //end of file
     //operators
+    Assign,
     Add,
     Sub,
     Mult,
@@ -37,6 +38,8 @@ pub(crate) enum TokenType {
     Exp,
     LeftParen,
     RightParen,
+    LeftBracket,
+    RightBracket,
     Comma,
     Less,
     Greater,
@@ -60,6 +63,7 @@ impl fmt::Display for TokenType {
             TokenType::Int => "INT",
             TokenType::Float => "FLOAT",
             TokenType::Eof => "EOF",
+            TokenType::Assign => "ASSIGN",
             TokenType::Add => "ADD",
             TokenType::Sub => "SUB",
             TokenType::Mult => "MULT",
@@ -81,6 +85,8 @@ impl fmt::Display for TokenType {
             TokenType::Const => "CONST",
             TokenType::ResFun => "RESERVED_FUNCTION",
             TokenType::Error => "ERR",
+            TokenType::LeftBracket => "LEFT_BRACKET",
+            TokenType::RightBracket => "RIGHT_BRACKET",
         };
         write!(f, "{}", display)
     }
@@ -88,6 +94,7 @@ impl fmt::Display for TokenType {
 
 pub(crate) fn to_token_name(symbol: &str) -> TokenType {
     match symbol {
+        "=" => TokenType::Assign,
         "+" => TokenType::Add,
         "-" => TokenType::Sub,
         "*" => TokenType::Mult,
@@ -98,13 +105,57 @@ pub(crate) fn to_token_name(symbol: &str) -> TokenType {
         "," => TokenType::Comma,
         "<" => TokenType::Less,
         ">" => TokenType::Greater,
-        "=" => TokenType::Equal,
         "calc" => TokenType::Calc,
         "sim" => TokenType::Sim,
         "der" => TokenType::Der,
         "int" => TokenType::Integral,
+        "[" => TokenType::LeftBracket,
+        "]" => TokenType::RightBracket,
         _ => TokenType::Error,
     }
 }
 
 //TODO: specify error codes
+
+pub(crate) fn precedence(operator: TokenType) -> u32 {
+    match operator {
+        TokenType::Name => 0,
+        TokenType::Int => 0,
+        TokenType::Float => 0,
+        TokenType::Const => 0,
+        TokenType::Error => 0,
+        TokenType::Eof => 0,
+
+        TokenType::Comma => 1,
+
+        TokenType::Assign => 2,
+
+        TokenType::Equal => 3,
+        TokenType::NotEqual => 3,
+
+        TokenType::Less => 4,
+        TokenType::Greater => 4,
+        TokenType::LessEqual => 4,
+        TokenType::GreaterEqual => 4,
+
+        TokenType::Add => 5,
+        TokenType::Sub => 5,
+
+        TokenType::Mult => 6,
+        TokenType::Div => 6,
+
+        TokenType::Exp => 7,
+
+        TokenType::Calc => 8,
+        TokenType::Sim => 8,
+        TokenType::Der => 8,
+        TokenType::Integral => 8,
+
+        TokenType::LeftParen => 9,
+        TokenType::RightParen => 9,
+        TokenType::LeftBracket => 9,
+        TokenType::RightBracket => 9,
+
+        TokenType::ResFun => 10,
+    }
+}
