@@ -4,9 +4,10 @@ use std::io;
 use std::io::prelude::*;
 use std::path::Path;
 
-use scanner::scanner::{process_line, TokenItem};
+use scanner::{process_line, TokenItem};
 
 pub mod error;
+pub mod parser;
 pub mod scanner;
 pub mod spec;
 pub mod test;
