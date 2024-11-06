@@ -1,11 +1,11 @@
 use std::iter::{Enumerate, Peekable};
 use std::{fmt, str};
 
-use crate::error::{print_error, CASError, CASErrorKind};
 use crate::spec;
 use crate::spec::{to_token_name, TokenType};
+use crate::types::error::{print_error, CASError, CASErrorKind};
 
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, PartialEq, Hash, Debug)]
 pub(crate) enum Value {
     //for numerical literals and variable names
     Int(i64),
@@ -23,7 +23,7 @@ impl fmt::Display for Value {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, PartialEq, Hash, Debug)]
 pub(crate) enum TokenItem {
     //stores each token or error we find in file
     Token {

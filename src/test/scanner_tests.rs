@@ -3,8 +3,8 @@ pub(crate) mod scanner_tests {
     use crate::scanner::{tokenize, TokenItem, Tokenization, Value};
 
     use crate::{
-        error::CASError,
         spec::TokenType::{self, *},
+        types::error::{CASError, CASErrorKind},
     };
 
     fn make_token(
@@ -149,7 +149,7 @@ pub(crate) mod scanner_tests {
             ],
             vec![CASError {
                 line_pos: 1,
-                kind: crate::error::CASErrorKind::MalformedVariableName,
+                kind: CASErrorKind::MalformedVariableName,
             }],
         );
 
@@ -206,7 +206,7 @@ pub(crate) mod scanner_tests {
             ],
             vec![CASError {
                 line_pos: 12,
-                kind: crate::error::CASErrorKind::MalformedNumericLiteral,
+                kind: CASErrorKind::MalformedNumericLiteral,
             }],
         );
     }

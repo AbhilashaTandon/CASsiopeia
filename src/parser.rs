@@ -1,6 +1,6 @@
 use crate::{
-    error::CASErrorKind,
     scanner::{TokenItem, Value},
+    types::error::CASErrorKind,
 };
 use std::collections::HashMap;
 
@@ -16,7 +16,7 @@ struct Tree<T> {
     root: Option<TreeNode<T>>,
 }
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(PartialEq, Hash)]
 struct Var {
     expr: Tree<TokenItem>,
     args: Vec<String>, //if args is empty it is a numeric or symbolic variable, 2, 3, pi, x, etc.

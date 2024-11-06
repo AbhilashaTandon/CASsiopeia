@@ -6,11 +6,11 @@ use std::path::Path;
 
 use scanner::{process_line, TokenItem};
 
-pub mod error;
 pub mod parser;
 pub mod scanner;
 pub mod spec;
 pub mod test;
+pub mod types;
 
 fn main() {
     //cli stuff
