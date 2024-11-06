@@ -66,7 +66,7 @@ pub(crate) fn align(a: &CASNum, b: &CASNum) -> VecDeque<(u8, u8)> {
     let max_digit = max(a_max_digit, b_max_digit);
     let min_digit = min(a_min_digit, b_min_digit);
 
-    let mut out: VecDeque<(u8, u8)> = Default::default();
+    let mut out: VecDeque<(u8, u8)> = VecDeque::new();
     for i in min_digit..=max_digit {
         out.push_back((
             if a_min_digit <= i && i <= a_max_digit {
@@ -126,15 +126,15 @@ impl PartialOrd for CASNum {
 
 impl CASNum {
     pub(crate) fn new(i: i128) -> Box<CASNum> {
-        let mut bytes: VecDeque<u8> = Default::default();
+        let mut bytes: VecDeque<u8> = VecDeque::new();
         let mut abs = i.abs();
         while abs > 0 {
             let rem: u8 = (abs & 255).try_into().unwrap();
             bytes.push_back(rem);
             abs >>= 8;
         }
-        while let Some(last) = bytes.back() {
-            if *last == 0 {
+        while let Some(&last) = bytes.back() {
+            if last == 0 {
                 bytes.pop_back();
             } else {
                 break;
@@ -196,7 +196,7 @@ impl ops::Add<CASNum> for CASNum {
     type Output = CASNum;
 
     fn add(self, rhs: Self) -> Self::Output {
-        let mut bytes: VecDeque<u8> = Default::default();
+        let mut bytes: VecDeque<u8> = VecDeque::new();
         let mut carry = 0;
 
         if rhs.sign == Sign::Neg && self.sign == Sign::Pos {
@@ -204,7 +204,7 @@ impl ops::Add<CASNum> for CASNum {
         }
 
         if self.sign == Sign::Neg && rhs.sign == Sign::Pos {
-            return self.abs() - rhs;
+            return rhs - self.abs();
         }
 
         if self.sign == Sign::Neg && rhs.sign == Sign::Neg {
@@ -229,9 +229,10 @@ impl ops::Add<CASNum> for CASNum {
 }
 
 impl ops::Sub<CASNum> for CASNum {
-    type Output = CASNum;
+    type Output = Self;
 
-    fn sub(self, rhs: CASNum) -> Self::Output {
+    fn sub(self: CASNum, rhs: Self) -> Self::Output {
+        let mut bytes: VecDeque<u8> = VecDeque::new();
         //convert all args to positive
         if rhs.sign == Sign::Neg && self.sign == Sign::Pos {
             //a - -b = a + b
@@ -253,8 +254,20 @@ impl ops::Sub<CASNum> for CASNum {
             return -(rhs - self);
         }
 
-        for (self_byte, other_byte) in align(&self, &rhs).iter() {}
+        let mut carry: i16 = 0;
+        for (self_byte, other_byte) in align(&self, &rhs).iter() {
+            let mut diff: i16 = (*self_byte as i16) - (*other_byte as i16) - carry;
+            if diff < 0 {
+                diff = 256 - diff;
+                carry = 1;
+            }
+            bytes.push_back(diff.try_into().unwrap());
+        }
 
-        return *CASNum::new(0);
+        return CASNum {
+            bytes,
+            exp: 0,
+            sign: Sign::Pos,
+        };
     }
 }

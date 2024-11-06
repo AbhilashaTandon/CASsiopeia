@@ -19,7 +19,9 @@ pub mod test {
     }
 
     fn addition(a: i128, b: i128) {
-        assert_eq!(*CASNum::new(a + b), *CASNum::new(a) + *CASNum::new(b));
+        let sum_1 = *CASNum::new(a + b);
+        let sum_2 = *CASNum::new(a) + *CASNum::new(b);
+        assert_eq!(sum_1, sum_2);
     }
 
     #[test]
