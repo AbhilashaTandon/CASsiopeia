@@ -2,19 +2,10 @@
 pub mod test {
     use super::super::CASNum;
 
-    #[test]
-    fn comparisons() {
-        let a: CASNum = *CASNum::new(12);
-        let b: CASNum = *CASNum::new(12343242);
-        assert!(a < b);
-        let c: CASNum = *CASNum::new(12);
-        assert!(a == c);
-        assert!(b > a);
-
-        let d = *CASNum::new(-256000);
-        assert!(d < a);
-        assert!(b > d);
-        assert!(c > d);
+    fn comparison(a: i128, b: i128) {
+        assert_eq!(*CASNum::new(a) < *CASNum::new(b), a < b);
+        assert_eq!(*CASNum::new(a) > *CASNum::new(b), a > b);
+        assert_eq!(*CASNum::new(a) == *CASNum::new(b), a == b);
     }
 
     fn addition(a: i128, b: i128) {
@@ -72,5 +63,28 @@ pub mod test {
         subtraction(46589611, -15489456);
         subtraction(-541, 154);
         subtraction(154, 145);
+    }
+
+    #[test]
+    fn comparison_tests() {
+        comparison(1, 0);
+        comparison(0, 0);
+        comparison(0, 1);
+        comparison(-1, 0);
+        comparison(0, -1);
+        comparison(-1, -1);
+        comparison(1, -1);
+        comparison(-1, 1);
+        comparison(1, 1);
+
+        comparison(12032, 23420);
+        comparison(02312, 054123);
+        comparison(012312, 11231);
+        comparison(-52521, 01231);
+        comparison(10532153, -11252);
+        comparison(-235131, -65347641);
+        comparison(46589611, -15489456);
+        comparison(-541, 154);
+        comparison(154, 145);
     }
 }

@@ -12,14 +12,11 @@ use std::{
 };
 
 use scanner::{process_line, TokenItem};
-use types::cas_num::{align, CASNum, Sign};
 
 pub mod parser;
 pub mod scanner;
 pub mod spec;
 pub mod types;
-
-use crate::types::cas_num;
 
 fn main() {
     //cli stuff
