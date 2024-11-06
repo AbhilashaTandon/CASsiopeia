@@ -9,7 +9,7 @@ enum Sign {
 }
 
 #[derive(Debug)]
-struct CASNum {
+pub(crate) struct CASNum {
     bytes: Vec<u8>, //little endian
     exp: i128,
     sign: Sign,
@@ -50,7 +50,7 @@ impl IntoIterator for CASNum {
     }
 }
 
-fn normalize(n: &mut CASNum) {
+pub(crate) fn normalize(n: &mut CASNum) {
     while let Some(least_order_byte) = n.bytes.get(0) {
         if least_order_byte & 1 == 0 {
             //if has trailing 0

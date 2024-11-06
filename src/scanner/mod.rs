@@ -5,6 +5,8 @@ use crate::spec;
 use crate::spec::{to_token_name, TokenType};
 use crate::types::error::{print_error, CASError, CASErrorKind};
 
+mod test;
+
 #[derive(Clone, PartialEq, Hash, Debug)]
 pub(crate) enum Value {
     //for numerical literals and variable names
@@ -38,7 +40,7 @@ pub(crate) enum TokenItem {
 }
 
 #[derive(PartialEq, Debug)]
-pub(crate) struct Tokenization {
+struct Tokenization {
     //result of tokenizing code
     pub tokens: Vec<TokenItem>,
     pub errors: Vec<CASError>,
@@ -75,7 +77,7 @@ pub(crate) fn process_line(line: &str, tokens: &mut Vec<TokenItem>, line_num: us
     }
 }
 
-pub(crate) fn tokenize(line_of_code: String) -> Tokenization {
+fn tokenize(line_of_code: String) -> Tokenization {
     //splits file into tokens
     let mut char_iter: Peekable<Enumerate<str::Chars>> =
         line_of_code.chars().enumerate().peekable(); //peekable to look forward for multichar tokens

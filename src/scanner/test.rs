@@ -1,12 +1,13 @@
 #[cfg(test)]
-pub(crate) mod scanner_tests {
+
+mod test {
+
     use crate::scanner::{tokenize, TokenItem, Tokenization, Value};
 
     use crate::{
         spec::TokenType::{self, *},
         types::error::{CASError, CASErrorKind},
     };
-
     fn make_token(
         token_name: TokenType,
         // token_text: &str,
