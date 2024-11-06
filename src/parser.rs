@@ -16,7 +16,7 @@ struct Tree<T> {
     root: Option<TreeNode<T>>,
 }
 
-#[derive(PartialEq, Hash)]
+#[derive(PartialEq)]
 struct Var {
     expr: Tree<TokenItem>,
     args: Vec<String>, //if args is empty it is a numeric or symbolic variable, 2, 3, pi, x, etc.

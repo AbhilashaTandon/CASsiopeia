@@ -2,12 +2,13 @@
 
 mod test {
 
-    use crate::scanner::{tokenize, TokenItem, Tokenization, Value};
+    use super::super::{tokenize, TokenItem, Tokenization, Value};
 
     use crate::{
         spec::TokenType::{self, *},
         types::error::{CASError, CASErrorKind},
     };
+
     fn make_token(
         token_name: TokenType,
         // token_text: &str,

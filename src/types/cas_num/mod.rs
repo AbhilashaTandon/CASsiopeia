@@ -1,21 +1,29 @@
-use std::cmp::max;
-use std::ops;
-use std::path::Iter;
+// use std::cmp::max;
+// use std::ops;
+// use std::path::Iter;
+
+use std::{
+    cmp::{max, min, Ordering},
+    collections::VecDeque,
+    ops,
+};
+
+mod test;
 
 #[derive(Debug, PartialEq, Eq)]
-enum Sign {
+pub(crate) enum Sign {
     Pos,
     Neg,
 }
 
 #[derive(Debug)]
 pub(crate) struct CASNum {
-    bytes: Vec<u8>, //little endian
-    exp: i128,
-    sign: Sign,
+    pub(crate) bytes: VecDeque<u8>, //little endian
+    pub(crate) exp: i128,           //base 256
+    pub(crate) sign: Sign,
 }
 
-struct CASNumIter {
+pub(crate) struct CASNumIter {
     cas_num: CASNum,
     index: usize,
 }
@@ -50,19 +58,203 @@ impl IntoIterator for CASNum {
     }
 }
 
-pub(crate) fn normalize(n: &mut CASNum) {
-    while let Some(least_order_byte) = n.bytes.get(0) {
-        if least_order_byte & 1 == 0 {
-            //if has trailing 0
-            n.exp += 1;
-            let mut remainder = 0;
-            let shift_left = n.bytes.iter().enumerate().rev().map(|(idx, byte)| {
-                let shl = byte >> 1 + remainder << 7;
-                remainder = byte & 1;
-                eprint!("{} ", shl);
-                shl
-            });
-            eprintln!();
+pub(crate) fn align(a: &CASNum, b: &CASNum) -> VecDeque<(u8, u8)> {
+    let a_max_digit = a.max_digit();
+    let a_min_digit = a.exp;
+    let b_max_digit = b.max_digit();
+    let b_min_digit = b.exp;
+    let max_digit = max(a_max_digit, b_max_digit);
+    let min_digit = min(a_min_digit, b_min_digit);
+
+    let mut out: VecDeque<(u8, u8)> = Default::default();
+    for i in min_digit..=max_digit {
+        out.push_back((
+            if a_min_digit <= i && i <= a_max_digit {
+                a.bytes[(i - a_min_digit).try_into().unwrap()]
+            } else {
+                0
+            },
+            if b_min_digit <= i && i <= b_max_digit {
+                b.bytes[(i - b_min_digit).try_into().unwrap()]
+            } else {
+                0
+            },
+        ));
+    }
+
+    return out;
+}
+
+impl PartialEq<CASNum> for CASNum {
+    fn eq(&self, other: &CASNum) -> bool {
+        self.bytes == other.bytes && self.exp == other.exp && self.sign == other.sign
+    }
+}
+
+fn compare(a: &CASNum, b: &CASNum) -> Ordering {
+    //returns comparison of absolute values
+    match a.bytes.len().cmp(&b.bytes.len()) {
+        Ordering::Less => return Ordering::Less,
+        Ordering::Greater => return Ordering::Greater,
+        Ordering::Equal => {}
+    }
+    for (a_byte, b_byte) in align(a, b).iter().rev() {
+        match a_byte.cmp(b_byte) {
+            Ordering::Less => return Ordering::Less,
+            Ordering::Equal => continue,
+            Ordering::Greater => return Ordering::Greater,
         }
+    }
+
+    return Ordering::Equal;
+}
+
+impl Eq for CASNum {}
+impl PartialOrd for CASNum {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self.sign == Sign::Pos && other.sign == Sign::Pos {
+            return Some(compare(self, other));
+        } else if self.sign == Sign::Neg && other.sign == Sign::Pos {
+            return Some(Ordering::Less);
+        } else if self.sign == Sign::Pos && other.sign == Sign::Neg {
+            return Some(Ordering::Greater);
+        } else {
+            return Some(compare(other, self));
+        }
+    }
+}
+
+impl CASNum {
+    pub(crate) fn new(i: i128) -> Box<CASNum> {
+        let mut bytes: VecDeque<u8> = Default::default();
+        let mut abs = i.abs();
+        while abs > 0 {
+            let rem: u8 = (abs & 255).try_into().unwrap();
+            bytes.push_back(rem);
+            abs >>= 8;
+        }
+        while let Some(last) = bytes.back() {
+            if *last == 0 {
+                bytes.pop_back();
+            } else {
+                break;
+            }
+        }
+
+        let mut out = CASNum {
+            bytes,
+            exp: 0,
+            sign: if i >= 0 { Sign::Pos } else { Sign::Neg },
+        };
+        out.normalize();
+        return Box::new(out);
+    }
+
+    fn max_digit(self: &Self) -> i128 {
+        //exponent position of first digit
+        return (self.bytes.len() as i128) - 1 + self.exp;
+    }
+
+    pub(crate) fn normalize(self: &mut Self) {
+        while let Some(least_order_byte) = self.bytes.front() {
+            if *least_order_byte == 0 {
+                //if has trailing 0 remove it
+                self.exp += 1;
+                self.bytes.pop_front();
+            } else {
+                break;
+            }
+        }
+    }
+
+    pub(crate) fn abs(self) -> CASNum {
+        return CASNum {
+            bytes: self.bytes,
+            exp: self.exp,
+            sign: Sign::Pos,
+        };
+    }
+}
+
+impl ops::Neg for CASNum {
+    type Output = CASNum;
+
+    fn neg(self) -> Self::Output {
+        return CASNum {
+            bytes: self.bytes,
+            exp: self.exp,
+            sign: if self.sign == Sign::Pos {
+                Sign::Neg
+            } else {
+                Sign::Pos
+            },
+        };
+    }
+}
+
+impl ops::Add<CASNum> for CASNum {
+    type Output = CASNum;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let mut bytes: VecDeque<u8> = Default::default();
+        let mut carry = 0;
+
+        if rhs.sign == Sign::Neg && self.sign == Sign::Pos {
+            return self - rhs.abs();
+        }
+
+        if self.sign == Sign::Neg && rhs.sign == Sign::Pos {
+            return self.abs() - rhs;
+        }
+
+        if self.sign == Sign::Neg && rhs.sign == Sign::Neg {
+            return -(self.abs() + rhs.abs());
+        }
+
+        for (a_byte, b_byte) in align(&self, &rhs) {
+            let sum: u16 = a_byte as u16 + b_byte as u16 + carry;
+            if sum >= 256 {
+                carry = sum / 256;
+            }
+            let new_byte: u8 = (sum % 256).try_into().unwrap();
+            bytes.push_back(new_byte);
+        }
+
+        return CASNum {
+            bytes,
+            exp: 0,
+            sign: Sign::Pos,
+        };
+    }
+}
+
+impl ops::Sub<CASNum> for CASNum {
+    type Output = CASNum;
+
+    fn sub(self, rhs: CASNum) -> Self::Output {
+        //convert all args to positive
+        if rhs.sign == Sign::Neg && self.sign == Sign::Pos {
+            //a - -b = a + b
+            return self + rhs.abs();
+        }
+
+        if self.sign == Sign::Neg && rhs.sign == Sign::Pos {
+            //-a - b = a - b
+            return -(rhs + self.abs());
+        }
+
+        if self.sign == Sign::Neg && rhs.sign == Sign::Neg {
+            //-a - -b = -a + b = b - a
+            return rhs.abs() - self.abs();
+        }
+
+        if self < rhs {
+            //a - b = -(b - a)
+            return -(rhs - self);
+        }
+
+        for (self_byte, other_byte) in align(&self, &rhs).iter() {}
+
+        return *CASNum::new(0);
     }
 }

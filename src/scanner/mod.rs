@@ -7,8 +7,8 @@ use crate::types::error::{print_error, CASError, CASErrorKind};
 
 mod test;
 
-#[derive(Clone, PartialEq, Hash, Debug)]
-pub(crate) enum Value {
+#[derive(Clone, PartialEq, Debug)]
+pub enum Value {
     //for numerical literals and variable names
     Int(i64),
     Float(f64), //TODO: replace these with arbitrary precision types, either custom or in some crate
@@ -25,8 +25,8 @@ impl fmt::Display for Value {
     }
 }
 
-#[derive(Clone, PartialEq, Hash, Debug)]
-pub(crate) enum TokenItem {
+#[derive(Clone, PartialEq, Debug)]
+pub enum TokenItem {
     //stores each token or error we find in file
     Token {
         token_name: TokenType,
@@ -46,7 +46,7 @@ struct Tokenization {
     pub errors: Vec<CASError>,
 }
 
-pub(crate) fn process_line(line: &str, tokens: &mut Vec<TokenItem>, line_num: usize) {
+pub fn process_line(line: &str, tokens: &mut Vec<TokenItem>, line_num: usize) {
     let result = tokenize(line.to_string());
     if result.errors.len() == 0 {
         for token in &result.tokens {
