@@ -10,13 +10,13 @@ use std::{
 
 mod test;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub(crate) enum Sign {
     Pos,
     Neg,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct CASNum {
     pub(crate) bytes: VecDeque<u8>, //little endian
     pub(crate) exp: i128,           //base 256
@@ -87,7 +87,14 @@ pub(crate) fn align(a: &CASNum, b: &CASNum) -> VecDeque<(u8, u8)> {
 
 impl PartialEq<CASNum> for CASNum {
     fn eq(&self, other: &CASNum) -> bool {
-        self.bytes == other.bytes && self.exp == other.exp && self.sign == other.sign
+        let mut norm_self = <CASNum as Clone>::clone(&self);
+        let mut norm_other = <CASNum as Clone>::clone(&other);
+        norm_self.normalize();
+        norm_other.normalize();
+
+        norm_self.bytes == norm_other.bytes
+            && norm_self.exp == norm_other.exp
+            && norm_self.sign == norm_other.sign
     }
 }
 
@@ -257,8 +264,9 @@ impl ops::Sub<CASNum> for CASNum {
         let mut carry: i16 = 0;
         for (self_byte, other_byte) in align(&self, &rhs).iter() {
             let mut diff: i16 = (*self_byte as i16) - (*other_byte as i16) - carry;
+
             if diff < 0 {
-                diff = 256 - diff;
+                diff = 255 + diff;
                 carry = 1;
             }
             bytes.push_back(diff.try_into().unwrap());

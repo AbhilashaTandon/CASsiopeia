@@ -4,6 +4,13 @@
 // use std::io::prelude::*;
 // use std::path::Path;
 
+use std::{
+    env,
+    fs::File,
+    io::{self, Read, Write},
+    path::Path,
+};
+
 use scanner::{process_line, TokenItem};
 use types::cas_num::{align, CASNum, Sign};
 
@@ -14,55 +21,40 @@ pub mod types;
 
 use crate::types::cas_num;
 
-fn testing() {
-    let a: CASNum = *CASNum::new(-1);
-    let mut b: CASNum = *CASNum::new(-1);
-    b.normalize();
-
-    println!("{:?} {:?}", a, b);
-
-    println!("{:?} ", align(&a, &b));
-
-    println!("{}", a > b);
-    println!("{}", a < b);
-    println!("{}", a == b);
-}
 fn main() {
     //cli stuff
-    // let args: Vec<String> = env::args().collect();
+    let args: Vec<String> = env::args().collect();
 
-    // if args.len() > 2 {
-    //     writeln!(io::stderr(), "Usage: {} <filename> for compilation, or run without any arguments to start an interpreter session.", args[0]).unwrap();
-    //     return;
+    if args.len() > 2 {
+        writeln!(io::stderr(), "Usage: {} <filename> for compilation, or run without any arguments to start an interpreter session.", args[0]).unwrap();
+        return;
+    }
+
+    // if args.len() == 1 {
+    //     prompt();
     // }
 
-    // // if args.len() == 1 {
-    // //     prompt();
-    // // }
+    let mut tokens: Vec<TokenItem> = vec![];
+    process_line("y = .10.2342", &mut tokens, 0);
 
-    // let mut tokens: Vec<TokenItem> = vec![];
-    // process_line("y = .10.2342", &mut tokens, 0);
+    for (idx, arg) in args.iter().enumerate() {
+        println!("arg #{}: {}", idx, arg);
+    }
 
-    // for (idx, arg) in args.iter().enumerate() {
-    //     println!("arg #{}: {}", idx, arg);
-    // }
+    let path: &Path = Path::new(&args[1]);
+    let display: std::path::Display<'_> = path.display();
 
-    // let path: &Path = Path::new(&args[1]);
-    // let display: std::path::Display<'_> = path.display();
+    let mut file = match File::open(&path) {
+        Err(why) => panic!("Error: couldn't open {}. {}", display, why),
+        Ok(f) => f,
+    };
 
-    // let mut file = match File::open(&path) {
-    //     Err(why) => panic!("Error: couldn't open {}. {}", display, why),
-    //     Ok(f) => f,
-    // };
+    let mut s: String = String::new();
 
-    // let mut s: String = String::new();
-
-    // match file.read_to_string(&mut s) {
-    //     Err(why) => panic!("Error: couldn't read {}. {}", display, why),
-    //     Ok(_) => run(s),
-    // };
-
-    testing();
+    match file.read_to_string(&mut s) {
+        Err(why) => panic!("Error: couldn't read {}. {}", display, why),
+        Ok(_) => run(s),
+    };
 }
 
 fn run(code: String) {
