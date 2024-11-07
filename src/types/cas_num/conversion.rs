@@ -1,34 +1,24 @@
 //for converting primitives to CASNum and vice versa
 
+use core::f32;
 use std::collections::VecDeque;
 
-use super::{CASNum, Sign};
+use super::{CASNum, CASValue, Sign};
 
 impl From<u8> for CASNum {
     fn from(value: u8) -> Self {
+        //we can avoid a normalize call since 0 is the only case where normalization is necessary
+        //which will give an empty vecdeque
+
         let mut bytes: VecDeque<u8> = VecDeque::new();
-        let mut copy: u16 = value.into();
-        while copy > 0 {
-            let rem: u8 = (copy & 255).try_into().unwrap();
-            bytes.push_back(rem);
-            copy /= 256;
-        }
-        while let Some(&last) = bytes.back() {
-            //get rid of leading 0s
-            if last == 0 {
-                bytes.pop_back();
-            } else {
-                break;
-            }
+        if value != 0 {
+            bytes.push_back(value);
         }
 
-        let mut out = CASNum {
-            bytes,
-            exp: 0,
+        return CASNum {
+            value: CASValue::Finite { bytes, exp: 0 },
             sign: Sign::Pos,
         };
-        out.normalize();
-        return out;
     }
 }
 
@@ -37,7 +27,7 @@ impl From<u16> for CASNum {
         let mut bytes: VecDeque<u8> = VecDeque::new();
         let mut copy = value;
         while copy > 0 {
-            let rem: u8 = (copy & 255).try_into().unwrap();
+            let rem: u8 = (copy & 255) as u8;
             bytes.push_back(rem);
             copy >>= 8;
         }
@@ -49,13 +39,10 @@ impl From<u16> for CASNum {
             }
         }
 
-        let mut out = CASNum {
-            bytes,
-            exp: 0,
+        return CASNum {
+            value: CASValue::Finite { bytes, exp: 0 }.normalize(),
             sign: Sign::Pos,
         };
-        out.normalize();
-        return out;
     }
 }
 
@@ -64,7 +51,7 @@ impl From<u32> for CASNum {
         let mut bytes: VecDeque<u8> = VecDeque::new();
         let mut copy = value;
         while copy > 0 {
-            let rem: u8 = (copy & 255).try_into().unwrap();
+            let rem: u8 = (copy & 255) as u8;
             bytes.push_back(rem);
             copy >>= 8;
         }
@@ -76,13 +63,10 @@ impl From<u32> for CASNum {
             }
         }
 
-        let mut out = CASNum {
-            bytes,
-            exp: 0,
+        return CASNum {
+            value: CASValue::Finite { bytes, exp: 0 }.normalize(),
             sign: Sign::Pos,
         };
-        out.normalize();
-        return out;
     }
 }
 
@@ -91,7 +75,7 @@ impl From<u64> for CASNum {
         let mut bytes: VecDeque<u8> = VecDeque::new();
         let mut copy = value;
         while copy > 0 {
-            let rem: u8 = (copy & 255).try_into().unwrap();
+            let rem: u8 = (copy & 255) as u8;
             bytes.push_back(rem);
             copy >>= 8;
         }
@@ -103,13 +87,10 @@ impl From<u64> for CASNum {
             }
         }
 
-        let mut out = CASNum {
-            bytes,
-            exp: 0,
+        return CASNum {
+            value: CASValue::Finite { bytes, exp: 0 }.normalize(),
             sign: Sign::Pos,
         };
-        out.normalize();
-        return out;
     }
 }
 
@@ -118,7 +99,7 @@ impl From<u128> for CASNum {
         let mut bytes: VecDeque<u8> = VecDeque::new();
         let mut copy = value;
         while copy > 0 {
-            let rem: u8 = (copy & 255).try_into().unwrap();
+            let rem: u8 = (copy & 255) as u8;
             bytes.push_back(rem);
             copy >>= 8;
         }
@@ -130,49 +111,34 @@ impl From<u128> for CASNum {
             }
         }
 
-        let mut out = CASNum {
-            bytes,
-            exp: 0,
+        return CASNum {
+            value: CASValue::Finite { bytes, exp: 0 }.normalize(),
             sign: Sign::Pos,
         };
-        out.normalize();
-        return out;
     }
 }
 
 impl From<i8> for CASNum {
     fn from(value: i8) -> Self {
         let mut bytes: VecDeque<u8> = VecDeque::new();
-        let mut abs: u16 = value.abs().try_into().unwrap();
-        while abs > 0 {
-            let rem: u8 = (abs & 255).try_into().unwrap();
-            bytes.push_back(rem);
-            abs >>= 8;
-        }
-        while let Some(&last) = bytes.back() {
-            if last == 0 {
-                bytes.pop_back();
-            } else {
-                break;
-            }
+
+        if value != 0 {
+            bytes.push_back(value as u8);
         }
 
-        let mut out = CASNum {
-            bytes,
-            exp: 0,
-            sign: if value >= 0 { Sign::Pos } else { Sign::Neg },
+        return CASNum {
+            value: CASValue::Finite { bytes, exp: 0 },
+            sign: Sign::Pos,
         };
-        out.normalize();
-        return out;
     }
 }
 
 impl From<i16> for CASNum {
     fn from(value: i16) -> Self {
         let mut bytes: VecDeque<u8> = VecDeque::new();
-        let mut abs: u32 = value.abs().try_into().unwrap();
+        let mut abs = value.abs();
         while abs > 0 {
-            let rem: u8 = (abs & 255).try_into().unwrap();
+            let rem: u8 = (abs & 255) as u8;
             bytes.push_back(rem);
             abs >>= 8;
         }
@@ -184,22 +150,19 @@ impl From<i16> for CASNum {
             }
         }
 
-        let mut out = CASNum {
-            bytes,
-            exp: 0,
-            sign: if value >= 0 { Sign::Pos } else { Sign::Neg },
+        return CASNum {
+            value: CASValue::Finite { bytes, exp: 0 }.normalize(),
+            sign: Sign::Pos,
         };
-        out.normalize();
-        return out;
     }
 }
 
 impl From<i32> for CASNum {
     fn from(value: i32) -> Self {
         let mut bytes: VecDeque<u8> = VecDeque::new();
-        let mut abs: u64 = value.abs().try_into().unwrap();
+        let mut abs = value.abs();
         while abs > 0 {
-            let rem: u8 = (abs & 255).try_into().unwrap();
+            let rem: u8 = (abs & 255) as u8;
             bytes.push_back(rem);
             abs >>= 8;
         }
@@ -211,22 +174,19 @@ impl From<i32> for CASNum {
             }
         }
 
-        let mut out = CASNum {
-            bytes,
-            exp: 0,
-            sign: if value >= 0 { Sign::Pos } else { Sign::Neg },
+        return CASNum {
+            value: CASValue::Finite { bytes, exp: 0 }.normalize(),
+            sign: Sign::Pos,
         };
-        out.normalize();
-        return out;
     }
 }
 
 impl From<i64> for CASNum {
     fn from(value: i64) -> Self {
         let mut bytes: VecDeque<u8> = VecDeque::new();
-        let mut abs: u128 = value.abs().try_into().unwrap();
+        let mut abs = value.abs();
         while abs > 0 {
-            let rem: u8 = (abs & 255).try_into().unwrap();
+            let rem: u8 = (abs & 255) as u8;
             bytes.push_back(rem);
             abs >>= 8;
         }
@@ -238,22 +198,19 @@ impl From<i64> for CASNum {
             }
         }
 
-        let mut out = CASNum {
-            bytes,
-            exp: 0,
-            sign: if value >= 0 { Sign::Pos } else { Sign::Neg },
+        return CASNum {
+            value: CASValue::Finite { bytes, exp: 0 }.normalize(),
+            sign: Sign::Pos,
         };
-        out.normalize();
-        return out;
     }
 }
 
 impl From<i128> for CASNum {
     fn from(value: i128) -> Self {
         let mut bytes: VecDeque<u8> = VecDeque::new();
-        let mut abs: u128 = value.abs().try_into().unwrap();
+        let mut abs = value.abs();
         while abs > 0 {
-            let rem: u8 = (abs & 255).try_into().unwrap();
+            let rem: u8 = (abs & 255) as u8;
             bytes.push_back(rem);
             abs >>= 8;
         }
@@ -265,13 +222,10 @@ impl From<i128> for CASNum {
             }
         }
 
-        let mut out = CASNum {
-            bytes,
-            exp: 0,
-            sign: if value >= 0 { Sign::Pos } else { Sign::Neg },
+        return CASNum {
+            value: CASValue::Finite { bytes, exp: 0 }.normalize(),
+            sign: Sign::Pos,
         };
-        out.normalize();
-        return out;
     }
 }
 
@@ -280,6 +234,38 @@ impl From<f32> for CASNum {
     where
         Self: Sized,
     {
+        if value.is_nan() {
+            return CASNum {
+                value: CASValue::Indeterminate,
+                sign: Sign::Pos,
+            };
+        }
+        match value {
+            f32::INFINITY => {
+                return CASNum {
+                    value: CASValue::Infinite,
+                    sign: Sign::Pos,
+                }
+            }
+            f32::NEG_INFINITY => {
+                return CASNum {
+                    value: CASValue::Infinite,
+                    sign: Sign::Neg,
+                }
+            }
+
+            0.0 => {
+                //also matches -0 but that doesn't really matter
+                return CASNum {
+                    value: CASValue::Finite {
+                        bytes: VecDeque::new(),
+                        exp: 0,
+                    },
+                    sign: Sign::Pos,
+                };
+            }
+            _ => {}
+        }
         let mut bytes: VecDeque<u8> = VecDeque::new();
         let bits = value.to_bits();
         const SIGN_MASK: u32 = 0x80000000;
@@ -308,9 +294,92 @@ impl From<f32> for CASNum {
         }
 
         return CASNum {
-            bytes,
-            exp: i128::from(exp / 8),
+            value: CASValue::Finite {
+                bytes,
+                exp: i128::from(exp / 8),
+            },
             sign,
         };
+    }
+}
+
+// impl Into<u8> for CASNum {
+//     fn into(self) -> u8 {
+//         let min_digit = self.exp;
+//         if min_digit > 0 {
+//             //no ones place
+//             return 0;
+//         } else {
+//             return match self.bytes.get((-min_digit).try_into().unwrap()) {
+//                 Some(x) => *x,
+//                 None => 0,
+//             };
+//         }
+//     }
+// }
+
+impl Into<u16> for CASNum {
+    fn into(self) -> u16 {
+        todo!()
+    }
+}
+
+impl Into<u32> for CASNum {
+    fn into(self) -> u32 {
+        todo!()
+    }
+}
+
+impl Into<u64> for CASNum {
+    fn into(self) -> u64 {
+        todo!()
+    }
+}
+
+impl Into<u128> for CASNum {
+    fn into(self) -> u128 {
+        todo!()
+    }
+}
+
+impl Into<i8> for CASNum {
+    fn into(self) -> i8 {
+        todo!()
+    }
+}
+
+impl Into<i16> for CASNum {
+    fn into(self) -> i16 {
+        todo!()
+    }
+}
+
+impl Into<i32> for CASNum {
+    fn into(self) -> i32 {
+        todo!()
+    }
+}
+
+impl Into<i64> for CASNum {
+    fn into(self) -> i64 {
+        todo!()
+    }
+}
+
+impl Into<i128> for CASNum {
+    fn into(self) -> i128 {
+        todo!()
+    }
+}
+
+impl Into<f32> for CASNum {
+    fn into(self) -> f32 {
+        todo!()
+    }
+}
+
+impl Into<f64> for CASNum {
+    fn into(self) -> f64 {
+        todo!()
     }
 }
