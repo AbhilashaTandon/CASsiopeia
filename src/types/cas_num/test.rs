@@ -3,20 +3,38 @@ pub mod test {
     use super::super::CASNum;
 
     fn comparison(a: i128, b: i128) {
-        assert_eq!(*CASNum::new(a) < *CASNum::new(b), a < b);
-        assert_eq!(*CASNum::new(a) > *CASNum::new(b), a > b);
-        assert_eq!(*CASNum::new(a) == *CASNum::new(b), a == b);
+        assert_eq!(CASNum::new(a) < CASNum::new(b), a < b);
+        assert_eq!(CASNum::new(a) > CASNum::new(b), a > b);
+        assert_eq!(CASNum::new(a) == CASNum::new(b), a == b);
     }
 
     fn addition(a: i128, b: i128) {
-        let mut sum_1 = *CASNum::new(a + b);
-        let mut sum_2 = *CASNum::new(a) + *CASNum::new(b);
+        let mut sum_1 = CASNum::new(a + b);
+        let mut sum_2 = CASNum::new(a) + CASNum::new(b);
         assert_eq!(sum_1.normalize(), sum_2.normalize());
     }
 
     fn subtraction(a: i128, b: i128) {
-        let mut sum_1 = *CASNum::new(a - b);
-        let mut sum_2 = *CASNum::new(a) - *CASNum::new(b);
+        let mut sum_1 = CASNum::new(a - b);
+        let mut sum_2 = CASNum::new(a) - CASNum::new(b);
+        assert_eq!(sum_1.normalize(), sum_2.normalize());
+    }
+
+    fn comparison_float(a: f32, b: f32) {
+        assert_eq!(CASNum::new(a) < CASNum::new(b), a < b);
+        assert_eq!(CASNum::new(a) > CASNum::new(b), a > b);
+        assert_eq!(CASNum::new(a) == CASNum::new(b), a == b);
+    }
+
+    fn addition_float(a: f32, b: f32) {
+        let mut sum_1 = CASNum::new(a + b);
+        let mut sum_2 = CASNum::new(a) + CASNum::new(b);
+        assert_eq!(sum_1.normalize(), sum_2.normalize());
+    }
+
+    fn subtraction_float(a: f32, b: f32) {
+        let mut sum_1 = CASNum::new(a - b);
+        let mut sum_2 = CASNum::new(a) - CASNum::new(b);
         assert_eq!(sum_1.normalize(), sum_2.normalize());
     }
 
@@ -86,5 +104,65 @@ pub mod test {
         comparison(46589611, -15489456);
         comparison(-541, 154);
         comparison(154, 145);
+    }
+
+    #[test]
+    fn comparison_float_tests() {
+        let floats_of_choice: Vec<f32> = vec![
+            -2.34844396355274555919e-22,
+            1.04091361631528862002e-27,
+            -1.83996007268899958108e+31,
+            0.,
+            902341.2532,
+            0239402.2340923,
+            09.3423,
+            -0.00304204920000,
+        ];
+
+        for a in &floats_of_choice {
+            for b in &floats_of_choice {
+                comparison_float(*a, *b);
+            }
+        }
+    }
+
+    #[test]
+    fn addition_float_tests() {
+        let floats_of_choice: Vec<f32> = vec![
+            -2.34844396355274555919e-22,
+            1.04091361631528862002e-27,
+            -1.83996007268899958108e+31,
+            0.,
+            902341.2532,
+            0239402.2340923,
+            09.3423,
+            -0.00304204920000,
+        ];
+
+        for a in &floats_of_choice {
+            for b in &floats_of_choice {
+                addition_float(*a, *b);
+            }
+        }
+    }
+
+    #[test]
+    fn subtraction_float_tests() {
+        let floats_of_choice: Vec<f32> = vec![
+            -2.34844396355274555919e-22,
+            1.04091361631528862002e-27,
+            -1.83996007268899958108e+31,
+            0.,
+            902341.2532,
+            0239402.2340923,
+            09.3423,
+            -0.00304204920000,
+        ];
+
+        for a in &floats_of_choice {
+            for b in &floats_of_choice {
+                subtraction_float(*a, *b);
+            }
+        }
     }
 }

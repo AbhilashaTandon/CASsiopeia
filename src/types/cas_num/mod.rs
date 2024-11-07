@@ -4,8 +4,6 @@
 
 use std::collections::VecDeque;
 
-use conversion::CASNumConvert;
-
 mod comp;
 mod conversion;
 mod helper;
@@ -27,8 +25,11 @@ pub(crate) struct CASNum {
 }
 
 impl CASNum {
-    pub(crate) fn new<T: CASNumConvert>(i: T) -> CASNum {
-        return i.to_cas_num();
+    pub(crate) fn new<T>(i: T) -> CASNum
+    where
+        CASNum: From<T>,
+    {
+        return i.into();
     }
 
     fn max_digit(self: &Self) -> i128 {

@@ -78,8 +78,8 @@ pub(crate) fn shunting_yard(
 ) -> Parsing {
     let mut output_queue: Vec<TokenItem> = vec![];
     let mut operator_stack: Vec<TokenItem> = vec![];
-    let mut error = CASErrorKind::NoError;
-    let mut expr: Tree<TokenItem> = Tree { root: None };
+    let error = CASErrorKind::NoError;
+    let expr: Tree<TokenItem> = Tree { root: None };
 
     let mut token_iter: std::iter::Peekable<std::slice::Iter<'_, TokenItem>> =
         tokens.iter().peekable();
