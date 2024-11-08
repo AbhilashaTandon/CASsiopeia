@@ -128,7 +128,7 @@ impl From<i8> for CASNum {
 
         return CASNum {
             value: CASValue::Finite { bytes, exp: 0 },
-            sign: Sign::Pos,
+            sign: if value > 0 { Sign::Pos } else { Sign::Neg },
         };
     }
 }
@@ -152,7 +152,7 @@ impl From<i16> for CASNum {
 
         return CASNum {
             value: CASValue::Finite { bytes, exp: 0 }.normalize(),
-            sign: Sign::Pos,
+            sign: if value > 0 { Sign::Pos } else { Sign::Neg },
         };
     }
 }
@@ -176,7 +176,7 @@ impl From<i32> for CASNum {
 
         return CASNum {
             value: CASValue::Finite { bytes, exp: 0 }.normalize(),
-            sign: Sign::Pos,
+            sign: if value > 0 { Sign::Pos } else { Sign::Neg },
         };
     }
 }
@@ -200,7 +200,7 @@ impl From<i64> for CASNum {
 
         return CASNum {
             value: CASValue::Finite { bytes, exp: 0 }.normalize(),
-            sign: Sign::Pos,
+            sign: if value > 0 { Sign::Pos } else { Sign::Neg },
         };
     }
 }
@@ -224,7 +224,7 @@ impl From<i128> for CASNum {
 
         return CASNum {
             value: CASValue::Finite { bytes, exp: 0 }.normalize(),
-            sign: Sign::Pos,
+            sign: if value > 0 { Sign::Pos } else { Sign::Neg },
         };
     }
 }
@@ -277,7 +277,6 @@ impl From<f32> for CASNum {
         };
         let exp: i64 = i64::from((bits >> 23) & 255) - 150;
         let mut mantissa: u64 = u64::from(bits & MANTISSA_MASK) + 0x00800000;
-        println!("{}", exp);
         //fp values are 1.(mantissa) * 2^exp * (-1)^sign
         //so we add the 1 back in
 
@@ -291,13 +290,17 @@ impl From<f32> for CASNum {
         while mantissa > 0 {
             bytes.push_back((mantissa & 255).try_into().unwrap());
             mantissa /= 256;
+            if bytes.len() == 3 {
+                break;
+            }
         }
 
         return CASNum {
             value: CASValue::Finite {
                 bytes,
                 exp: i128::from(exp / 8),
-            },
+            }
+            .normalize(),
             sign,
         };
     }

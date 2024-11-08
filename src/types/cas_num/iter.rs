@@ -11,7 +11,7 @@ impl Iterator for CASNumIter {
     type Item = i16;
     fn next(&mut self) -> Option<i16> {
         let current = match &self.cas_num.value {
-            super::CASValue::Finite { bytes, exp } => bytes.get(self.index),
+            super::CASValue::Finite { bytes, .. } => bytes.get(self.index),
             super::CASValue::Infinite => None,
             super::CASValue::Indeterminate => None,
         };

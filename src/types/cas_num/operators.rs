@@ -5,7 +5,6 @@ use super::{CASNum, CASValue, Sign, INDETERMINATE, INFINITY, NEG_INFINITY};
 
 impl ops::Neg for CASNum {
     type Output = CASNum;
-
     fn neg(self) -> Self::Output {
         return CASNum {
             value: self.value,
@@ -56,7 +55,7 @@ impl ops::Add<CASNum> for CASNum {
                     sign: rhs_sign,
                 };
 
-                addition_float(self_copy, rhs_copy)
+                return addition_finite(self_copy, rhs_copy);
             }
             (
                 CASNum {
@@ -104,7 +103,13 @@ impl ops::Add<CASNum> for CASNum {
     }
 }
 
-fn addition_float(lhs: CASNum, rhs: CASNum) -> CASNum {
+fn addition_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
+    match (lhs.value.is_zero(), rhs.value.is_zero()) {
+        (true, true) => return lhs,  //0 + 0 == 0
+        (true, false) => return rhs, //0 + x == x
+        (false, true) => return lhs, //x + 0 == x
+        (false, false) => {}
+    }
     match (lhs.sign, rhs.sign) {
         (Sign::Pos, Sign::Pos) => {
             let mut bytes: VecDeque<u8> = VecDeque::new();
@@ -119,9 +124,15 @@ fn addition_float(lhs: CASNum, rhs: CASNum) -> CASNum {
                 let sum: u16 = a_byte as u16 + b_byte as u16 + carry;
                 if sum >= 256 {
                     carry = sum / 256;
+                } else {
+                    carry = 0;
                 }
                 let new_byte: u8 = (sum % 256).try_into().unwrap();
                 bytes.push_back(new_byte);
+            }
+
+            if carry != 0 {
+                bytes.push_back(carry as u8);
             }
 
             return CASNum {
@@ -174,7 +185,7 @@ impl ops::Sub<CASNum> for CASNum {
                     sign: rhs_sign,
                 };
 
-                subtraction_float(self_copy, rhs_copy)
+                subtraction_finite(self_copy, rhs_copy)
             }
             (
                 CASNum {
@@ -222,7 +233,13 @@ impl ops::Sub<CASNum> for CASNum {
     }
 }
 
-fn subtraction_float(lhs: CASNum, rhs: CASNum) -> CASNum {
+fn subtraction_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
+    match (lhs.value.is_zero(), rhs.value.is_zero()) {
+        (true, true) => return lhs,   //0 - 0 == 0
+        (true, false) => return -rhs, //0 - x == x
+        (false, true) => return lhs,  //x - 0 == x
+        (false, false) => {}
+    }
     match (lhs.sign, rhs.sign) {
         (Sign::Pos, Sign::Pos) => {
             if lhs < rhs {
@@ -238,11 +255,13 @@ fn subtraction_float(lhs: CASNum, rhs: CASNum) -> CASNum {
             let alignment = self_value.align(&rhs_value).unwrap(); //we can unwrap safely since both self and rhs are finite
 
             for (self_byte, other_byte, _) in alignment {
-                let mut diff: i16 = (self_byte as i16) - (other_byte as i16) - carry;
+                let mut diff: i16 = (self_byte as i16) - (other_byte as i16) + carry;
 
                 if diff < 0 {
-                    diff = 255 + diff;
-                    carry = 1;
+                    diff = 256 + diff;
+                    carry = -1;
+                } else {
+                    carry = 0;
                 }
                 bytes.push_back(diff.try_into().unwrap());
             }

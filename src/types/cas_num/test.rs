@@ -1,14 +1,20 @@
 #[cfg(test)]
 pub mod test {
+    use std::collections::VecDeque;
+
+    use crate::types::cas_num::Sign;
+
     use super::super::CASNum;
 
     fn comparison(a: i128, b: i128) {
+        println!("{} {}", a, b);
         assert_eq!(CASNum::from(a) < CASNum::from(b), a < b);
         assert_eq!(CASNum::from(a) > CASNum::from(b), a > b);
         assert_eq!(CASNum::from(a) == CASNum::from(b), a == b);
     }
 
     fn addition(a: i128, b: i128) {
+        println!("{} {}", a, b);
         let mut sum_1 = CASNum::from(a + b);
         let mut sum_2 = CASNum::from(a) + CASNum::from(b);
         sum_1.value = sum_1.value.normalize();
@@ -17,6 +23,7 @@ pub mod test {
     }
 
     fn subtraction(a: i128, b: i128) {
+        println!("{} {}", a, b);
         let mut sum_1 = CASNum::from(a - b);
         let mut sum_2 = CASNum::from(a) - CASNum::from(b);
         sum_1.value = sum_1.value.normalize();
@@ -25,12 +32,14 @@ pub mod test {
     }
 
     fn comparison_float(a: f32, b: f32) {
+        println!("{} {}", a, b);
         assert_eq!(CASNum::from(a) < CASNum::from(b), a < b);
         assert_eq!(CASNum::from(a) > CASNum::from(b), a > b);
         assert_eq!(CASNum::from(a) == CASNum::from(b), a == b);
     }
 
     fn addition_float(a: f32, b: f32) {
+        println!("{} {}", a, b);
         let mut sum_1 = CASNum::from(a + b);
         let mut sum_2 = CASNum::from(a) + CASNum::from(b);
         sum_1.value = sum_1.value.normalize();
@@ -39,11 +48,171 @@ pub mod test {
     }
 
     fn subtraction_float(a: f32, b: f32) {
+        println!("{} {}", a, b);
         let mut sum_1 = CASNum::from(a - b);
         let mut sum_2 = CASNum::from(a) - CASNum::from(b);
         sum_1.value = sum_1.value.normalize();
         sum_2.value = sum_2.value.normalize();
         assert_eq!(sum_1, sum_2);
+    }
+
+    #[test]
+    fn conversion_tests() {
+        assert_eq!(
+            CASNum::from(1),
+            CASNum {
+                value: crate::types::cas_num::CASValue::Finite {
+                    bytes: VecDeque::from([1]),
+                    exp: 0
+                },
+                sign: Sign::Pos,
+            },
+        );
+        assert_eq!(
+            CASNum::from(-1),
+            CASNum {
+                value: crate::types::cas_num::CASValue::Finite {
+                    bytes: VecDeque::from([1]),
+                    exp: 0
+                },
+                sign: Sign::Neg,
+            },
+        );
+        assert_eq!(
+            CASNum::from(523563),
+            CASNum {
+                value: crate::types::cas_num::CASValue::Finite {
+                    bytes: VecDeque::from([43, 253, 7]),
+                    exp: 0
+                },
+                sign: Sign::Pos,
+            },
+        );
+        assert_eq!(
+            CASNum::from(6531),
+            CASNum {
+                value: crate::types::cas_num::CASValue::Finite {
+                    bytes: VecDeque::from([131, 25]),
+                    exp: 0
+                },
+                sign: Sign::Pos,
+            },
+        );
+
+        assert_eq!(
+            CASNum::from(154),
+            CASNum {
+                value: crate::types::cas_num::CASValue::Finite {
+                    bytes: VecDeque::from([154]),
+                    exp: 0
+                },
+                sign: Sign::Pos,
+            },
+        );
+        assert_eq!(
+            CASNum::from(145),
+            CASNum {
+                value: crate::types::cas_num::CASValue::Finite {
+                    bytes: VecDeque::from([145]),
+                    exp: 0
+                },
+                sign: Sign::Pos,
+            },
+        );
+    }
+
+    #[test]
+    fn conversion_tests_float() {
+        assert_eq!(
+            CASNum::from(2.5325),
+            CASNum {
+                value: crate::types::cas_num::CASValue::Finite {
+                    bytes: VecDeque::from([81, 136, 2]),
+                    exp: -2
+                },
+                sign: Sign::Pos,
+            },
+        );
+
+        assert_eq!(
+            CASNum::from(0.0000019073486328125),
+            CASNum {
+                value: crate::types::cas_num::CASValue::Finite {
+                    bytes: VecDeque::from([32]),
+                    exp: -3
+                },
+                sign: Sign::Pos,
+            },
+        );
+
+        assert_eq!(
+            CASNum::from(-2.34844396355274555919e-22),
+            CASNum {
+                value: crate::types::cas_num::CASValue::Finite {
+                    bytes: VecDeque::from([232, 27, 1]),
+                    exp: -11
+                },
+                sign: Sign::Neg,
+            },
+        );
+
+        assert_eq!(
+            CASNum::from(1.04091361631528862002e-27),
+            CASNum {
+                value: crate::types::cas_num::CASValue::Finite {
+                    bytes: VecDeque::from([60, 120, 82]),
+                    exp: -14
+                },
+                sign: Sign::Pos,
+            },
+        );
+
+        assert_eq!(
+            CASNum::from(-1.83996007268899958108e+31),
+            CASNum {
+                value: crate::types::cas_num::CASValue::Finite {
+                    bytes: VecDeque::from([81, 60, 232]),
+                    exp: 10
+                },
+                sign: Sign::Neg,
+            },
+        );
+
+        assert_eq!(
+            CASNum::from(0.),
+            CASNum {
+                value: crate::types::cas_num::CASValue::Finite {
+                    bytes: VecDeque::from([]),
+                    exp: 0
+                },
+                sign: Sign::Neg,
+            },
+        );
+
+        assert_eq!(
+            CASNum::from(902341.2532),
+            CASNum {
+                value: crate::types::cas_num::CASValue::Finite {
+                    bytes: VecDeque::from([197, 196, 13]),
+                    exp: 0
+                },
+                sign: Sign::Pos,
+            },
+        );
+
+        assert_eq!(
+            CASNum::from(0239402.2340923),
+            CASNum {
+                value: crate::types::cas_num::CASValue::Finite {
+                    bytes: VecDeque::from([42, 167, 3]),
+                    exp: 0
+                },
+                sign: Sign::Pos,
+            },
+        );
+
+        //         09.3423,
+        //         -0.00304204920000,
     }
 
     #[test]
@@ -57,6 +226,8 @@ pub mod test {
         addition(1, -1);
         addition(-1, 1);
         addition(1, 1);
+
+        // println!("{:?} {:?}", CASNum::from(12032), CASNum::from(23420));
 
         addition(12032, 23420);
         addition(02312, 054123);
@@ -82,6 +253,7 @@ pub mod test {
 
         subtraction(12032, 23420);
         subtraction(02312, 054123);
+
         subtraction(012312, 11231);
         subtraction(-52521, 01231);
         subtraction(10532153, -11252);
@@ -94,45 +266,45 @@ pub mod test {
     #[test]
     fn comparison_tests() {
         comparison(1, 0);
-        // comparison(0, 0);
-        // comparison(0, 1);
-        // comparison(-1, 0);
-        // comparison(0, -1);
-        // comparison(-1, -1);
-        // comparison(1, -1);
-        // comparison(-1, 1);
-        // comparison(1, 1);
+        comparison(0, 0);
+        comparison(0, 1);
+        comparison(-1, 0);
+        comparison(0, -1);
+        comparison(-1, -1);
+        comparison(1, -1);
+        comparison(-1, 1);
+        comparison(1, 1);
 
-        // comparison(12032, 23420);
-        // comparison(02312, 054123);
-        // comparison(012312, 11231);
-        // comparison(-52521, 01231);
-        // comparison(10532153, -11252);
-        // comparison(-235131, -65347641);
-        // comparison(46589611, -15489456);
-        // comparison(-541, 154);
-        // comparison(154, 145);
+        comparison(12032, 23420);
+        comparison(02312, 054123);
+        comparison(012312, 11231);
+        comparison(-52521, 01231);
+        comparison(10532153, -11252);
+        comparison(-235131, -65347641);
+        comparison(46589611, -15489456);
+        comparison(-541, 154);
+        comparison(154, 145);
     }
 
-    // #[test]
-    // fn comparison_float_tests() {
-    //     let floats_of_choice: Vec<f32> = vec![
-    //         -2.34844396355274555919e-22,
-    //         1.04091361631528862002e-27,
-    //         -1.83996007268899958108e+31,
-    //         0.,
-    //         902341.2532,
-    //         0239402.2340923,
-    //         09.3423,
-    //         -0.00304204920000,
-    //     ];
+    #[test]
+    fn comparison_float_tests() {
+        let floats_of_choice: Vec<f32> = vec![
+            -2.34844396355274555919e-22,
+            1.04091361631528862002e-27,
+            -1.83996007268899958108e+31,
+            0.,
+            902341.2532,
+            0239402.2340923,
+            09.3423,
+            -0.00304204920000,
+        ];
 
-    //     for a in &floats_of_choice {
-    //         for b in &floats_of_choice {
-    //             comparison_float(*a, *b);
-    //         }
-    //     }
-    // }
+        for a in &floats_of_choice {
+            for b in &floats_of_choice {
+                comparison_float(*a, *b);
+            }
+        }
+    }
     #[test]
     fn addition_float_tests() {
         let floats_of_choice: Vec<f32> = vec![

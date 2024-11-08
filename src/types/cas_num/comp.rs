@@ -13,8 +13,6 @@ impl PartialEq<CASNum> for CASNum {
         //this works like floating point
         //0 == -0, infinity > finite numbers, indeterminate != indeterminate (equiv of nan)
 
-        println!("{} {}", self.value.is_zero(), other.value.is_zero());
-
         match (self.value.is_zero(), other.value.is_zero()) {
             (true, true) => return true,   //0 == -0
             (true, false) => return false, //0 != nonzero
@@ -67,20 +65,14 @@ impl PartialOrd for CASNum {
         match (self, other) {
             (
                 CASNum {
-                    value:
-                        CASValue::Finite {
-                            bytes: self_bytes, ..
-                        },
-                    sign: self_sign,
+                    value: CASValue::Finite { .. },
+                    ..
                 },
                 CASNum {
-                    value:
-                        CASValue::Finite {
-                            bytes: other_bytes, ..
-                        },
-                    sign: other_sign,
+                    value: CASValue::Finite { .. },
+                    ..
                 },
-            ) => self.compare_finite(self_sign, other_sign, self_bytes, other_bytes, other),
+            ) => Some(self.compare_finite(other)),
             (
                 CASNum {
                     value: CASValue::Finite { .. },
