@@ -10,6 +10,7 @@ use std::string::ToString;
     AssignmentInExpression,
     UnknownSymbol,
     MismatchedParentheses,
+    NoExpressionGiven,
 }
 
 impl ToString for CASErrorKind {
@@ -23,6 +24,7 @@ impl ToString for CASErrorKind {
             CASErrorKind::AssignmentInExpression => "Syntax Error",
             CASErrorKind::UnknownSymbol => "Syntax Error",
             CASErrorKind::MismatchedParentheses => "Syntax Error",
+            CASErrorKind::NoExpressionGiven => "Syntax Error",
         });
     }
 }
@@ -44,6 +46,7 @@ impl CASErrorKind{
             CASErrorKind::AssignmentInExpression => "variable or function assignments cannot be made inside expressions. Perhaps you meant to use the equality operator '=='?",
             CASErrorKind::UnknownSymbol => "use of unknown variable or function.",
             CASErrorKind::MismatchedParentheses => "expression contains mismatched parentheses.",
+                    CASErrorKind::NoExpressionGiven => "a variable or command was given a blank expression.",
             
         });
     }

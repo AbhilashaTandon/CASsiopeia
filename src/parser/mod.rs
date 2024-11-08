@@ -10,22 +10,24 @@ use crate::spec::TokenType::*;
 
 mod test;
 
+type TreeNodeRef<T> = Box<TreeNode<T>>;
+
 #[derive(PartialEq, Eq, Hash, Debug)]
 struct TreeNode<T> {
     data: T,
-    children: Vec<Box<TreeNode<T>>>,
+    children: VecDeque<TreeNodeRef<T>>,
 }
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 struct Tree<T> {
     //expression
-    root: Option<TreeNode<T>>,
+    root: Option<TreeNodeRef<T>>,
 }
 
 #[derive(PartialEq, Debug)]
 struct Var<'a> {
     expr: Tree<TokenItem>,
-    args: Vec<&'a str>, //if args is empty it is a numeric or symbolic variable, 2, 3, pi, x, etc.
+    args: VecDeque<&'a str>, //if args is empty it is a numeric or symbolic variable, 2, 3, pi, x, etc.
 }
 
 //table storing predefined variables (numericals and functions)
@@ -42,6 +44,18 @@ enum Symbol<'a> {
     Const { name: &'a str },
 }
 
+impl Symbol<'_> {
+    fn num_args(&self) -> usize {
+        match self {
+            Symbol::Variable { .. } => 0,
+            Symbol::Operator(..) => 2,
+            Symbol::Function { num_args, .. } => *num_args,
+            Symbol::Num { .. } => 0,
+            Symbol::Const { .. } => 0,
+        }
+    }
+}
+
 fn shunting_yard<'a>(
     tokens: &'a Vec<TokenItem>,
     var_table: VarTable<'a>,
@@ -49,8 +63,6 @@ fn shunting_yard<'a>(
 ) -> Parsing<'a> {
     let mut output_queue: VecDeque<Symbol> = VecDeque::new();
     let mut operator_stack: VecDeque<Symbol> = VecDeque::new();
-    let error = CASErrorKind::NoError;
-    let expr: Tree<Symbol> = Tree { root: None };
 
     let mut token_iter: std::iter::Peekable<std::slice::Iter<'_, TokenItem>> =
         tokens.iter().peekable();
@@ -174,7 +186,7 @@ fn shunting_yard<'a>(
         }
     }
 
-    ///* After the while loop, pop the remaining items from the operator stack into the output queue. */
+    /* After the while loop, pop the remaining items from the operator stack into the output queue. */
     // while there are tokens on the operator stack:
     while let Some(token) = operator_stack.pop_back() {
         if token == Symbol::Operator(LeftParen) || token == Symbol::Operator(LeftBracket) {
@@ -183,12 +195,38 @@ fn shunting_yard<'a>(
         output_queue.push_back(token);
     }
 
+    let mut tree_stack: VecDeque<TreeNodeRef<Symbol<'a>>> = VecDeque::new();
+    //temporary stack for constructing the tree
+
     for token in output_queue {
-        println!("{:?}", token);
+        match token.num_args() {
+            0 => tree_stack.push_back(Box::new(TreeNode {
+                data: token,
+                children: VecDeque::new(),
+            })),
+            x => {
+                let mut args = VecDeque::new();
+                for _ in 0..x {
+                    match tree_stack.pop_back() {
+                        Some(symbol) => args.push_front(symbol),
+                        //since we're getting them backwards we need to add them backwards
+                        None => {
+                            return Err(CASErrorKind::SyntaxError);
+                        }
+                    }
+                }
+                tree_stack.push_back(Box::new(TreeNode {
+                    data: token,
+                    children: args,
+                }));
+            }
+        }
     }
     //construct tree
-
-    return Ok(expr);
+    return match tree_stack.front() {
+        Some(expr) => Ok(Tree { root: Some(*expr) }),
+        None => Err(CASErrorKind::NoExpressionGiven),
+    };
 }
 
 fn parse_numeric_operator<'a>(
