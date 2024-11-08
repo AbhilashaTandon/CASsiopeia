@@ -275,7 +275,7 @@ impl From<f32> for CASNum {
         } else {
             Sign::Neg
         };
-        let mut exp: i64 = i64::from((bits >> 23) & 255) - 150;
+        let mut exp: i64 = i64::from((bits >> 23) & 255) - 127 - 23;
         let mut mantissa: u64 = u64::from(bits & MANTISSA_MASK) + 0x00800000;
         //fp values are 1.(mantissa) * 2^exp * (-1)^sign
         //so we add the 1 back in
@@ -311,7 +311,84 @@ impl From<f32> for CASNum {
 
 impl From<f64> for CASNum {
     fn from(value: f64) -> Self {
-        todo!()
+        if value.is_nan() {
+            return CASNum {
+                value: CASValue::Indeterminate,
+                sign: Sign::Pos,
+            };
+        }
+        match value {
+            f64::INFINITY => {
+                return CASNum {
+                    value: CASValue::Infinite,
+                    sign: Sign::Pos,
+                }
+            }
+            f64::NEG_INFINITY => {
+                return CASNum {
+                    value: CASValue::Infinite,
+                    sign: Sign::Neg,
+                }
+            }
+
+            0.0 => {
+                //also matches -0 but that doesn't really matter
+                return CASNum {
+                    value: CASValue::Finite {
+                        bytes: VecDeque::new(),
+                        exp: 0,
+                    },
+                    sign: Sign::Pos,
+                };
+            }
+            _ => {}
+        }
+
+        println!("{}", value);
+        let mut bytes: VecDeque<u8> = VecDeque::new();
+        let bits = value.to_bits();
+        const SIGN_MASK: u64 = 0x8000000000000000;
+        const MANTISSA_MASK: u64 = 0x000FFFFFFFFFFFFF;
+        let sign: Sign = if bits & SIGN_MASK == 0 {
+            Sign::Pos
+        } else {
+            Sign::Neg
+        };
+        let mut exp: i128 = i128::from((bits >> 52) & 0x7ff) - 1023 - 52;
+        let mut mantissa: u64 = u64::from(bits & MANTISSA_MASK) + 0x10000000000000;
+        //fp values are 1.(mantissa) * 2^exp * (-1)^sign
+        //so we add the 1 back in
+
+        // println!("{:?} {} {}", sign, exp + 1023, mantissa - 0x10000000000000);
+
+        if exp > 0 {
+            //we have to change mantissa since we cant have exponents that arent powers of 256
+            mantissa <<= exp % 8;
+        } else {
+            mantissa >>= (-exp) % 8;
+        }
+
+        while mantissa > 0 {
+            bytes.push_back((mantissa % 256).try_into().unwrap());
+            mantissa /= 256;
+        }
+
+        while bytes.len() > 7 {
+            //32 bit floats should only have a 3 byte significand
+            bytes.pop_front();
+            exp += 8;
+        }
+
+        println!();
+
+        return CASNum {
+            value: CASValue::Finite {
+                bytes,
+                exp: i128::from(exp / 8),
+            }
+            .normalize(),
+            sign,
+        };
     }
 }
 

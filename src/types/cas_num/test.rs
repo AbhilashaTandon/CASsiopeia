@@ -133,8 +133,8 @@ pub mod test {
             CASNum::from(2.5325),
             CASNum {
                 value: crate::types::cas_num::CASValue::Finite {
-                    bytes: VecDeque::from([81, 136, 2]),
-                    exp: -2
+                    bytes: VecDeque::from([184, 30, 133, 235, 81, 136, 2]),
+                    exp: -6
                 },
                 sign: Sign::Pos,
             },
@@ -155,8 +155,8 @@ pub mod test {
             CASNum::from(-2.34844396355274555919e-22),
             CASNum {
                 value: crate::types::cas_num::CASValue::Finite {
-                    bytes: VecDeque::from([232, 27, 1]),
-                    exp: -11
+                    bytes: VecDeque::from([210, 232, 27, 1]),
+                    exp: -12
                 },
                 sign: Sign::Neg,
             },
@@ -166,8 +166,8 @@ pub mod test {
             CASNum::from(1.04091361631528862002e-27),
             CASNum {
                 value: crate::types::cas_num::CASValue::Finite {
-                    bytes: VecDeque::from([60, 120, 82]),
-                    exp: -14
+                    bytes: VecDeque::from([128, 60, 120, 82]),
+                    exp: -15
                 },
                 sign: Sign::Pos,
             },
@@ -199,8 +199,8 @@ pub mod test {
             CASNum::from(902341.2532),
             CASNum {
                 value: crate::types::cas_num::CASValue::Finite {
-                    bytes: VecDeque::from([197, 196, 13]),
-                    exp: 0
+                    bytes: VecDeque::from([23, 183, 209, 64, 197, 196, 13]),
+                    exp: -4,
                 },
                 sign: Sign::Pos,
             },
@@ -210,8 +210,8 @@ pub mod test {
             CASNum::from(0239402.2340923),
             CASNum {
                 value: crate::types::cas_num::CASValue::Finite {
-                    bytes: VecDeque::from([42, 167, 3]),
-                    exp: 0
+                    bytes: VecDeque::from([20, 121, 237, 59, 42, 167, 3]),
+                    exp: -4
                 },
                 sign: Sign::Pos,
             },
@@ -221,8 +221,8 @@ pub mod test {
             CASNum::from(55.592082977294921875),
             CASNum {
                 value: crate::types::cas_num::CASValue::Finite {
-                    bytes: VecDeque::from([146, 151, 55]),
-                    exp: -2
+                    bytes: VecDeque::from([192, 146, 151, 55]),
+                    exp: -3
                 },
                 sign: Sign::Pos,
             },
@@ -232,8 +232,8 @@ pub mod test {
             CASNum::from(13.384548187255859375),
             CASNum {
                 value: crate::types::cas_num::CASValue::Finite {
-                    bytes: VecDeque::from([113, 98, 13]),
-                    exp: -2
+                    bytes: VecDeque::from([192, 113, 98, 13]),
+                    exp: -3
                 },
                 sign: Sign::Pos,
             },
@@ -276,8 +276,8 @@ pub mod test {
             CASNum::from(2582772973568.0),
             CASNum {
                 value: crate::types::cas_num::CASValue::Finite {
-                    bytes: VecDeque::from([89, 89, 2]),
-                    exp: 3
+                    bytes: VecDeque::from([68, 89, 89, 2]),
+                    exp: 2
                 },
                 sign: Sign::Pos,
             },
@@ -287,15 +287,12 @@ pub mod test {
             CASNum::from(1.95604696469614937424e-16),
             CASNum {
                 value: crate::types::cas_num::CASValue::Finite {
-                    bytes: VecDeque::from([69, 24, 14]),
-                    exp: -9
+                    bytes: VecDeque::from([16, 69, 24, 14]),
+                    exp: -10
                 },
                 sign: Sign::Pos,
             },
         );
-
-        //         09.3423,
-        //         -0.00304204920000,
     }
 
     #[test]
