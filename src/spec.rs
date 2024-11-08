@@ -1,6 +1,6 @@
 use std::fmt;
 
-pub(crate) const KEYWORDS: [&'static str; 4] = [
+pub const KEYWORDS: [&'static str; 4] = [
     //for calculating the value of an expression, uses variable values from symbol table
     "calc", //calculates value of expression, gives arbitrary precision fp
     "sim",
@@ -12,16 +12,15 @@ pub(crate) const KEYWORDS: [&'static str; 4] = [
     // integrates, indefinite
 ];
 
-pub(crate) const RESERVED_FUNCTIONS: [&'static str; 17] = [
+pub const RESERVED_FUNCTIONS: [&'static str; 17] = [
     "sqrt", "cbrt", "log2", "log10", "ln", "sin", "cos", "tan", "csc", "sec", "cot", "asin",
     "acos", "atan", "acsc", "asec", "acot",
 ];
 
-pub(crate) const RESERVED_CONSTANTS: [&'static str; 5] = ["pi", "e", "phi", "tau", "i"];
+pub const RESERVED_CONSTANTS: [&'static str; 5] = ["pi", "e", "phi", "tau", "i"];
 pub const OPERATORS: [char; 13] = [
     '+', '-', '*', '/', '^', '(', ')', ',', '<', '=', '>', '[', ']',
 ];
-pub const COMP: [&'static str; 3] = ["!=", "<=", ">="];
 
 #[derive(Clone, PartialEq, Debug, Copy)]
 pub enum Operator {
@@ -42,14 +41,14 @@ pub enum Operator {
     GreaterEqual,
 }
 
-pub(crate) fn left_associative(operator: &Operator) -> bool {
+pub fn left_associative(operator: &Operator) -> bool {
     match operator {
         Operator::Exp => false,
         _ => true,
     }
 }
 
-pub(crate) fn precedence(op: &Operator) -> u8 {
+pub fn precedence(op: &Operator) -> u8 {
     match op {
         Operator::Less
         | Operator::Greater
@@ -68,7 +67,7 @@ pub(crate) fn precedence(op: &Operator) -> u8 {
     }
 }
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) enum TokenType {
+pub enum TokenType {
     Name(String), //variable name
     Int(i128),    //integer literal
     Float(f64),   //floating point literal
@@ -122,7 +121,7 @@ impl fmt::Display for TokenType {
     }
 }
 
-pub(crate) fn to_token_name(symbol: &str) -> TokenType {
+pub fn to_token_name(symbol: &str) -> TokenType {
     match symbol {
         "=" => TokenType::Assign,
         "+" => TokenType::Operator(Operator::Add),

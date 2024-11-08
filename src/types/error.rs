@@ -1,7 +1,7 @@
 use std::string::ToString;
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub(crate) enum CASErrorKind {
+ pub(crate) enum CASErrorKind {
     NoError,
     SyntaxError,
     TypeError,
@@ -28,9 +28,9 @@ impl ToString for CASErrorKind {
 }
 
 #[derive(PartialEq, Debug)]
-pub(crate) struct CASError {
-    pub(crate) line_pos: usize,
-    pub(crate) kind: CASErrorKind,
+ pub struct CASError {
+     pub line_pos: usize,
+     pub kind: CASErrorKind,
 }
 
 impl CASErrorKind{
@@ -50,7 +50,7 @@ impl CASErrorKind{
 }
 
 
-pub(crate) fn print_error(err: CASError, line: &str, line_num: usize) {
+ pub fn print_error(err: CASError, line: &str, line_num: usize) {
     eprintln!("{} on line {}.", err.kind.to_string(), line_num + 1);
     //we number lines starting w 1 instead of 0
     eprintln!("{}", line);

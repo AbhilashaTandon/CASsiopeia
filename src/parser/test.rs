@@ -1,5 +1,5 @@
 #[cfg(test)]
-pub mod test {
+mod test {
     use std::collections::HashMap;
 
     use crate::{
@@ -19,5 +19,7 @@ pub mod test {
             Ok(expr) => println!("{:?}", expr),
             Err(_) => todo!(),
         }
+
+        assert!(false);
     }
 }

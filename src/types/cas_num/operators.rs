@@ -193,6 +193,8 @@ impl ops::Sub<CASNum> for CASNum {
                     sign: rhs_sign,
                 };
 
+                //TODO: find a better way than reconstructing CASnums
+
                 subtraction_finite(self_copy, rhs_copy)
             }
             (

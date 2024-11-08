@@ -14,19 +14,19 @@ mod operators;
 mod test;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub(crate) enum Sign {
+enum Sign {
     Pos,
     Neg,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct CASNum {
-    pub(crate) value: CASValue,
-    pub(crate) sign: Sign,
+    value: CASValue,
+    sign: Sign,
 }
 
-#[derive(Debug, PartialEq)]
-pub(crate) enum CASValue {
+#[derive(Debug, PartialEq, Clone)]
+enum CASValue {
     Finite {
         bytes: VecDeque<u8>, //little endian
         exp: i128,           //base 256
@@ -60,7 +60,7 @@ const ZERO: CASNum = CASNum {
 
 impl CASNum {
     //only put functions in here instead of CASValue if they interact with sign
-    pub(crate) fn abs(self) -> Self {
+    fn abs(self) -> Self {
         return CASNum {
             sign: Sign::Pos,
             value: self.value,
@@ -156,7 +156,7 @@ impl CASNum {
 }
 
 impl CASValue {
-    pub(crate) fn new<T>(i: T) -> CASNum
+    fn new<T>(i: T) -> CASNum
     where
         CASNum: From<T>,
     {
@@ -172,7 +172,7 @@ impl CASValue {
         };
     }
 
-    pub(crate) fn normalize(mut self: Self) -> Self {
+    fn normalize(mut self: Self) -> Self {
         match self {
             CASValue::Finite {
                 ref mut bytes,
@@ -194,7 +194,7 @@ impl CASValue {
         }
     }
 
-    pub(crate) fn is_zero(&self) -> bool {
+    fn is_zero(&self) -> bool {
         match &self {
             CASValue::Finite { bytes, .. } => {
                 for byte in bytes {
@@ -210,7 +210,7 @@ impl CASValue {
         }
     }
 
-    pub(crate) fn is_infinite(&self) -> bool {
+    fn is_infinite(&self) -> bool {
         match &self {
             CASValue::Finite { .. } => false,
             CASValue::Infinite => true,
@@ -218,7 +218,7 @@ impl CASValue {
         }
     }
 
-    pub(crate) fn is_finite(&self) -> bool {
+    fn is_finite(&self) -> bool {
         match &self {
             CASValue::Finite { .. } => true,
             CASValue::Infinite => false,
@@ -226,7 +226,7 @@ impl CASValue {
         }
     }
 
-    pub(crate) fn is_indeterminate(&self) -> bool {
+    fn is_indeterminate(&self) -> bool {
         match &self {
             CASValue::Finite { .. } => false,
             CASValue::Infinite => false,
@@ -234,7 +234,7 @@ impl CASValue {
         }
     }
 
-    pub fn align(self: &Self, other: &Self) -> Option<VecDeque<(u8, u8, i128)>> {
+    fn align(self: &Self, other: &Self) -> Option<VecDeque<(u8, u8, i128)>> {
         //digits aligned by exponent and zipped together
         //base 10 example
 
@@ -282,16 +282,15 @@ impl CASValue {
         return None;
     }
 
-    pub fn cartesian(&self, other: &Self) -> Option<VecDeque<VecDeque<(u8, u8, i128)>>> {
+    fn cartesian(&self, other: &Self) -> Option<VecDeque<VecDeque<(u8, u8, i128)>>> {
         //aligned cartesian product of base 256 digits
         //base 10 example
 
-        //123.45, 4.567 ->
-        // (1, 4,  2) (2, 4,  1) (3, 4,  0) . (4, 4, -1) (5, 4, -2)
+        //120.45, 4.067 ->
+        // (1, 4,  2) (2, 4,  1) . (4, 4, -1) (5, 4, -2)
         //     .      .      .        .      .
-        // (1, 5,  1) (2, 5,  0) (3, 5, -1) . (4, 5, -2) (5, 5, -3)
-        // (1, 6,  0) (2, 6, -1) (3, 6, -2) . (4, 6, -3) (5, 6, -4)
-        // (1, 7, -1) (2, 7, -2) (3, 7, -3) . (4, 7, -4) (5, 7, -5)
+        // (1, 6,  0) (2, 6, -1)  . (4, 6, -3) (5, 6, -4)
+        // (1, 7, -1) (2, 7, -2)  . (4, 7, -4) (5, 7, -5)
 
         if let CASValue::Finite {
             bytes: self_bytes,
@@ -334,5 +333,17 @@ impl CASValue {
         }
 
         return None;
+    }
+
+    fn set_precision(&mut self, num_bytes: usize) {
+        return match self {
+            CASValue::Finite { bytes, exp } => {
+                while bytes.len() > num_bytes {
+                    bytes.pop_front();
+                    *exp += 1;
+                }
+            }
+            _ => {}
+        };
     }
 }

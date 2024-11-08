@@ -1,5 +1,5 @@
 #[cfg(test)]
-pub mod test {
+mod test {
     use core::f32;
     use std::collections::VecDeque;
 

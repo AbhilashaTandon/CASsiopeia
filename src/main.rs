@@ -13,10 +13,10 @@ use std::{
 
 use scanner::{process_line, TokenItem};
 
-pub mod parser;
-pub mod scanner;
-pub mod spec;
-pub mod types;
+mod parser;
+mod scanner;
+mod spec;
+mod types;
 
 fn main() {
     //cli stuff

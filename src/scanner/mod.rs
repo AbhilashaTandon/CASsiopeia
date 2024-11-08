@@ -8,7 +8,7 @@ use crate::types::error::{print_error, CASError, CASErrorKind};
 mod test;
 
 #[derive(Clone, PartialEq, Debug)]
-pub enum TokenItem {
+pub(crate) enum TokenItem {
     //stores each token or error we find in file
     Token(TokenType),
 
@@ -18,8 +18,8 @@ pub enum TokenItem {
 #[derive(PartialEq, Debug)]
 struct Tokenization {
     //result of tokenizing code
-    pub tokens: Vec<TokenItem>,
-    pub errors: Vec<CASError>,
+    tokens: Vec<TokenItem>,
+    errors: Vec<CASError>,
 }
 
 pub fn process_line(line: &str, tokens: &mut Vec<TokenItem>, line_num: usize) {

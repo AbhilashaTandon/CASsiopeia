@@ -8,7 +8,7 @@ use std::collections::{HashMap, VecDeque};
 
 use crate::spec::TokenType::*;
 
-pub mod test;
+mod test;
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 struct TreeNode<T> {
@@ -33,7 +33,7 @@ type VarTable<'a> = HashMap<&'a str, Var<'a>>;
 type Parsing<'a> = Result<Tree<Symbol<'a>>, CASErrorKind>;
 
 #[derive(Debug, PartialEq)]
-pub enum Symbol<'a> {
+enum Symbol<'a> {
     //output of parsing
     Variable { name: &'a str },
     Operator(Operator),
@@ -42,7 +42,7 @@ pub enum Symbol<'a> {
     Const { name: &'a str },
 }
 
-pub(crate) fn shunting_yard<'a>(
+fn shunting_yard<'a>(
     tokens: &'a Vec<TokenItem>,
     var_table: VarTable<'a>,
     args: Vec<&str>,
@@ -61,7 +61,7 @@ pub(crate) fn shunting_yard<'a>(
                 Name(name) => {
                     if let Some(value) = parse_name(
                         &args,
-                        name,
+                        &name,
                         &mut output_queue,
                         &var_table,
                         &mut operator_stack,
@@ -91,7 +91,7 @@ pub(crate) fn shunting_yard<'a>(
                     Add | Sub | Mult | Div | Exp | Less | Greater | Equal | NotEqual
                     | LessEqual | GreaterEqual => {
                         if let Some(value) =
-                            parse_numeric_operator(&mut operator_stack, o1, &mut output_queue)
+                            parse_numeric_operator(&mut operator_stack, &o1, &mut output_queue)
                         {
                             return value;
                         }
