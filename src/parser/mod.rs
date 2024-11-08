@@ -99,33 +99,54 @@ pub(crate) fn shunting_yard<'a>(
 
                     LeftParen | LeftBracket => operator_stack.push_back(Symbol::Operator(*o1)),
 
-                    RightParen | RightBracket => loop {
-                        let top_of_stack: Option<&Symbol<'_>> = operator_stack.back();
-                        match top_of_stack {
-                            Some(symbol) => match symbol {
-                                Symbol::Operator(o2) => match o2 {
-                                    LeftBracket | LeftParen => break,
-                                    _ => {
-                                        output_queue.push_back(Symbol::Operator(*o2));
+                    RightParen | RightBracket => {
+                        loop {
+                            let top_of_stack: Option<&Symbol<'_>> = operator_stack.back();
+                            match top_of_stack {
+                                Some(symbol) => match symbol {
+                                    Symbol::Operator(o2) => match o2 {
+                                        LeftBracket | LeftParen => break,
+                                        //while the operator at the top of the operator stack is not a left parenthesis:
+                                        _ => {
+                                            output_queue.push_back(Symbol::Operator(*o2));
+                                            operator_stack.pop_back();
+                                            //pop the operator from the operator stack into the output queue
+                                        }
+                                    },
+                                    Symbol::Function { num_args, name } => {
+                                        output_queue.push_back(Symbol::Function {
+                                            num_args: *num_args,
+                                            name,
+                                        });
                                         operator_stack.pop_back();
+                                        //pop the operator from the operator stack into the output queue
+                                    }
+                                    _ => {
+                                        return Err(CASErrorKind::SyntaxError);
                                     }
                                 },
-                                Symbol::Function { num_args, name } => {
-                                    output_queue.push_back(Symbol::Function {
-                                        num_args: *num_args,
-                                        name,
-                                    });
-                                    operator_stack.pop_back();
+                                None => {
+                                    return Err(CASErrorKind::MismatchedParentheses);
+                                    // assert the operator stack is not empty//
+                                    /* If the stack runs out without finding a left parenthesis, then there are mismatched parentheses. */
                                 }
-                                _ => {
-                                    return Err(CASErrorKind::SyntaxError);
-                                }
-                            },
-                            None => {
-                                return Err(CASErrorKind::MismatchedParentheses);
                             }
                         }
-                    },
+                        if operator_stack.back() != Some(&Symbol::Operator(LeftParen))
+                            && operator_stack.back() != Some(&Symbol::Operator(LeftBracket))
+                        {
+                            //{assert there is a left parenthesis at the top of the operator stack}
+                            return Err(CASErrorKind::MismatchedParentheses);
+                        }
+                        operator_stack.pop_back();
+                        //  pop the left parenthesis from the operator stack and discard it
+                        if let Some(&Symbol::Function { .. }) = operator_stack.back() {
+                            output_queue.push_back(operator_stack.pop_back().unwrap());
+                        }
+
+                        // if there is a function token at the top of the operator stack, then:
+                        //pop the function from the operator stack into the output queue
+                    }
                 },
 
                 Comma => {
@@ -152,6 +173,20 @@ pub(crate) fn shunting_yard<'a>(
             TokenItem::Error(err) => todo!(),
         }
     }
+
+    ///* After the while loop, pop the remaining items from the operator stack into the output queue. */
+    // while there are tokens on the operator stack:
+    while let Some(token) = operator_stack.pop_back() {
+        if token == Symbol::Operator(LeftParen) || token == Symbol::Operator(LeftBracket) {
+            return Err(CASErrorKind::MismatchedParentheses);
+        }
+        output_queue.push_back(token);
+    }
+
+    for token in output_queue {
+        println!("{:?}", token);
+    }
+    //construct tree
 
     return Ok(expr);
 }
