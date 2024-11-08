@@ -120,14 +120,19 @@ fn addition_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
 
             let alignment = self_value.align(&rhs_value).unwrap(); //we can unwrap safely since both self and rhs are finite
 
+            println!("{:?}", alignment);
+
+            let exp = alignment.front().unwrap().2;
+
             for (a_byte, b_byte, _) in alignment {
-                let sum: u16 = a_byte as u16 + b_byte as u16 + carry;
+                let mut sum: u16 = a_byte as u16 + b_byte as u16 + carry;
                 if sum >= 256 {
-                    carry = sum / 256;
+                    carry = 1;
+                    sum -= 256;
                 } else {
                     carry = 0;
                 }
-                let new_byte: u8 = (sum % 256).try_into().unwrap();
+                let new_byte: u8 = sum.try_into().unwrap();
                 bytes.push_back(new_byte);
             }
 
@@ -136,7 +141,7 @@ fn addition_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
             }
 
             return CASNum {
-                value: CASValue::Finite { bytes, exp: 0 },
+                value: CASValue::Finite { bytes, exp },
                 sign: Sign::Pos,
             };
         }
@@ -254,6 +259,8 @@ fn subtraction_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
 
             let alignment = self_value.align(&rhs_value).unwrap(); //we can unwrap safely since both self and rhs are finite
 
+            let exp = alignment.front().unwrap().2;
+
             for (self_byte, other_byte, _) in alignment {
                 let mut diff: i16 = (self_byte as i16) - (other_byte as i16) + carry;
 
@@ -267,7 +274,7 @@ fn subtraction_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
             }
 
             return CASNum {
-                value: CASValue::Finite { bytes, exp: 0 },
+                value: CASValue::Finite { bytes, exp },
                 sign: Sign::Pos,
             };
         }

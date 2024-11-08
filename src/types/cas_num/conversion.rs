@@ -275,7 +275,7 @@ impl From<f32> for CASNum {
         } else {
             Sign::Neg
         };
-        let exp: i64 = i64::from((bits >> 23) & 255) - 150;
+        let mut exp: i64 = i64::from((bits >> 23) & 255) - 150;
         let mut mantissa: u64 = u64::from(bits & MANTISSA_MASK) + 0x00800000;
         //fp values are 1.(mantissa) * 2^exp * (-1)^sign
         //so we add the 1 back in
@@ -288,11 +288,14 @@ impl From<f32> for CASNum {
         }
 
         while mantissa > 0 {
-            bytes.push_back((mantissa & 255).try_into().unwrap());
+            bytes.push_back((mantissa % 256).try_into().unwrap());
             mantissa /= 256;
-            if bytes.len() == 3 {
-                break;
-            }
+        }
+
+        while bytes.len() > 3 {
+            //32 bit floats should only have a 3 byte significand
+            bytes.pop_front();
+            exp += 8;
         }
 
         return CASNum {

@@ -1,20 +1,25 @@
 #[cfg(test)]
 pub mod test {
+    use core::f32;
     use std::collections::VecDeque;
 
     use crate::types::cas_num::Sign;
 
+    use crate::types::cas_num::CASValue::Finite;
+    use crate::types::cas_num::CASValue::Indeterminate;
+    use crate::types::cas_num::CASValue::Infinite;
+
     use super::super::CASNum;
 
     fn comparison(a: i128, b: i128) {
-        println!("{} {}", a, b);
+        // println!("{} {}", a, b);
         assert_eq!(CASNum::from(a) < CASNum::from(b), a < b);
         assert_eq!(CASNum::from(a) > CASNum::from(b), a > b);
         assert_eq!(CASNum::from(a) == CASNum::from(b), a == b);
     }
 
     fn addition(a: i128, b: i128) {
-        println!("{} {}", a, b);
+        // println!("{} {}", a, b);
         let mut sum_1 = CASNum::from(a + b);
         let mut sum_2 = CASNum::from(a) + CASNum::from(b);
         sum_1.value = sum_1.value.normalize();
@@ -23,7 +28,7 @@ pub mod test {
     }
 
     fn subtraction(a: i128, b: i128) {
-        println!("{} {}", a, b);
+        // println!("{} {}", a, b);
         let mut sum_1 = CASNum::from(a - b);
         let mut sum_2 = CASNum::from(a) - CASNum::from(b);
         sum_1.value = sum_1.value.normalize();
@@ -32,28 +37,24 @@ pub mod test {
     }
 
     fn comparison_float(a: f32, b: f32) {
-        println!("{} {}", a, b);
+        // println!("{} {}", a, b);
         assert_eq!(CASNum::from(a) < CASNum::from(b), a < b);
         assert_eq!(CASNum::from(a) > CASNum::from(b), a > b);
         assert_eq!(CASNum::from(a) == CASNum::from(b), a == b);
     }
 
-    fn addition_float(a: f32, b: f32) {
-        println!("{} {}", a, b);
-        let mut sum_1 = CASNum::from(a + b);
-        let mut sum_2 = CASNum::from(a) + CASNum::from(b);
-        sum_1.value = sum_1.value.normalize();
-        sum_2.value = sum_2.value.normalize();
-        assert_eq!(sum_1, sum_2);
+    fn addition_float(a: f32, b: f32, result: CASNum) {
+        // println!("{} {}", a, b);
+        let mut sum = CASNum::from(a) + CASNum::from(b);
+        sum.value = sum.value.normalize();
+        assert_eq!(sum, result);
     }
 
-    fn subtraction_float(a: f32, b: f32) {
-        println!("{} {}", a, b);
-        let mut sum_1 = CASNum::from(a - b);
-        let mut sum_2 = CASNum::from(a) - CASNum::from(b);
-        sum_1.value = sum_1.value.normalize();
-        sum_2.value = sum_2.value.normalize();
-        assert_eq!(sum_1, sum_2);
+    fn subtraction_float(a: f32, b: f32, result: CASNum) {
+        // println!("{} {}", a, b);
+        let mut diff = CASNum::from(a) - CASNum::from(b);
+        diff.value = diff.value.normalize();
+        assert_eq!(diff, result);
     }
 
     #[test]
@@ -211,6 +212,83 @@ pub mod test {
             },
         );
 
+        assert_eq!(
+            CASNum::from(55.592082977294921875),
+            CASNum {
+                value: crate::types::cas_num::CASValue::Finite {
+                    bytes: VecDeque::from([146, 151, 55]),
+                    exp: -2
+                },
+                sign: Sign::Pos,
+            },
+        );
+
+        assert_eq!(
+            CASNum::from(13.384548187255859375),
+            CASNum {
+                value: crate::types::cas_num::CASValue::Finite {
+                    bytes: VecDeque::from([113, 98, 13]),
+                    exp: -2
+                },
+                sign: Sign::Pos,
+            },
+        );
+
+        assert_eq!(
+            CASNum::from(36029084781772800.0),
+            CASNum {
+                value: crate::types::cas_num::CASValue::Finite {
+                    bytes: VecDeque::from([67, 0, 128]),
+                    exp: 4
+                },
+                sign: Sign::Pos,
+            },
+        );
+
+        assert_eq!(
+            CASNum::from(4.5741310728335148525e-26),
+            CASNum {
+                value: crate::types::cas_num::CASValue::Finite {
+                    bytes: VecDeque::from([40, 14]),
+                    exp: -12
+                },
+                sign: Sign::Pos,
+            },
+        );
+
+        assert_eq!(
+            CASNum::from(5.35045224510513345425e-23),
+            CASNum {
+                value: crate::types::cas_num::CASValue::Finite {
+                    bytes: VecDeque::from([217, 174, 64]),
+                    exp: -12
+                },
+                sign: Sign::Pos,
+            },
+        );
+
+        assert_eq!(
+            CASNum::from(2582772973568.0),
+            CASNum {
+                value: crate::types::cas_num::CASValue::Finite {
+                    bytes: VecDeque::from([89, 89, 2]),
+                    exp: 3
+                },
+                sign: Sign::Pos,
+            },
+        );
+
+        assert_eq!(
+            CASNum::from(1.95604696469614937424e-16),
+            CASNum {
+                value: crate::types::cas_num::CASValue::Finite {
+                    bytes: VecDeque::from([69, 24, 14]),
+                    exp: -9
+                },
+                sign: Sign::Pos,
+            },
+        );
+
         //         09.3423,
         //         -0.00304204920000,
     }
@@ -307,58 +385,243 @@ pub mod test {
     }
     #[test]
     fn addition_float_tests() {
-        let floats_of_choice: Vec<f32> = vec![
-            -2.34844396355274555919e-22,
-            1.04091361631528862002e-27,
-            -1.83996007268899958108e+31,
+        addition_float(
             0.,
-            902341.2532,
-            0239402.2340923,
-            09.3423,
-            -0.00304204920000,
-        ];
+            0.,
+            CASNum {
+                value: Finite {
+                    bytes: VecDeque::from([]),
+                    exp: 0,
+                },
+                sign: Sign::Pos,
+            },
+        );
 
-        for a in &floats_of_choice {
-            for b in &floats_of_choice {
-                addition_float(*a, *b);
-            }
-        }
+        addition_float(
+            0.,
+            1.,
+            CASNum {
+                value: Finite {
+                    bytes: VecDeque::from([1]),
+                    exp: 0,
+                },
+                sign: Sign::Pos,
+            },
+        );
+
+        addition_float(
+            0.,
+            -1.,
+            CASNum {
+                value: Finite {
+                    bytes: VecDeque::from([1]),
+                    exp: 0,
+                },
+                sign: Sign::Neg,
+            },
+        );
+
+        addition_float(
+            1.,
+            -1.,
+            CASNum {
+                value: Finite {
+                    bytes: VecDeque::from([]),
+                    exp: 0,
+                },
+                sign: Sign::Neg,
+            },
+        );
+
+        addition_float(
+            1.,
+            -1.,
+            CASNum {
+                value: Finite {
+                    bytes: VecDeque::from([0]),
+                    exp: 0,
+                },
+                sign: Sign::Neg,
+            },
+        );
+
+        addition_float(
+            100.,
+            -1.,
+            CASNum {
+                value: Finite {
+                    bytes: VecDeque::from([99]),
+                    exp: 0,
+                },
+                sign: Sign::Pos,
+            },
+        );
+
+        addition_float(
+            f32::INFINITY,
+            f32::INFINITY,
+            CASNum {
+                value: Infinite,
+                sign: Sign::Pos,
+            },
+        );
+
+        addition_float(
+            f32::NEG_INFINITY,
+            f32::NEG_INFINITY,
+            CASNum {
+                value: Infinite,
+                sign: Sign::Neg,
+            },
+        );
+
+        addition_float(
+            55.592082977294921875,
+            13.384548187255859375,
+            CASNum {
+                value: Finite {
+                    bytes: VecDeque::from([3, 250, 68]),
+                    exp: -2,
+                },
+                sign: Sign::Pos,
+            },
+        );
+
+        addition_float(
+            2582772973568.0,
+            1.95604696469614937424e-16,
+            CASNum {
+                value: Finite {
+                    bytes: VecDeque::from([69, 24, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 89, 89, 2]),
+                    exp: -9,
+                },
+                sign: Sign::Pos,
+            },
+        );
     }
 
     #[test]
     fn subtraction_float_tests() {
-        let floats_of_choice: Vec<f32> = vec![
-            -2.34844396355274555919e-22,
-            1.04091361631528862002e-27,
-            -1.83996007268899958108e+31,
+        subtraction_float(
             0.,
-            902341.2532,
-            0239402.2340923,
-            09.3423,
-            -0.00304204920000,
-        ];
-
-        for a in &floats_of_choice {
-            for b in &floats_of_choice {
-                subtraction_float(*a, *b);
-            }
-        }
-    }
-
-    fn float_tests() {
-        let floats_of_choice: Vec<f32> = vec![
-            -2.34844396355274555919e-22,
-            1.04091361631528862002e-27,
-            -1.83996007268899958108e+31,
             0.,
-            902341.2532,
-            0239402.2340923,
-            09.3423,
-            -0.00304204920000,
-        ];
+            CASNum {
+                value: Finite {
+                    bytes: VecDeque::from([]),
+                    exp: 0,
+                },
+                sign: Sign::Pos,
+            },
+        );
 
-        // for a in &floats_of_choice {
-        //     assert_eq!(CASNum::from(*a).into(), *a);
-        // }
+        subtraction_float(
+            0.,
+            1.,
+            CASNum {
+                value: Finite {
+                    bytes: VecDeque::from([1]),
+                    exp: 0,
+                },
+                sign: Sign::Neg,
+            },
+        );
+
+        subtraction_float(
+            0.,
+            -1.,
+            CASNum {
+                value: Finite {
+                    bytes: VecDeque::from([1]),
+                    exp: 0,
+                },
+                sign: Sign::Pos,
+            },
+        );
+
+        subtraction_float(
+            1.,
+            -1.,
+            CASNum {
+                value: Finite {
+                    bytes: VecDeque::from([2]),
+                    exp: 0,
+                },
+                sign: Sign::Pos,
+            },
+        );
+
+        subtraction_float(
+            100.,
+            -1.,
+            CASNum {
+                value: Finite {
+                    bytes: VecDeque::from([101]),
+                    exp: 0,
+                },
+                sign: Sign::Pos,
+            },
+        );
+
+        subtraction_float(
+            55.592082977294921875,
+            13.384548187255859375,
+            CASNum {
+                value: Finite {
+                    bytes: VecDeque::from([33, 53, 42]),
+                    exp: -2,
+                },
+                sign: Sign::Pos,
+            },
+        );
+
+        subtraction_float(
+            13.384548187255859375,
+            55.592082977294921875,
+            CASNum {
+                value: Finite {
+                    bytes: VecDeque::from([33, 53, 42]),
+                    exp: -2,
+                },
+                sign: Sign::Neg,
+            },
+        );
+
+        subtraction_float(
+            -55.592082977294921875,
+            13.384548187255859375,
+            CASNum {
+                value: Finite {
+                    bytes: VecDeque::from([3, 250, 68]),
+                    exp: -2,
+                },
+                sign: Sign::Neg,
+            },
+        );
+
+        subtraction_float(
+            13.384548187255859375,
+            -55.592082977294921875,
+            CASNum {
+                value: Finite {
+                    bytes: VecDeque::from([3, 250, 68]),
+                    exp: -2,
+                },
+                sign: Sign::Pos,
+            },
+        );
+
+        subtraction_float(
+            5.87962771339207829504e-23,
+            56173.81640625,
+            CASNum {
+                value: Finite {
+                    bytes: VecDeque::from([
+                        111, 235, 184, 255, 255, 255, 255, 255, 255, 255, 255, 208, 109, 219,
+                    ]),
+                    exp: -12,
+                },
+                sign: Sign::Neg,
+            },
+        );
     }
 }
