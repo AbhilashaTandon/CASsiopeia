@@ -36,6 +36,12 @@ pub mod test {
         assert_eq!(sum_1, sum_2);
     }
 
+    fn multiplication(a: i128, b: i128) {
+        let prod_1 = CASNum::from(a * b);
+        let prod_2 = CASNum::from(a) * CASNum::from(b);
+        assert_eq!(prod_1, prod_2);
+    }
+
     fn comparison_float(a: f32, b: f32) {
         // println!("{} {}", a, b);
         assert_eq!(CASNum::from(a) < CASNum::from(b), a < b);
@@ -623,5 +629,29 @@ pub mod test {
                 sign: Sign::Neg,
             },
         );
+    }
+
+    #[test]
+    fn multiplication_tests() {
+        let values_to_test: Vec<i128> = vec![
+            029092059405034,
+            -25131235,
+            235125,
+            -345353,
+            -53221,
+            234,
+            94,
+            52,
+            7,
+            1,
+            -1,
+            0,
+        ];
+
+        for value_1 in &values_to_test {
+            for value_2 in &values_to_test {
+                multiplication(*value_1, *value_2);
+            }
+        }
     }
 }

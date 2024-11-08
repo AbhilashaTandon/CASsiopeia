@@ -25,7 +25,7 @@ pub(crate) struct CASNum {
     pub(crate) sign: Sign,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub(crate) enum CASValue {
     Finite {
         bytes: VecDeque<u8>, //little endian
@@ -47,6 +47,14 @@ const NEG_INFINITY: CASNum = CASNum {
 
 const INDETERMINATE: CASNum = CASNum {
     value: CASValue::Indeterminate,
+    sign: Sign::Pos,
+};
+
+const ZERO: CASNum = CASNum {
+    value: CASValue::Finite {
+        bytes: VecDeque::new(),
+        exp: 0,
+    },
     sign: Sign::Pos,
 };
 

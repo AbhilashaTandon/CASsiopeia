@@ -1,7 +1,7 @@
 //numerical operators, +, -, *, / etc
 use std::{collections::VecDeque, ops};
 
-use super::{CASNum, CASValue, Sign, INDETERMINATE, INFINITY, NEG_INFINITY};
+use super::{CASNum, CASValue, Sign, INDETERMINATE, INFINITY, NEG_INFINITY, ZERO};
 
 impl ops::Neg for CASNum {
     type Output = CASNum;
@@ -283,4 +283,92 @@ fn subtraction_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
         (Sign::Neg, Sign::Pos) => -(rhs + lhs.abs()), ////-a - b = a - b
         (Sign::Neg, Sign::Neg) => rhs.abs() - lhs.abs(), //-a - -b = -a + b = b - a
     }
+}
+
+impl ops::Mul<CASNum> for CASNum {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        if self.value.is_indeterminate() || rhs.value.is_indeterminate() {
+            return INDETERMINATE;
+            //NAN * x == NAN
+            //x * NAN == NAN
+        }
+
+        if self.value.is_zero() && rhs.value.is_infinite() {
+            return INDETERMINATE;
+
+            //0 * +/- inf == NAN
+        }
+
+        if self.value.is_infinite() && rhs.value.is_zero() {
+            return INDETERMINATE;
+
+            // +/- inf  * 0 == NAN
+        }
+
+        match (self.sign, rhs.sign) {
+            (Sign::Pos, Sign::Pos) => {}
+            (Sign::Pos, Sign::Neg) => return -(self * (-rhs)),
+            (Sign::Neg, Sign::Pos) => return -((-self) * rhs),
+            (Sign::Neg, Sign::Neg) => return (-self) * (-rhs),
+        };
+
+        if self.value.is_infinite() && rhs.value.is_infinite() {
+            return INFINITY; //we already checked sign so we can assume all beyond this point is positive
+        }
+
+        if self.value.is_zero() || rhs.value.is_zero() {
+            return ZERO;
+        }
+
+        return multiplication_finite(self, rhs);
+    }
+}
+
+fn multiplication_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
+    let cartesian = lhs.value.cartesian(&rhs.value).unwrap();
+
+    let max_digit = cartesian.back().unwrap().back().unwrap().2;
+    let min_digit = cartesian.front().unwrap().front().unwrap().2;
+
+    // println!("{:?} {:?} {} {}", lhs, rhs, min_digit, max_digit);
+
+    println!("{:?}", cartesian);
+
+    assert!(max_digit >= min_digit);
+
+    let mut temp_arr: Vec<u32> = vec![];
+    for _ in min_digit..=max_digit {
+        temp_arr.push(0);
+    }
+
+    for row in cartesian {
+        for (self_byte, rhs_byte, exp) in row {
+            temp_arr[(exp - min_digit) as usize] += (self_byte as u32) * (rhs_byte as u32);
+        }
+    }
+
+    let mut carry = 0;
+    let mut bytes: VecDeque<u8> = VecDeque::new();
+
+    for &value in temp_arr.iter() {
+        print!("{} ", &value);
+
+        let adjusted = value + carry;
+        bytes.push_back((adjusted % 256) as u8);
+        carry = adjusted / 256;
+    }
+    while carry > 0 {
+        bytes.push_back((carry % 256).try_into().unwrap());
+        carry /= 256;
+    }
+
+    return CASNum {
+        value: CASValue::Finite {
+            bytes,
+            exp: min_digit,
+        },
+        sign: Sign::Pos,
+    };
 }
