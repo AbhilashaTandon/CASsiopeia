@@ -60,7 +60,7 @@ const ZERO: CASNum = CASNum {
 
 impl CASNum {
     //only put functions in here instead of CASValue if they interact with sign
-    pub(crate) fn abs(mut self) -> Self {
+    pub(crate) fn abs(self) -> Self {
         return CASNum {
             sign: Sign::Pos,
             value: self.value,

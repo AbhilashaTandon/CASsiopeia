@@ -1,5 +1,8 @@
 //numerical operators, +, -, *, / etc
-use std::{collections::VecDeque, ops};
+use std::{
+    collections::VecDeque,
+    ops::{self, Div},
+};
 
 use super::{CASNum, CASValue, Sign, INDETERMINATE, INFINITY, NEG_INFINITY, ZERO};
 
@@ -371,4 +374,46 @@ fn multiplication_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
         },
         sign: Sign::Pos,
     };
+}
+
+impl ops::Div<CASNum> for CASNum {
+    type Output = CASNum;
+
+    fn div(self, rhs: CASNum) -> Self::Output {
+        if self.value.is_indeterminate() || rhs.value.is_indeterminate() {
+            return INDETERMINATE;
+            //NAN / x == NAN
+            //x / NAN == NAN
+        }
+
+        if self.value.is_zero() && rhs.value.is_zero() {
+            return INDETERMINATE;
+            //0/0 == NAN
+        }
+
+        if self.value.is_infinite() && rhs.value.is_infinite() {
+            return INDETERMINATE;
+        }
+
+        match (self.sign, rhs.sign) {
+            (Sign::Pos, Sign::Pos) => {}
+            (Sign::Pos, Sign::Neg) => return -(self * (-rhs)),
+            (Sign::Neg, Sign::Pos) => return -((-self) * rhs),
+            (Sign::Neg, Sign::Neg) => return (-self) * (-rhs),
+        };
+
+        if rhs.value.is_infinite() {
+            return INFINITY; //we already checked sign so we can assume all beyond this point is positive
+        }
+
+        if self.value.is_zero() || rhs.value.is_infinite() {
+            return ZERO;
+        }
+
+        return division_finite(self, rhs);
+    }
+}
+
+fn division_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
+    todo!();
 }

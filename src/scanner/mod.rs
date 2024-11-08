@@ -49,25 +49,25 @@ struct Tokenization {
 pub fn process_line(line: &str, tokens: &mut Vec<TokenItem>, line_num: usize) {
     let result = tokenize(line.to_string());
     if result.errors.len() == 0 {
-        for token in &result.tokens {
-            match token {
-                TokenItem::Token {
-                    token_name,
-                    // token_text,
-                    token_value,
-                } => println!(
-                    // "{} {} {}",
-                    "{} {}",
-                    token_name.to_string(),
-                    // token_text,
-                    match token_value {
-                        Some(value) => value.to_string(),
-                        None => String::from("None"),
-                    }
-                ),
-                _ => (),
-            }
-        }
+        // for token in &result.tokens {
+        //     match token {
+        //         TokenItem::Token {
+        //             token_name,
+        //             // token_text,
+        //             token_value,
+        //         } => println!(
+        //             // "{} {} {}",
+        //             "{} {}",
+        //             token_name.to_string(),
+        //             // token_text,
+        //             match token_value {
+        //                 Some(value) => value.to_string(),
+        //                 None => String::from("None"),
+        //             }
+        //         ),
+        //         _ => (),
+        //     }
+        // }
         tokens.extend(result.tokens);
     } else {
         //if theres any error print it out

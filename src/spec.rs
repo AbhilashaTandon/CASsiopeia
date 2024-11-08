@@ -117,21 +117,53 @@ pub(crate) fn to_token_name(symbol: &str) -> TokenType {
 
 //TODO: specify error codes
 
-pub(crate) fn precedence(operator: TokenType) -> u32 {
+pub(crate) fn left_associative(operator: &TokenType) -> bool {
     match operator {
-        TokenType::Name => 0,
-        TokenType::Int => 0,
-        TokenType::Float => 0,
-        TokenType::Const => 0,
-        TokenType::Error => 0,
-        TokenType::Eof => 0,
+        TokenType::Name
+        | TokenType::Int
+        | TokenType::Float
+        | TokenType::Eof
+        | TokenType::Assign => false,
+        TokenType::Add => true,
+        TokenType::Sub => todo!(),
+        TokenType::Mult => todo!(),
+        TokenType::Div => todo!(),
+        TokenType::Exp => todo!(),
+        TokenType::LeftParen => todo!(),
+        TokenType::RightParen => todo!(),
+        TokenType::LeftBracket => todo!(),
+        TokenType::RightBracket => todo!(),
+        TokenType::Comma => todo!(),
+        TokenType::Less => todo!(),
+        TokenType::Greater => todo!(),
+        TokenType::Equal => todo!(),
+        TokenType::NotEqual => todo!(),
+        TokenType::LessEqual => todo!(),
+        TokenType::GreaterEqual => todo!(),
+        TokenType::Calc => todo!(),
+        TokenType::Sim => todo!(),
+        TokenType::Der => todo!(),
+        TokenType::Integral => todo!(),
+        TokenType::Const => todo!(),
+        TokenType::ResFun => todo!(),
+        TokenType::Error => todo!(),
+    }
+}
+
+pub(crate) fn precedence(operator: &TokenType) -> u32 {
+    match operator {
+        TokenType::Name
+        | TokenType::Int
+        | TokenType::Float
+        | TokenType::Const
+        | TokenType::Eof
+        | TokenType::Error => 0,
 
         TokenType::Comma => 1,
 
         TokenType::Assign => 2,
 
-        TokenType::Equal => 3,
-        TokenType::NotEqual => 3,
+        TokenType::Equal | TokenType::NotEqual => 3,
 
         TokenType::Less => 4,
         TokenType::Greater => 4,

@@ -6,7 +6,6 @@ pub mod test {
     use crate::types::cas_num::Sign;
 
     use crate::types::cas_num::CASValue::Finite;
-    use crate::types::cas_num::CASValue::Indeterminate;
     use crate::types::cas_num::CASValue::Infinite;
 
     use super::super::CASNum;
@@ -634,7 +633,8 @@ pub mod test {
     #[test]
     fn multiplication_tests() {
         let values_to_test: Vec<i128> = vec![
-            029092059405034,
+            5762184032698574102,
+            29092059405034,
             -25131235,
             235125,
             -345353,

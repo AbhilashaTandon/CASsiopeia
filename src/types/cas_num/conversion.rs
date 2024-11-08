@@ -309,6 +309,12 @@ impl From<f32> for CASNum {
     }
 }
 
+impl From<f64> for CASNum {
+    fn from(value: f64) -> Self {
+        todo!()
+    }
+}
+
 // impl Into<u8> for CASNum {
 //     fn into(self) -> u8 {
 //         let min_digit = self.exp;

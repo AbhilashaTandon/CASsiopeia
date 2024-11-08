@@ -8,6 +8,8 @@ pub(crate) enum CASErrorKind {
     MalformedNumericLiteral,
     MalformedVariableName,
     AssignmentInExpression,
+    UnknownSymbol,
+    MismatchedParentheses,
 }
 
 impl ToString for CASErrorKind {
@@ -18,7 +20,9 @@ impl ToString for CASErrorKind {
             | CASErrorKind::MalformedNumericLiteral
             | CASErrorKind::MalformedVariableName => "Syntax Error",
             CASErrorKind::TypeError => "Type Error",
-            CASErrorKind::AssignmentInExpression => "Assignment in expression",
+            CASErrorKind::AssignmentInExpression => "Syntax Error",
+            CASErrorKind::UnknownSymbol => "Syntax Error",
+            CASErrorKind::MismatchedParentheses => "Syntax Error",
         });
     }
 }
@@ -37,7 +41,9 @@ impl CASErrorKind{
             CASErrorKind::TypeError => "unspecified type error.",
             CASErrorKind::MalformedNumericLiteral => "malformed numerical literal.",
             CASErrorKind::MalformedVariableName => "variable names must begin with an alphabetic character, and must only contain alphanumeric characters, _, or -.",
-                    CASErrorKind::AssignmentInExpression => "variable or function assignments cannot be made inside expressions. Perhaps you meant to use the equality operator '=='?",
+            CASErrorKind::AssignmentInExpression => "variable or function assignments cannot be made inside expressions. Perhaps you meant to use the equality operator '=='?",
+            CASErrorKind::UnknownSymbol => "use of unknown variable or function.",
+            CASErrorKind::MismatchedParentheses => "expression contains mismatched parentheses.",
             
         });
     }
