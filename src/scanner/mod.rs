@@ -1,7 +1,7 @@
 use std::iter::{Enumerate, Peekable};
 use std::{fmt, str};
 
-use crate::spec;
+use crate::spec::{self, Operator};
 use crate::spec::{to_token_name, TokenType};
 use crate::types::error::{print_error, CASError, CASErrorKind};
 
@@ -176,10 +176,10 @@ fn parse_comp_ops(
             if iter.peek().unwrap().1 == '=' {
                 iter.next();
                 return Some(TokenItem::Token(match next_char {
-                    '<' => TokenType::LessEqual,
-                    '>' => TokenType::GreaterEqual,
-                    '!' => TokenType::NotEqual,
-                    '=' => TokenType::Equal,
+                    '<' => TokenType::Operator(Operator::LessEqual),
+                    '>' => TokenType::Operator(Operator::GreaterEqual),
+                    '!' => TokenType::Operator(Operator::NotEqual),
+                    '=' => TokenType::Operator(Operator::Equal),
                     _ => TokenType::Error,
                 }));
             }

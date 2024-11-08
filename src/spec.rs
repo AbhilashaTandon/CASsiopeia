@@ -23,7 +23,64 @@ pub const OPERATORS: [char; 13] = [
 ];
 pub const COMP: [&'static str; 3] = ["!=", "<=", ">="];
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Copy)]
+pub enum Operator {
+    Add,
+    Sub,
+    Mult,
+    Div,
+    Exp,
+    LeftBracket,
+    LeftParen,
+    RightBracket,
+    RightParen,
+    Less,
+    Greater,
+    Equal,
+    NotEqual,
+    LessEqual,
+    GreaterEqual,
+}
+
+pub(crate) fn left_associative(operator: &Operator) -> bool {
+    match operator {
+        Operator::Add => todo!(),
+        Operator::Sub => todo!(),
+        Operator::Mult => todo!(),
+        Operator::Div => todo!(),
+        Operator::Exp => todo!(),
+        Operator::LeftBracket => todo!(),
+        Operator::LeftParen => todo!(),
+        Operator::RightBracket => todo!(),
+        Operator::RightParen => todo!(),
+        Operator::Less => todo!(),
+        Operator::Greater => todo!(),
+        Operator::Equal => todo!(),
+        Operator::NotEqual => todo!(),
+        Operator::LessEqual => todo!(),
+        Operator::GreaterEqual => todo!(),
+    }
+}
+
+pub(crate) fn precedence(op: &Operator) -> u8 {
+    match op {
+        Operator::Less
+        | Operator::Greater
+        | Operator::Equal
+        | Operator::NotEqual
+        | Operator::LessEqual
+        | Operator::GreaterEqual => 4,
+
+        Operator::Add | Operator::Sub => 5,
+        Operator::Mult | Operator::Div => 6,
+        Operator::Exp => 7,
+        Operator::LeftBracket
+        | Operator::LeftParen
+        | Operator::RightBracket
+        | Operator::RightParen => 9,
+    }
+}
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) enum TokenType {
     Name(String), //variable name
     Int(i128),    //integer literal
@@ -31,22 +88,8 @@ pub(crate) enum TokenType {
     Eof,          //end of file
     //operators
     Assign,
-    Add,
-    Sub,
-    Mult,
-    Div,
-    Exp,
-    LeftParen,
-    RightParen,
-    LeftBracket,
-    RightBracket,
+    Operator(Operator),
     Comma,
-    Less,
-    Greater,
-    Equal,
-    NotEqual,
-    LessEqual,
-    GreaterEqual,
     Calc,
     Sim,
     Der,
@@ -64,27 +107,29 @@ impl fmt::Display for TokenType {
             TokenType::Float(value) => &format!("{}", value),
             TokenType::Eof => "EOF",
             TokenType::Assign => "ASSIGN",
-            TokenType::Add => "ADD",
-            TokenType::Sub => "SUB",
-            TokenType::Mult => "MULT",
-            TokenType::Div => "DIV",
-            TokenType::Exp => "EXP",
-            TokenType::LeftParen => "LEFT_PAREN",
-            TokenType::RightParen => "RIGHT_PAREN",
+            TokenType::Operator(op) => match op {
+                Operator::Add => "ADD",
+                Operator::Sub => "SUB",
+                Operator::Mult => "MULT",
+                Operator::Div => "DIV",
+                Operator::Exp => "EXP",
+                Operator::LeftBracket => "LEFT_BRACKET",
+                Operator::LeftParen => "LEFT_PAREN",
+                Operator::RightBracket => "RIGHT_BRACKET",
+                Operator::RightParen => "RIGHT_PAREN",
+                Operator::Less => "LESS",
+                Operator::Greater => "GREATER",
+                Operator::Equal => "EQUAL",
+                Operator::NotEqual => "NOT_EQUAL",
+                Operator::LessEqual => "LESS_EQUAL",
+                Operator::GreaterEqual => "GREATER_EQUAL",
+            },
             TokenType::Comma => "COMMA",
-            TokenType::Less => "LESS",
-            TokenType::Greater => "GREATER",
-            TokenType::Equal => "EQUAL",
-            TokenType::NotEqual => "NOT_EQUAL",
-            TokenType::LessEqual => "LESS_EQUAL",
-            TokenType::GreaterEqual => "GREATER_EQUAL",
             TokenType::Calc => "CALC",
             TokenType::Sim => "SIM",
             TokenType::Der => "DER",
             TokenType::Integral => "INTEGRAL",
             TokenType::Error => "ERR",
-            TokenType::LeftBracket => "LEFT_BRACKET",
-            TokenType::RightBracket => "RIGHT_BRACKET",
         };
         write!(f, "{}", display)
     }
@@ -93,99 +138,24 @@ impl fmt::Display for TokenType {
 pub(crate) fn to_token_name(symbol: &str) -> TokenType {
     match symbol {
         "=" => TokenType::Assign,
-        "+" => TokenType::Add,
-        "-" => TokenType::Sub,
-        "*" => TokenType::Mult,
-        "/" => TokenType::Div,
-        "^" => TokenType::Exp,
-        "(" => TokenType::LeftParen,
-        ")" => TokenType::RightParen,
+        "+" => TokenType::Operator(Operator::Add),
+        "-" => TokenType::Operator(Operator::Sub),
+        "*" => TokenType::Operator(Operator::Mult),
+        "/" => TokenType::Operator(Operator::Div),
+        "^" => TokenType::Operator(Operator::Exp),
+        "(" => TokenType::Operator(Operator::LeftParen),
+        ")" => TokenType::Operator(Operator::RightParen),
         "," => TokenType::Comma,
-        "<" => TokenType::Less,
-        ">" => TokenType::Greater,
+        "<" => TokenType::Operator(Operator::Less),
+        ">" => TokenType::Operator(Operator::Greater),
         "calc" => TokenType::Calc,
         "sim" => TokenType::Sim,
         "der" => TokenType::Der,
         "int" => TokenType::Integral,
-        "[" => TokenType::LeftBracket,
-        "]" => TokenType::RightBracket,
+        "[" => TokenType::Operator(Operator::LeftBracket),
+        "]" => TokenType::Operator(Operator::RightBracket),
         _ => TokenType::Error,
     }
 }
 
 //TODO: specify error codes
-
-pub(crate) fn left_associative(operator: &TokenType) -> bool {
-    match operator {
-        TokenType::Name(_)
-        | TokenType::Int(_)
-        | TokenType::Float(_)
-        | TokenType::Eof
-        | TokenType::Assign => false,
-        TokenType::Add => true,
-        TokenType::Sub => todo!(),
-        TokenType::Mult => todo!(),
-        TokenType::Div => todo!(),
-        TokenType::Exp => todo!(),
-        TokenType::LeftParen => todo!(),
-        TokenType::RightParen => todo!(),
-        TokenType::LeftBracket => todo!(),
-        TokenType::RightBracket => todo!(),
-        TokenType::Comma => todo!(),
-        TokenType::Less => todo!(),
-        TokenType::Greater => todo!(),
-        TokenType::Equal => todo!(),
-        TokenType::NotEqual => todo!(),
-        TokenType::LessEqual => todo!(),
-        TokenType::GreaterEqual => todo!(),
-        TokenType::Calc => todo!(),
-        TokenType::Sim => todo!(),
-        TokenType::Der => todo!(),
-        TokenType::Integral => todo!(),
-        TokenType::Const(_) => todo!(),
-        TokenType::ResFun(_) => todo!(),
-        TokenType::Error => todo!(),
-    }
-}
-
-pub(crate) fn precedence(operator: &TokenType) -> u32 {
-    match operator {
-        TokenType::Name(_)
-        | TokenType::Int(_)
-        | TokenType::Float(_)
-        | TokenType::Const(_)
-        | TokenType::Eof
-        | TokenType::Error => 0,
-
-        TokenType::Comma => 1,
-
-        TokenType::Assign => 2,
-
-        TokenType::Equal | TokenType::NotEqual => 3,
-
-        TokenType::Less => 4,
-        TokenType::Greater => 4,
-        TokenType::LessEqual => 4,
-        TokenType::GreaterEqual => 4,
-
-        TokenType::Add => 5,
-        TokenType::Sub => 5,
-
-        TokenType::Mult => 6,
-        TokenType::Div => 6,
-
-        TokenType::Exp => 7,
-
-        TokenType::Calc => 8,
-        TokenType::Sim => 8,
-        TokenType::Der => 8,
-        TokenType::Integral => 8,
-
-        TokenType::LeftParen => 9,
-        TokenType::RightParen => 9,
-        TokenType::LeftBracket => 9,
-        TokenType::RightBracket => 9,
-
-        TokenType::ResFun(_) => 10,
-    }
-}

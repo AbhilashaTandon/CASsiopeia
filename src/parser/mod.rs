@@ -1,15 +1,12 @@
+use crate::spec::{precedence, Operator::*};
 use crate::{
     scanner::TokenItem,
-    spec::{left_associative, precedence},
+    spec::{left_associative, Operator},
     types::{cas_num::CASNum, error::CASErrorKind},
 };
 use std::collections::{HashMap, VecDeque};
 
-use crate::spec::TokenType::{
-    Add, Assign, Calc, Comma, Const, Der, Div, Eof, Equal, Error, Exp, Float, Greater,
-    GreaterEqual, Int, Integral, LeftBracket, LeftParen, Less, LessEqual, Mult, Name, NotEqual,
-    ResFun, RightBracket, RightParen, Sim, Sub,
-};
+use crate::spec::TokenType::*;
 
 pub mod test;
 
@@ -34,18 +31,7 @@ struct Var<'a> {
 //table storing predefined variables (numericals and functions)
 type VarTable<'a> = HashMap<&'a str, Var<'a>>;
 
-pub enum Operator {
-    Add,
-    Sub,
-    Mult,
-    Div,
-    Exp,
-    LeftBracket,
-    LeftParen,
-    RightBracket,
-    RightParen,
-}
-
+#[derive(Debug, PartialEq)]
 pub enum Symbol<'a> {
     //output of parsing
     Variable { name: &'a str },
@@ -77,39 +63,83 @@ pub(crate) fn shunting_yard<'a>(
     while let Some(token) = token_iter.next() {
         match token {
             TokenItem::Token(token_type) => match token_type {
-                Name(name) => {}
+                Name(name) => {
+                    if args.contains(&name.as_str()) {
+                        output_queue.push_back(Symbol::Variable { name });
+                        //if the token is a number put it into the output queue
+                    } else if let Some(ref var) = var_table.get(name as &str) {
+                        match var.args.len() {
+                            0 => output_queue.push_back(Symbol::Variable { name }),
+
+                            //if the token is a number put it into the output queue
+                            x => operator_stack.push_back(Symbol::Function { num_args: x, name }),
+                            //if the token is a function push it onto the operator stack
+                        }
+                    } else {
+                        return Parsing {
+                            expr,
+                            error: CASErrorKind::UnknownSymbol,
+                        };
+                        //unknown variable name
+                    }
+                }
                 Int(i) => {
-                    todo!()
+                    output_queue.push_back(Symbol::Num {
+                        value: CASNum::from(*i),
+                    });
+                    //if the token is a number put it into the output queue
                 }
                 Float(f) => {
-                    todo!()
+                    output_queue.push_back(Symbol::Num {
+                        value: CASNum::from(*f),
+                    });
+                    //if the token is a number put it into the output queue
                 }
                 Eof => {
-                    todo!()
+                    break;
                 }
                 Assign => {
-                    todo!()
+                    return Parsing {
+                        expr,
+                        error: CASErrorKind::AssignmentInExpression,
+                    };
                 }
-                Add => todo!(),
-                Sub => todo!(),
-                Mult => todo!(),
-                Div => todo!(),
-                Exp => todo!(),
-                LeftParen => todo!(),
-                RightParen => todo!(),
-                LeftBracket => todo!(),
-                RightBracket => todo!(),
+                Operator(o1) => match o1 {
+                    Add | Sub | Mult | Div | Exp | Less | Greater | Equal | NotEqual
+                    | LessEqual | GreaterEqual => {
+                        while let Some(Symbol::Operator(o2)) = operator_stack.back() {
+                            if *o2 == Operator::LeftParen {
+                                break;
+                            }
+                            //while there is an operator at the top of the stack which is not a left paren
+                            //or  (o2 has <= precedence than o1 and (o1 and o2 have diff precedence or o1 is not left-associative))
+                            //
+
+                            let o1_prec = precedence(o1);
+                            let o2_prec = precedence(o2);
+                            if o2_prec <= o1_prec && (o2_prec != o1_prec || !left_associative(o1)) {
+                                break;
+                            }
+                            output_queue.push_back(Symbol::Operator(*o2));
+                            operator_stack.pop_back();
+                            //pop o2 from the operator stack into the output queue
+                        }
+                        operator_stack.push_back(Symbol::Operator(*o1));
+                        //push o1 onto the operator stack
+                    }
+
+                    LeftParen | LeftBracket => todo!(),
+
+                    RightParen | RightBracket => todo!(),
+                },
+
                 Comma => todo!(),
-                Less => todo!(),
-                Greater => todo!(),
-                Equal => todo!(),
-                NotEqual => todo!(),
-                LessEqual => todo!(),
-                GreaterEqual => todo!(),
+
                 Calc => todo!(),
                 Sim => todo!(),
                 Der => todo!(),
                 Integral => todo!(),
+
                 Const(name) => todo!(),
                 ResFun(name) => todo!(),
                 Error => todo!(),
@@ -120,31 +150,3 @@ pub(crate) fn shunting_yard<'a>(
 
     return Parsing { expr, error };
 }
-
-// fn parse_name<'a>(
-//     token_value: &'a Option<Value>,
-//     var_table: &'a HashMap<String, Var>,
-//     output_queue: &'a mut VecDeque<Symbol<'a>>,
-//     operator_stack: &'a mut VecDeque<Symbol<'a>>,
-//     args: &'a Vec<String>,
-//     expr: &'a Tree<Symbol<'a>>,
-// ) -> Option<Parsing<'a>> {
-//     let var_name: String = (&<Option<Value> as Clone>::clone(&token_value).unwrap()).to_string();
-//     if let Some(var) = var_table.get(&var_name) {
-//         match var.args.len() {
-//             0 => output_queue.push_back(Symbol::Variable { name: &var_name }), //variable
-//             x => operator_stack.push_back(Symbol::Function {
-//                 num_args: x,
-//                 name: &var_name,
-//             }), //function
-//         }
-//     } else if args.contains(&var_name) {
-//         output_queue.push_back(Symbol::Variable { name: &var_name })
-//     } else {
-//         return Some(Parsing {
-//             expr: *expr,
-//             error: CASErrorKind::UnknownSymbol,
-//         });
-//     }
-//     None
-// }

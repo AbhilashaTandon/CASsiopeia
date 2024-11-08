@@ -9,6 +9,9 @@ mod test {
         types::error::{CASError, CASErrorKind},
     };
 
+    use crate::spec::Operator;
+    use crate::spec::Operator::*;
+
     fn make_token(token_name: TokenType) -> TokenItem {
         return TokenItem::Token(token_name);
     }
@@ -42,18 +45,18 @@ mod test {
             "f(x,y) = 2 * x + 3 * y",
             vec![
                 make_token(Name("f".to_string())),
-                make_token(LeftParen),
+                make_token(Operator(LeftParen)),
                 make_token(Name("x".to_string())),
                 make_token(Comma),
                 make_token(Name("y".to_string())),
-                make_token(RightParen),
+                make_token(Operator(RightParen)),
                 make_token(Assign),
                 make_token(Int(2)),
-                make_token(Mult),
+                make_token(Operator(Mult)),
                 make_token(Name("x".to_string())),
-                make_token(Add),
+                make_token(Operator(Add)),
                 make_token(Int(3)),
-                make_token(Mult),
+                make_token(Operator(Mult)),
                 make_token(Name("y".to_string())),
             ],
             vec![],
@@ -67,9 +70,9 @@ mod test {
             vec![
                 make_token(Calc),
                 make_token(Int(3)),
-                make_token(Mult),
+                make_token(Operator(Mult)),
                 make_token(Name("x".to_string())),
-                make_token(Sub),
+                make_token(Operator(Sub)),
                 make_token(Int(5)),
             ],
             vec![],
@@ -80,9 +83,9 @@ mod test {
             vec![
                 make_token(Sim),
                 make_token(Int(3)),
-                make_token(Mult),
+                make_token(Operator(Mult)),
                 make_token(Name("x".to_string())),
-                make_token(Sub),
+                make_token(Operator(Sub)),
                 make_token(Int(5)),
             ],
             vec![],
@@ -93,9 +96,9 @@ mod test {
             vec![
                 make_token(Der),
                 make_token(Int(3)),
-                make_token(Mult),
+                make_token(Operator(Mult)),
                 make_token(Name("x".to_string())),
-                make_token(Sub),
+                make_token(Operator(Sub)),
                 make_token(Int(5)),
                 make_token(Comma),
                 make_token(Name("x".to_string())),
@@ -111,14 +114,14 @@ mod test {
             vec![
                 make_token(Name("x-y_z".to_string())),
                 make_token(Assign),
-                make_token(Sub),
+                make_token(Operator(Sub)),
                 make_token(Int(5)),
-                make_token(Add),
+                make_token(Operator(Add)),
                 make_token(Int(3)),
-                make_token(Sub),
+                make_token(Operator(Sub)),
                 make_token(Int(2)),
-                make_token(Sub),
-                make_token(Sub),
+                make_token(Operator(Sub)),
+                make_token(Operator(Sub)),
                 make_token(Int(4)),
             ],
             vec![],
@@ -147,7 +150,7 @@ mod test {
         run_test(
             "-x = 2",
             vec![
-                make_token(Sub),
+                make_token(Operator(Sub)),
                 make_token(Name("x".to_string())),
                 make_token(Assign),
                 make_token(Int(2)),
@@ -173,7 +176,7 @@ mod test {
             vec![
                 make_token(Name("y".to_string())),
                 make_token(Assign),
-                make_token(Sub),
+                make_token(Operator(Sub)),
                 make_token(Float(102342.0)),
             ],
             vec![],
@@ -205,7 +208,7 @@ mod test {
             "x == y",
             vec![
                 make_token(Name("x".to_string())),
-                make_token(Equal),
+                make_token(Operator(Equal)),
                 make_token(Name("y".to_string())),
             ],
             vec![],
@@ -215,7 +218,7 @@ mod test {
             "x <= y",
             vec![
                 make_token(Name("x".to_string())),
-                make_token(LessEqual),
+                make_token(Operator(LessEqual)),
                 make_token(Name("y".to_string())),
             ],
             vec![],
@@ -225,7 +228,7 @@ mod test {
             "x != y",
             vec![
                 make_token(Name("x".to_string())),
-                make_token(NotEqual),
+                make_token(Operator(NotEqual)),
                 make_token(Name("y".to_string())),
             ],
             vec![],
@@ -235,7 +238,7 @@ mod test {
             "x >= y",
             vec![
                 make_token(Name("x".to_string())),
-                make_token(GreaterEqual),
+                make_token(Operator(GreaterEqual)),
                 make_token(Name("y".to_string())),
             ],
             vec![],
@@ -245,7 +248,7 @@ mod test {
             "x < y",
             vec![
                 make_token(Name("x".to_string())),
-                make_token(Less),
+                make_token(Operator(Less)),
                 make_token(Name("y".to_string())),
             ],
             vec![],
@@ -255,7 +258,7 @@ mod test {
             "x > y",
             vec![
                 make_token(Name("x".to_string())),
-                make_token(Greater),
+                make_token(Operator(Greater)),
                 make_token(Name("y".to_string())),
             ],
             vec![],
