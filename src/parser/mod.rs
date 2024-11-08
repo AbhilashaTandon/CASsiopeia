@@ -26,13 +26,13 @@ struct Tree<T> {
 }
 
 #[derive(PartialEq)]
-struct Var {
+struct Var<'a> {
     expr: Tree<TokenItem>,
-    args: Vec<String>, //if args is empty it is a numeric or symbolic variable, 2, 3, pi, x, etc.
+    args: Vec<&'a str>, //if args is empty it is a numeric or symbolic variable, 2, 3, pi, x, etc.
 }
 
 //table storing predefined variables (numericals and functions)
-type VarTable<'a> = HashMap<String, Var>;
+type VarTable<'a> = HashMap<&'a str, Var<'a>>;
 
 pub enum Operator {
     Add,
@@ -64,7 +64,7 @@ pub(crate) struct Parsing<'a> {
 pub(crate) fn shunting_yard<'a>(
     tokens: &'a Vec<TokenItem>,
     var_table: VarTable<'a>,
-    args: Vec<String>,
+    args: Vec<&str>,
 ) -> Parsing<'a> {
     let mut output_queue: VecDeque<Symbol> = VecDeque::new();
     let mut operator_stack: VecDeque<Symbol> = VecDeque::new();
@@ -80,11 +80,21 @@ pub(crate) fn shunting_yard<'a>(
                 token_name,
                 token_value,
             } => match token_name {
-                Name => todo!(),
-                Int => todo!(),
-                Float => todo!(),
-                Eof => todo!(),
-                Assign => todo!(),
+                Name => {
+                    todo!()
+                }
+                Int => {
+                    todo!()
+                }
+                Float => {
+                    todo!()
+                }
+                Eof => {
+                    todo!()
+                }
+                Assign => {
+                    todo!()
+                }
                 Add => todo!(),
                 Sub => todo!(),
                 Mult => todo!(),

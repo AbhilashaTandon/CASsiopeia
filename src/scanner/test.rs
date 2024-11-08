@@ -21,7 +21,7 @@ mod test {
     }
 
     fn run_test(line_of_code: &str, desired_tokens: Vec<TokenItem>, desired_errors: Vec<CASError>) {
-        let computed_tokens: Tokenization = tokenize(String::from(line_of_code));
+        let computed_tokens: Tokenization = tokenize(line_of_code);
 
         let desired_output: Tokenization = Tokenization {
             tokens: desired_tokens,

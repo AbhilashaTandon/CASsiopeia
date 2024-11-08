@@ -47,7 +47,7 @@ struct Tokenization {
 }
 
 pub fn process_line(line: &str, tokens: &mut Vec<TokenItem>, line_num: usize) {
-    let result = tokenize(line.to_string());
+    let result = tokenize(line);
     if result.errors.len() == 0 {
         // for token in &result.tokens {
         //     match token {
@@ -77,7 +77,7 @@ pub fn process_line(line: &str, tokens: &mut Vec<TokenItem>, line_num: usize) {
     }
 }
 
-fn tokenize(line_of_code: String) -> Tokenization {
+fn tokenize(line_of_code: &str) -> Tokenization {
     //splits file into tokens
     let mut char_iter: Peekable<Enumerate<str::Chars>> =
         line_of_code.chars().enumerate().peekable(); //peekable to look forward for multichar tokens
@@ -193,7 +193,7 @@ fn parse_number(next_char: char, iter: &mut Peekable<Enumerate<str::Chars>>) -> 
 }
 
 fn get_next_number(chr: char, iter: &mut Peekable<Enumerate<str::Chars>>) -> Result<Value, String> {
-    let mut num: String = String::from(chr);
+    let mut num: String = chr.to_string();
     while let Some(&(_, chr)) = iter.peek() {
         if !chr.is_numeric() && chr != '.' {
             break;
