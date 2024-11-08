@@ -13,8 +13,11 @@ pub mod test {
 
         let var_table = HashMap::new();
 
-        let Parsing { error, .. } = shunting_yard(&tokens, var_table, vec![]);
+        let parsing: Parsing = shunting_yard(&tokens, var_table, vec![]);
 
-        println! {"{:?}", error};
+        match parsing {
+            Ok(expr) => println!("{:?}", expr),
+            Err(_) => todo!(),
+        }
     }
 }

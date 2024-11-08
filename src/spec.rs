@@ -44,21 +44,8 @@ pub enum Operator {
 
 pub(crate) fn left_associative(operator: &Operator) -> bool {
     match operator {
-        Operator::Add => todo!(),
-        Operator::Sub => todo!(),
-        Operator::Mult => todo!(),
-        Operator::Div => todo!(),
-        Operator::Exp => todo!(),
-        Operator::LeftBracket => todo!(),
-        Operator::LeftParen => todo!(),
-        Operator::RightBracket => todo!(),
-        Operator::RightParen => todo!(),
-        Operator::Less => todo!(),
-        Operator::Greater => todo!(),
-        Operator::Equal => todo!(),
-        Operator::NotEqual => todo!(),
-        Operator::LessEqual => todo!(),
-        Operator::GreaterEqual => todo!(),
+        Operator::Exp => false,
+        _ => true,
     }
 }
 
