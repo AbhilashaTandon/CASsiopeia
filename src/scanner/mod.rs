@@ -8,35 +8,11 @@ use crate::types::error::{print_error, CASError, CASErrorKind};
 mod test;
 
 #[derive(Clone, PartialEq, Debug)]
-pub enum Value {
-    //for numerical literals and variable names
-    Int(i64),
-    Float(f64), //TODO: replace these with arbitrary precision types, either custom or in some crate
-    String(String),
-}
-
-impl fmt::Display for Value {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Value::Int(int) => write!(f, "{}", int),
-            Value::Float(float) => write!(f, "{}", float),
-            Value::String(string) => write!(f, "{}", string),
-        }
-    }
-}
-
-#[derive(Clone, PartialEq, Debug)]
 pub enum TokenItem {
     //stores each token or error we find in file
-    Token {
-        token_name: TokenType,
-        // token_text: String,
-        token_value: Option<Value>,
-    },
+    Token(TokenType),
 
-    Error {
-        err: CASErrorKind,
-    },
+    Error(CASErrorKind),
 }
 
 #[derive(PartialEq, Debug)]
@@ -49,25 +25,6 @@ struct Tokenization {
 pub fn process_line(line: &str, tokens: &mut Vec<TokenItem>, line_num: usize) {
     let result = tokenize(line);
     if result.errors.len() == 0 {
-        // for token in &result.tokens {
-        //     match token {
-        //         TokenItem::Token {
-        //             token_name,
-        //             // token_text,
-        //             token_value,
-        //         } => println!(
-        //             // "{} {} {}",
-        //             "{} {}",
-        //             token_name.to_string(),
-        //             // token_text,
-        //             match token_value {
-        //                 Some(value) => value.to_string(),
-        //                 None => String::from("None"),
-        //             }
-        //         ),
-        //         _ => (),
-        //     }
-        // }
         tokens.extend(result.tokens);
     } else {
         //if theres any error print it out
@@ -91,7 +48,7 @@ fn tokenize(line_of_code: &str) -> Tokenization {
         let current_token: TokenItem = get_token(&mut char_iter);
         match current_token {
             TokenItem::Token { .. } => tokens.push(current_token),
-            TokenItem::Error { err } => {
+            TokenItem::Error(err) => {
                 if let Some(&(line_pos, _)) = char_iter.peek() {
                     errors.push(CASError {
                         line_pos,
@@ -114,11 +71,7 @@ fn tokenize(line_of_code: &str) -> Tokenization {
 fn get_token(iter: &mut Peekable<Enumerate<str::Chars>>) -> TokenItem {
     //END OF FILE
     if iter.peek().is_none() {
-        return TokenItem::Token {
-            token_name: TokenType::Eof,
-            // token_text: String::from(""),
-            token_value: None,
-        };
+        return TokenItem::Token(TokenType::Eof);
     }
 
     let mut next_char = iter.next().unwrap().1;
@@ -151,11 +104,9 @@ fn get_token(iter: &mut Peekable<Enumerate<str::Chars>>) -> TokenItem {
         return value;
     }
 
-    return TokenItem::Token {
-        token_name: to_token_name(String::from(next_char).to_lowercase().as_str()),
-        // token_text: next_char.to_string(),
-        token_value: None,
-    };
+    return TokenItem::Token(to_token_name(
+        String::from(next_char).to_lowercase().as_str(),
+    ));
 }
 
 fn parse_number(next_char: char, iter: &mut Peekable<Enumerate<str::Chars>>) -> Option<TokenItem> {
@@ -163,36 +114,22 @@ fn parse_number(next_char: char, iter: &mut Peekable<Enumerate<str::Chars>>) -> 
     if next_char.is_numeric() || next_char == '.' {
         match get_next_number(next_char, iter) {
             //check if its a float, int, or something that cant be either
-            Ok(Value::Float(float)) => {
-                return Some(TokenItem::Token {
-                    token_name: TokenType::Float,
-                    // token_text: String::from("float"),
-                    token_value: Some(Value::Float(float)),
-                });
+            Ok(TokenType::Float(float)) => {
+                return Some(TokenItem::Token(TokenType::Float(float)));
             }
-            Ok(Value::Int(int)) => {
-                return Some(TokenItem::Token {
-                    token_name: TokenType::Int,
-                    // token_text: String::from("int"),
-                    token_value: Some(Value::Int(int)),
-                });
+            Ok(TokenType::Int(int)) => {
+                return Some(TokenItem::Token(TokenType::Int(int)));
             }
-            Ok(Value::String(_)) => {
-                return Some(TokenItem::Error {
-                    err: CASErrorKind::MalformedNumericLiteral,
-                })
-            }
-            Err(_) => {
-                return Some(TokenItem::Error {
-                    err: CASErrorKind::MalformedNumericLiteral,
-                })
-            }
+            _ => return Some(TokenItem::Error(CASErrorKind::MalformedNumericLiteral)),
         }
     }
     None
 }
 
-fn get_next_number(chr: char, iter: &mut Peekable<Enumerate<str::Chars>>) -> Result<Value, String> {
+fn get_next_number(
+    chr: char,
+    iter: &mut Peekable<Enumerate<str::Chars>>,
+) -> Result<TokenType, String> {
     let mut num: String = chr.to_string();
     while let Some(&(_, chr)) = iter.peek() {
         if !chr.is_numeric() && chr != '.' {
@@ -203,11 +140,11 @@ fn get_next_number(chr: char, iter: &mut Peekable<Enumerate<str::Chars>>) -> Res
     }
     let int_parse = num.parse::<i64>();
     if let Ok(int) = int_parse {
-        return Ok(Value::Int(int));
+        return Ok(TokenType::Int(int.into()));
     }
     let float_parse = num.parse::<f64>();
     match float_parse {
-        Ok(float) => return Ok(Value::Float(float)),
+        Ok(float) => return Ok(TokenType::Float(float)),
         Err(_) => return Err(num),
     }
 }
@@ -223,11 +160,7 @@ fn skip_over_whitespace(
             *next_char = chr;
         } else {
             //at end of file
-            return Some(TokenItem::Token {
-                token_name: TokenType::Eof,
-                // token_text: String::from(""),
-                token_value: None,
-            });
+            return Some(TokenItem::Token(TokenType::Eof));
         }
     }
     None //we return none once we reach a non whitespace char
@@ -242,17 +175,13 @@ fn parse_comp_ops(
         if iter.peek().is_some() {
             if iter.peek().unwrap().1 == '=' {
                 iter.next();
-                return Some(TokenItem::Token {
-                    token_name: match next_char {
-                        '<' => TokenType::LessEqual,
-                        '>' => TokenType::GreaterEqual,
-                        '!' => TokenType::NotEqual,
-                        '=' => TokenType::Equal,
-                        _ => TokenType::Error,
-                    },
-                    // token_text: next_char.to_string() + "=",
-                    token_value: None,
-                });
+                return Some(TokenItem::Token(match next_char {
+                    '<' => TokenType::LessEqual,
+                    '>' => TokenType::GreaterEqual,
+                    '!' => TokenType::NotEqual,
+                    '=' => TokenType::Equal,
+                    _ => TokenType::Error,
+                }));
             }
         }
     }
@@ -262,11 +191,9 @@ fn parse_comp_ops(
 fn parse_ops(next_char: char) -> Option<TokenItem> {
     //parses operators that are one character
     if spec::OPERATORS.contains(&next_char) {
-        return Some(TokenItem::Token {
-            token_name: to_token_name(String::from(next_char).to_lowercase().as_str()),
-            // token_text: next_char.to_string(),
-            token_value: None,
-        });
+        return Some(TokenItem::Token(to_token_name(
+            String::from(next_char).to_lowercase().as_str(),
+        )));
     }
     None
 }
@@ -277,35 +204,19 @@ fn parse_names(next_char: char, iter: &mut Peekable<Enumerate<str::Chars>>) -> O
     if next_char.is_alphabetic() {
         let word: String = next_char.to_string() + &get_next_word(iter);
         if spec::KEYWORDS.contains(&word.as_str()) {
-            return Some(TokenItem::Token {
-                token_name: to_token_name(word.to_lowercase().as_str()),
-                // token_text: word,
-                token_value: None,
-            });
+            return Some(TokenItem::Token(to_token_name(
+                word.to_lowercase().as_str(),
+            )));
         } else if spec::RESERVED_FUNCTIONS.contains(&word.as_str()) {
-            return Some(TokenItem::Token {
-                token_name: TokenType::ResFun,
-                // token_text: word,
-                token_value: None,
-            });
+            return Some(TokenItem::Token(TokenType::ResFun(word)));
         } else if spec::RESERVED_CONSTANTS.contains(&word.as_str()) {
-            return Some(TokenItem::Token {
-                token_name: TokenType::Const,
-                // token_text: word,
-                token_value: None,
-            });
+            return Some(TokenItem::Token(TokenType::Const(word)));
         } else {
-            return Some(TokenItem::Token {
-                token_name: TokenType::Name,
-                // token_text: word,
-                token_value: Some(Value::String(word)),
-            });
+            return Some(TokenItem::Token(TokenType::Name(word)));
         }
     } else if next_char == '_' {
         //if variable name starts with _ or -
-        return Some(TokenItem::Error {
-            err: CASErrorKind::MalformedVariableName,
-        });
+        return Some(TokenItem::Error(CASErrorKind::MalformedVariableName));
     }
     None
 }

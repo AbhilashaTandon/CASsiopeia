@@ -1,5 +1,5 @@
 use crate::{
-    scanner::{TokenItem, Value},
+    scanner::TokenItem,
     spec::{left_associative, precedence},
     types::{cas_num::CASNum, error::CASErrorKind},
 };
@@ -76,17 +76,12 @@ pub(crate) fn shunting_yard<'a>(
 
     while let Some(token) = token_iter.next() {
         match token {
-            TokenItem::Token {
-                token_name,
-                token_value,
-            } => match token_name {
-                Name => {
+            TokenItem::Token(token_type) => match token_type {
+                Name(name) => {}
+                Int(i) => {
                     todo!()
                 }
-                Int => {
-                    todo!()
-                }
-                Float => {
+                Float(f) => {
                     todo!()
                 }
                 Eof => {
@@ -115,11 +110,11 @@ pub(crate) fn shunting_yard<'a>(
                 Sim => todo!(),
                 Der => todo!(),
                 Integral => todo!(),
-                Const => todo!(),
-                ResFun => todo!(),
+                Const(name) => todo!(),
+                ResFun(name) => todo!(),
                 Error => todo!(),
             },
-            TokenItem::Error { err } => todo!(),
+            TokenItem::Error(err) => todo!(),
         }
     }
 

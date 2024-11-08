@@ -23,12 +23,12 @@ pub const OPERATORS: [char; 13] = [
 ];
 pub const COMP: [&'static str; 3] = ["!=", "<=", ">="];
 
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub(crate) enum TokenType {
-    Name,  //variable name
-    Int,   //integer literal
-    Float, //floating point literal
-    Eof,   //end of file
+    Name(String), //variable name
+    Int(i128),    //integer literal
+    Float(f64),   //floating point literal
+    Eof,          //end of file
     //operators
     Assign,
     Add,
@@ -51,17 +51,17 @@ pub(crate) enum TokenType {
     Sim,
     Der,
     Integral,
-    Const,  //constants like pi, e, etc.
-    ResFun, //reserved function
+    Const(String),  //constants like pi, e, etc.
+    ResFun(String), //reserved function
     Error,
 }
 
 impl fmt::Display for TokenType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let display: &str = match self {
-            TokenType::Name => "NAME",
-            TokenType::Int => "INT",
-            TokenType::Float => "FLOAT",
+            TokenType::Name(name) | TokenType::Const(name) | TokenType::ResFun(name) => name,
+            TokenType::Int(value) => &format!("{}", value),
+            TokenType::Float(value) => &format!("{}", value),
             TokenType::Eof => "EOF",
             TokenType::Assign => "ASSIGN",
             TokenType::Add => "ADD",
@@ -82,8 +82,6 @@ impl fmt::Display for TokenType {
             TokenType::Sim => "SIM",
             TokenType::Der => "DER",
             TokenType::Integral => "INTEGRAL",
-            TokenType::Const => "CONST",
-            TokenType::ResFun => "RESERVED_FUNCTION",
             TokenType::Error => "ERR",
             TokenType::LeftBracket => "LEFT_BRACKET",
             TokenType::RightBracket => "RIGHT_BRACKET",
@@ -119,9 +117,9 @@ pub(crate) fn to_token_name(symbol: &str) -> TokenType {
 
 pub(crate) fn left_associative(operator: &TokenType) -> bool {
     match operator {
-        TokenType::Name
-        | TokenType::Int
-        | TokenType::Float
+        TokenType::Name(_)
+        | TokenType::Int(_)
+        | TokenType::Float(_)
         | TokenType::Eof
         | TokenType::Assign => false,
         TokenType::Add => true,
@@ -144,18 +142,18 @@ pub(crate) fn left_associative(operator: &TokenType) -> bool {
         TokenType::Sim => todo!(),
         TokenType::Der => todo!(),
         TokenType::Integral => todo!(),
-        TokenType::Const => todo!(),
-        TokenType::ResFun => todo!(),
+        TokenType::Const(_) => todo!(),
+        TokenType::ResFun(_) => todo!(),
         TokenType::Error => todo!(),
     }
 }
 
 pub(crate) fn precedence(operator: &TokenType) -> u32 {
     match operator {
-        TokenType::Name
-        | TokenType::Int
-        | TokenType::Float
-        | TokenType::Const
+        TokenType::Name(_)
+        | TokenType::Int(_)
+        | TokenType::Float(_)
+        | TokenType::Const(_)
         | TokenType::Eof
         | TokenType::Error => 0,
 
@@ -188,6 +186,6 @@ pub(crate) fn precedence(operator: &TokenType) -> u32 {
         TokenType::LeftBracket => 9,
         TokenType::RightBracket => 9,
 
-        TokenType::ResFun => 10,
+        TokenType::ResFun(_) => 10,
     }
 }
