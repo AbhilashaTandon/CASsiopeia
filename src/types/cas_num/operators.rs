@@ -123,8 +123,6 @@ fn addition_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
 
             let alignment = self_value.align(&rhs_value).unwrap(); //we can unwrap safely since both self and rhs are finite
 
-            println!("{:?}", alignment);
-
             let exp = alignment.front().unwrap().2;
 
             for (a_byte, b_byte, _) in alignment {
@@ -319,7 +317,7 @@ impl ops::Mul<CASNum> for CASNum {
             (Sign::Neg, Sign::Neg) => return (-self) * (-rhs),
         };
 
-        if self.value.is_infinite() && rhs.value.is_infinite() {
+        if self.value.is_infinite() || rhs.value.is_infinite() {
             return INFINITY; //we already checked sign so we can assume all beyond this point is positive
         }
 
@@ -332,14 +330,11 @@ impl ops::Mul<CASNum> for CASNum {
 }
 
 fn multiplication_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
+    println!("{:?} {:?}", lhs, rhs);
     let cartesian = lhs.value.cartesian(&rhs.value).unwrap();
 
     let max_digit = cartesian.back().unwrap().back().unwrap().2;
     let min_digit = cartesian.front().unwrap().front().unwrap().2;
-
-    // println!("{:?} {:?} {} {}", lhs, rhs, min_digit, max_digit);
-
-    println!("{:?}", cartesian);
 
     assert!(max_digit >= min_digit);
 
@@ -358,8 +353,6 @@ fn multiplication_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
     let mut bytes: VecDeque<u8> = VecDeque::new();
 
     for &value in temp_arr.iter() {
-        print!("{} ", &value);
-
         let adjusted = value + carry;
         bytes.push_back((adjusted % 256) as u8);
         carry = adjusted / 256;
@@ -373,7 +366,8 @@ fn multiplication_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
         value: CASValue::Finite {
             bytes,
             exp: min_digit,
-        },
+        }
+        .normalize(),
         sign: Sign::Pos,
     };
 }

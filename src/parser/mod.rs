@@ -223,10 +223,11 @@ fn shunting_yard<'a>(
         }
     }
     //construct tree
-    return match tree_stack.front() {
-        Some(expr) => Ok(Tree { root: Some(*expr) }),
-        None => Err(CASErrorKind::NoExpressionGiven),
-    };
+    // return match tree_stack.front() {
+    //     Some(expr) => Ok(Tree { root: Some(*expr) }),
+    //     None => Err(CASErrorKind::NoExpressionGiven),
+    // };
+    return Err(CASErrorKind::NoExpressionGiven);
 }
 
 fn parse_numeric_operator<'a>(

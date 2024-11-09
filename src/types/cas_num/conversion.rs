@@ -344,7 +344,6 @@ impl From<f64> for CASNum {
             _ => {}
         }
 
-        println!("{}", value);
         let mut bytes: VecDeque<u8> = VecDeque::new();
         let bits = value.to_bits();
         const SIGN_MASK: u64 = 0x8000000000000000;
@@ -358,8 +357,6 @@ impl From<f64> for CASNum {
         let mut mantissa: u64 = u64::from(bits & MANTISSA_MASK) + 0x10000000000000;
         //fp values are 1.(mantissa) * 2^exp * (-1)^sign
         //so we add the 1 back in
-
-        // println!("{:?} {} {}", sign, exp + 1023, mantissa - 0x10000000000000);
 
         if exp > 0 {
             //we have to change mantissa since we cant have exponents that arent powers of 256
@@ -378,8 +375,6 @@ impl From<f64> for CASNum {
             bytes.pop_front();
             exp += 8;
         }
-
-        println!();
 
         return CASNum {
             value: CASValue::Finite {

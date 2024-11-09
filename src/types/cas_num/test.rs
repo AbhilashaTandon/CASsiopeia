@@ -62,6 +62,15 @@ mod test {
         assert_eq!(diff, result);
     }
 
+    fn multiplication_float(a: f64, b: f64) {
+        let prod_1 = CASNum::from(a * b);
+        let prod_2 = CASNum::from(a) * CASNum::from(b);
+        if (prod_1 != prod_2) {
+            println!("{:?} {:?}", a, b);
+        }
+        assert_eq!(prod_1, prod_2);
+    }
+
     #[test]
     fn conversion_tests() {
         assert_eq!(
@@ -648,6 +657,24 @@ mod test {
         for value_1 in &values_to_test {
             for value_2 in &values_to_test {
                 multiplication(*value_1, *value_2);
+            }
+        }
+    }
+
+    #[test]
+    fn multiplication_tests_float() {
+        let values_to_test: Vec<f64> = vec![
+            1304870518784.0,
+            2.17444695539569153215e-38,
+            7.56240493161290485401e+37,
+            165512.90625,
+            0.0,
+            -0.0,
+        ];
+
+        for value_1 in &values_to_test {
+            for value_2 in &values_to_test {
+                multiplication_float(*value_1, *value_2);
             }
         }
     }

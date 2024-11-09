@@ -100,8 +100,6 @@ impl CASNum {
                 (Sign::Pos, Sign::Pos) => {
                     let self_max_digit = self.value.max_digit().unwrap();
                     let other_max_digit = other.value.max_digit().unwrap();
-
-                    println!("{} {}", self_max_digit, other_max_digit);
                     //we can safely unwrap since these are finite
 
                     if self_max_digit > other_max_digit {
@@ -187,10 +185,10 @@ impl CASValue {
                         break;
                     }
                 }
-                self
+                return self;
             }
-            CASValue::Infinite => self,
-            CASValue::Indeterminate => self,
+            CASValue::Infinite => return self,
+            CASValue::Indeterminate => return self,
         }
     }
 
