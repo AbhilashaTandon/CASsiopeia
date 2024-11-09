@@ -11,14 +11,12 @@ mod test {
     use super::super::CASNum;
 
     fn comparison(a: i128, b: i128) {
-        // println!("{} {}", a, b);
         assert_eq!(CASNum::from(a) < CASNum::from(b), a < b);
         assert_eq!(CASNum::from(a) > CASNum::from(b), a > b);
         assert_eq!(CASNum::from(a) == CASNum::from(b), a == b);
     }
 
     fn addition(a: i128, b: i128) {
-        // println!("{} {}", a, b);
         let mut sum_1 = CASNum::from(a + b);
         let mut sum_2 = CASNum::from(a) + CASNum::from(b);
         sum_1.value = sum_1.value.normalize();
@@ -27,7 +25,6 @@ mod test {
     }
 
     fn subtraction(a: i128, b: i128) {
-        // println!("{} {}", a, b);
         let mut sum_1 = CASNum::from(a - b);
         let mut sum_2 = CASNum::from(a) - CASNum::from(b);
         sum_1.value = sum_1.value.normalize();
@@ -42,21 +39,18 @@ mod test {
     }
 
     fn comparison_float(a: f32, b: f32) {
-        // println!("{} {}", a, b);
         assert_eq!(CASNum::from(a) < CASNum::from(b), a < b);
         assert_eq!(CASNum::from(a) > CASNum::from(b), a > b);
         assert_eq!(CASNum::from(a) == CASNum::from(b), a == b);
     }
 
     fn addition_float(a: f32, b: f32, result: CASNum) {
-        // println!("{} {}", a, b);
         let mut sum = CASNum::from(a) + CASNum::from(b);
         sum.value = sum.value.normalize();
         assert_eq!(sum, result);
     }
 
     fn subtraction_float(a: f32, b: f32, result: CASNum) {
-        // println!("{} {}", a, b);
         let mut diff = CASNum::from(a) - CASNum::from(b);
         diff.value = diff.value.normalize();
         assert_eq!(diff, result);
@@ -65,10 +59,19 @@ mod test {
     fn multiplication_float(a: f64, b: f64) {
         let prod_1 = CASNum::from(a * b);
         let prod_2 = CASNum::from(a) * CASNum::from(b);
-        if (prod_1 != prod_2) {
+        if prod_1 != prod_2 {
             println!("{:?} {:?}", a, b);
         }
         assert_eq!(prod_1, prod_2);
+    }
+
+    fn division_float(a: f64, b: f64) {
+        let quot_1 = CASNum::from(a / b);
+        let quot_2 = CASNum::from(a) / CASNum::from(b);
+        if quot_1 != quot_2 {
+            println!("{:?} {:?}", a, b);
+        }
+        assert_eq!(quot_1, quot_2);
     }
 
     #[test]
@@ -315,8 +318,6 @@ mod test {
         addition(1, -1);
         addition(-1, 1);
         addition(1, 1);
-
-        // println!("{:?} {:?}", CASNum::from(12032), CASNum::from(23420));
 
         addition(12032, 23420);
         addition(02312, 054123);
@@ -678,4 +679,21 @@ mod test {
             }
         }
     }
+
+    // #[test]
+    // fn division_tests_float() {
+    //     let values_to_test: Vec<f64> = vec![
+    //         1304870518784.0,
+    //         2.17444695539569153215e-38,
+    //         7.56240493161290485401e+37,
+    //         165512.90625,
+    //         0.0,
+    //     ];
+
+    //     for value_1 in &values_to_test {
+    //         for value_2 in &values_to_test {
+    //             division_float(*value_1, *value_2);
+    //         }
+    //     }
+    // }
 }

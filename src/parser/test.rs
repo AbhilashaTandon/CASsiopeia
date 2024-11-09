@@ -3,7 +3,7 @@ mod test {
     use std::collections::HashMap;
 
     use crate::{
-        parser::{shunting_yard, Parsing},
+        parser::{expression::shunting_yard, trees::Parsing},
         scanner::{process_line, TokenItem},
     };
     #[test]

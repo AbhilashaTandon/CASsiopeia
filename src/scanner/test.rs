@@ -9,7 +9,6 @@ mod test {
         types::error::{CASError, CASErrorKind},
     };
 
-    use crate::spec::Operator;
     use crate::spec::Operator::*;
 
     fn make_token(token_name: TokenType) -> TokenItem {

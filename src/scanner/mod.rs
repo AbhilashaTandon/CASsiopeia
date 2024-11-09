@@ -1,5 +1,5 @@
 use std::iter::{Enumerate, Peekable};
-use std::{fmt, str};
+use std::str;
 
 use crate::spec::{self, Operator};
 use crate::spec::{to_token_name, TokenType};

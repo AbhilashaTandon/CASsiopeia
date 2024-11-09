@@ -1,5 +1,7 @@
 use std::fmt;
 
+use crate::types::cas_num::CASNum;
+
 pub const KEYWORDS: [&'static str; 4] = [
     //for calculating the value of an expression, uses variable values from symbol table
     "calc", //calculates value of expression, gives arbitrary precision fp
@@ -68,6 +70,7 @@ pub fn precedence(op: &Operator) -> u8 {
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
+    //type of tokens outputted by scanner
     Name(String), //variable name
     Int(i128),    //integer literal
     Float(f64),   //floating point literal
@@ -145,3 +148,25 @@ pub fn to_token_name(symbol: &str) -> TokenType {
 }
 
 //TODO: specify error codes
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum Symbol<'a> {
+    //type of tokens of output of parsing
+    Variable { name: &'a str },
+    Operator(Operator),
+    Function { num_args: usize, name: &'a str },
+    Num { value: CASNum },
+    Const { name: &'a str },
+}
+
+impl Symbol<'_> {
+    pub fn num_args(&self) -> usize {
+        match self {
+            Symbol::Variable { .. } => 0,
+            Symbol::Operator(..) => 2,
+            Symbol::Function { num_args, .. } => *num_args,
+            Symbol::Num { .. } => 0,
+            Symbol::Const { .. } => 0,
+        }
+    }
+}

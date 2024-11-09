@@ -11,20 +11,19 @@ use std::string::ToString;
     UnknownSymbol,
     MismatchedParentheses,
     NoExpressionGiven,
+    WrongNumberOfArgs,
+    UndefinedFunction,
 }
 
 impl ToString for CASErrorKind {
     fn to_string(&self) -> String {
         return String::from(match self {
             CASErrorKind::NoError => "No Error",
+            CASErrorKind::TypeError => "Type Error",
             CASErrorKind::SyntaxError
             | CASErrorKind::MalformedNumericLiteral
-            | CASErrorKind::MalformedVariableName => "Syntax Error",
-            CASErrorKind::TypeError => "Type Error",
-            CASErrorKind::AssignmentInExpression => "Syntax Error",
-            CASErrorKind::UnknownSymbol => "Syntax Error",
-            CASErrorKind::MismatchedParentheses => "Syntax Error",
-            CASErrorKind::NoExpressionGiven => "Syntax Error",
+            | CASErrorKind::MalformedVariableName | CASErrorKind::AssignmentInExpression | CASErrorKind::UnknownSymbol | CASErrorKind::MismatchedParentheses | CASErrorKind::NoExpressionGiven => "Syntax Error",
+            CASErrorKind::WrongNumberOfArgs | CASErrorKind::UndefinedFunction => "Runtime Error",
         });
     }
 }
@@ -46,7 +45,9 @@ impl CASErrorKind{
             CASErrorKind::AssignmentInExpression => "variable or function assignments cannot be made inside expressions. Perhaps you meant to use the equality operator '=='?",
             CASErrorKind::UnknownSymbol => "use of unknown variable or function.",
             CASErrorKind::MismatchedParentheses => "expression contains mismatched parentheses.",
-                    CASErrorKind::NoExpressionGiven => "a variable or command was given a blank expression.",
+            CASErrorKind::NoExpressionGiven => "a variable or command was given an empty expression.",
+            CASErrorKind::WrongNumberOfArgs => "the wrong number of arguments were given to a function.",
+            CASErrorKind::UndefinedFunction => "arguments were passed to an undefined function.",
             
         });
     }

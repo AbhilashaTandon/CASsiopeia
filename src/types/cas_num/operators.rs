@@ -1,7 +1,7 @@
 //numerical operators, +, -, *, / etc
 use std::{
     collections::VecDeque,
-    ops::{self, Div},
+    ops::{self},
 };
 
 use super::{CASNum, CASValue, Sign, INDETERMINATE, INFINITY, NEG_INFINITY, ZERO};
