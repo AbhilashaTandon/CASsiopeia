@@ -16,16 +16,24 @@ pub struct Var<'a> {
 pub type VarTable<'a> = HashMap<&'a str, Var<'a>>;
 
 impl<'a> Var<'a> {
-    pub fn apply<'b>(self, arg_vals: Box<[CASNum]>) -> Result<Expression<'b>, CASErrorKind>
+    pub fn apply<'b>(
+        self,
+        func_name: String,
+        arg_vals: Box<[CASNum]>,
+    ) -> Result<Expression<'b>, CASErrorKind>
     where
         'a: 'b,
     {
         if arg_vals.len() != self.args.len() {
-            return Err(CASErrorKind::WrongNumberOfArgs);
+            return Err(CASErrorKind::WrongNumberOfArgs {
+                args_given: arg_vals.len(),
+                args_needed: self.args.len(),
+                func_name,
+            });
         }
 
         if self.expr.root.is_none() {
-            return Err(CASErrorKind::UndefinedFunction);
+            return Err(CASErrorKind::UndefinedFunction { func_name });
         }
         let mut args_map: HashMap<&'_ str, CASNum> = HashMap::new();
         for (name, value) in zip(self.args, arg_vals) {

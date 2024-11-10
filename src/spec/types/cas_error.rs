@@ -1,19 +1,33 @@
 use std::string::ToString;
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
  pub(crate) enum CASErrorKind {
     NoError,
     SyntaxError,
     TypeError,
-    MalformedNumericLiteral,
-    MalformedVariableName,
+    MalformedNumericLiteral{
+        lit:String
+    },
+    MalformedVariableName{
+        name:  String
+    },
     AssignmentInExpression,
-    UnknownSymbol,
+    UnknownSymbol{
+        symbol: String
+    },
     MismatchedParentheses,
     NoExpressionGiven,
-    WrongNumberOfArgs,
-    UndefinedFunction,
-    InvalidCharacter,
+    WrongNumberOfArgs{
+        args_given: usize,
+        args_needed: usize,
+        func_name:String
+    },
+    UndefinedFunction{
+        func_name: String
+    },
+    InvalidCharacter{
+        chr: char
+    },
 }
 
 impl ToString for CASErrorKind {
@@ -22,10 +36,10 @@ impl ToString for CASErrorKind {
             CASErrorKind::NoError => "No Error",
             CASErrorKind::TypeError => "Type Error",
             CASErrorKind::SyntaxError
-            | CASErrorKind::MalformedNumericLiteral
-            | CASErrorKind::MalformedVariableName | CASErrorKind::AssignmentInExpression | CASErrorKind::UnknownSymbol | CASErrorKind::MismatchedParentheses | CASErrorKind::NoExpressionGiven => "Syntax Error",
-            CASErrorKind::WrongNumberOfArgs | CASErrorKind::UndefinedFunction => "Runtime Error",
-            CASErrorKind::InvalidCharacter => "Syntax Error",
+            | CASErrorKind::MalformedNumericLiteral{..}
+            | CASErrorKind::MalformedVariableName{..} | CASErrorKind::AssignmentInExpression | CASErrorKind::UnknownSymbol{..} | CASErrorKind::MismatchedParentheses | CASErrorKind::NoExpressionGiven => "Syntax Error",
+            CASErrorKind::WrongNumberOfArgs{..} | CASErrorKind::UndefinedFunction{..} => "Runtime Error",
+            CASErrorKind::InvalidCharacter{..} => "Syntax Error",
         });
     }
 }
@@ -38,21 +52,23 @@ impl ToString for CASErrorKind {
 
 impl CASErrorKind{
     fn get_message(self: &Self) -> String {
-    return String::from(match self {
-            CASErrorKind::NoError => "nothing to see here!",
-            CASErrorKind::SyntaxError => "unspecified syntax error.",
-            CASErrorKind::TypeError => "unspecified type error.",
-            CASErrorKind::MalformedNumericLiteral => "malformed numerical literal.",
-            CASErrorKind::MalformedVariableName => "variable names must begin with an alphabetic character, and must only contain alphanumeric characters, _, or -.",
-            CASErrorKind::AssignmentInExpression => "variable or function assignments cannot be made inside expressions. Perhaps you meant to use the equality operator '=='?",
-            CASErrorKind::UnknownSymbol => "use of unknown variable or function.",
-            CASErrorKind::MismatchedParentheses => "expression contains mismatched parentheses.",
-            CASErrorKind::NoExpressionGiven => "a variable or command was given an empty expression.",
-            CASErrorKind::WrongNumberOfArgs => "the wrong number of arguments were given to a function.",
-            CASErrorKind::UndefinedFunction => "arguments were passed to an undefined function.",
-            CASErrorKind::InvalidCharacter => "an invalid character was entered.",
+    return match self {
+            CASErrorKind::NoError => String::from("nothing to see here!"),
+            CASErrorKind::SyntaxError => String::from("unspecified syntax error."),
+            CASErrorKind::TypeError => String::from("unspecified type error."),
+            CASErrorKind::MalformedNumericLiteral{
+                lit
+            } => format!("malformed numerical literal {}.", lit),
+            CASErrorKind::MalformedVariableName{name} => format!("malformed variable name {}. variable names must begin with an alphabetic character, and must only contain alphanumeric characters, _, or -.", name),
+            CASErrorKind::AssignmentInExpression => String::from("variable or function assignments cannot be made inside expressions. Perhaps you meant to use the equality operator '=='?"),
+            CASErrorKind::UnknownSymbol{symbol} => format!("use of unknown variable or function {}.", symbol),
+            CASErrorKind::MismatchedParentheses => String::from("expression contains mismatched parentheses."),
+            CASErrorKind::NoExpressionGiven => String::from("a variable or command was given an empty expression."),
+            CASErrorKind::WrongNumberOfArgs{args_given, args_needed, func_name} => format!("function {} requires {} arguments, but was given {}.", func_name, args_needed, args_given),
+            CASErrorKind::UndefinedFunction{func_name} => format!("arguments were passed to an undefined function {}.", func_name),
+            CASErrorKind::InvalidCharacter{chr} => format!("an invalid character {} was entered.", chr),
             
-        });
+        };
     }
 }
 

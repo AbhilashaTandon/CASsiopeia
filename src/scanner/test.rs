@@ -115,7 +115,9 @@ mod test {
             "_x = 2",
             Err(vec![CASError {
                 line_pos: 1,
-                kind: CASErrorKind::MalformedVariableName,
+                kind: CASErrorKind::MalformedVariableName {
+                    name: "_x".to_string(),
+                },
             }]),
         );
 
@@ -151,7 +153,9 @@ mod test {
             "y = .10.2342",
             Err(vec![CASError {
                 line_pos: 12,
-                kind: CASErrorKind::MalformedNumericLiteral,
+                kind: CASErrorKind::MalformedNumericLiteral {
+                    lit: ".10.2342".to_string(),
+                },
             }]),
         );
     }

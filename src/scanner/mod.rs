@@ -101,7 +101,8 @@ fn parse_number(
             Ok(Token::Int(int)) => {
                 return Some(Ok(Token::Int(int)));
             }
-            _ => return Some(Err(CASErrorKind::MalformedNumericLiteral)),
+            Err(lit) => return Some(Err(CASErrorKind::MalformedNumericLiteral { lit })),
+            _ => return Some(Err(CASErrorKind::SyntaxError)),
         }
     }
     None
@@ -158,7 +159,7 @@ fn parse_comp_ops(
                     '>' => Some(Ok(Token::Operator(Operator::GreaterEqual))),
                     '!' => Some(Ok(Token::Operator(Operator::NotEqual))),
                     '=' => Some(Ok(Token::Operator(Operator::Equal))),
-                    _ => Some(Err(CASErrorKind::InvalidCharacter)),
+                    c => Some(Err(CASErrorKind::InvalidCharacter { chr: c })),
                 };
             }
         }
@@ -182,8 +183,9 @@ fn parse_names(
 ) -> Option<Result<Token, CASErrorKind>> {
     //parses variable or function names or constants (alphabetic chars)
 
+    let word: String = next_char.to_string() + &get_next_word(iter);
+
     if next_char.is_alphabetic() {
-        let word: String = next_char.to_string() + &get_next_word(iter);
         if spec::KEYWORDS.contains(&word.as_str()) {
             return Some(Ok(to_token_name(word.to_lowercase().as_str())));
         } else if spec::RESERVED_FUNCTIONS.contains(&word.as_str()) {
@@ -195,7 +197,7 @@ fn parse_names(
         }
     } else if next_char == '_' {
         //if variable name starts with _ or -
-        return Some(Err(CASErrorKind::MalformedVariableName));
+        return Some(Err(CASErrorKind::MalformedVariableName { name: word }));
     }
     None
 }

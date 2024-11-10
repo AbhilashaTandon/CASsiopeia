@@ -262,7 +262,9 @@ fn parse_name<'a>(
             //if the token is a function push it onto the operator stack
         }
     } else {
-        return Some(Err(CASErrorKind::UnknownSymbol));
+        return Some(Err(CASErrorKind::UnknownSymbol {
+            symbol: name.to_string(),
+        }));
     }
     None
 }
