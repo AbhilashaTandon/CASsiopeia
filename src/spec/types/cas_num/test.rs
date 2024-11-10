@@ -3,10 +3,10 @@ mod test {
     use core::f32;
     use std::collections::VecDeque;
 
-    use crate::types::cas_num::Sign;
+    use crate::spec::types::cas_num::Sign;
 
-    use crate::types::cas_num::CASValue::Finite;
-    use crate::types::cas_num::CASValue::Infinite;
+    use crate::spec::types::cas_num::CASValue::Finite;
+    use crate::spec::types::cas_num::CASValue::Infinite;
 
     use super::super::CASNum;
 
@@ -79,7 +79,7 @@ mod test {
         assert_eq!(
             CASNum::from(1),
             CASNum {
-                value: crate::types::cas_num::CASValue::Finite {
+                value: Finite {
                     bytes: VecDeque::from([1]),
                     exp: 0
                 },
@@ -89,7 +89,7 @@ mod test {
         assert_eq!(
             CASNum::from(-1),
             CASNum {
-                value: crate::types::cas_num::CASValue::Finite {
+                value: Finite {
                     bytes: VecDeque::from([1]),
                     exp: 0
                 },
@@ -99,7 +99,7 @@ mod test {
         assert_eq!(
             CASNum::from(523563),
             CASNum {
-                value: crate::types::cas_num::CASValue::Finite {
+                value: Finite {
                     bytes: VecDeque::from([43, 253, 7]),
                     exp: 0
                 },
@@ -109,7 +109,7 @@ mod test {
         assert_eq!(
             CASNum::from(6531),
             CASNum {
-                value: crate::types::cas_num::CASValue::Finite {
+                value: Finite {
                     bytes: VecDeque::from([131, 25]),
                     exp: 0
                 },
@@ -120,7 +120,7 @@ mod test {
         assert_eq!(
             CASNum::from(154),
             CASNum {
-                value: crate::types::cas_num::CASValue::Finite {
+                value: Finite {
                     bytes: VecDeque::from([154]),
                     exp: 0
                 },
@@ -130,7 +130,7 @@ mod test {
         assert_eq!(
             CASNum::from(145),
             CASNum {
-                value: crate::types::cas_num::CASValue::Finite {
+                value: Finite {
                     bytes: VecDeque::from([145]),
                     exp: 0
                 },
@@ -144,7 +144,7 @@ mod test {
         assert_eq!(
             CASNum::from(2.5325),
             CASNum {
-                value: crate::types::cas_num::CASValue::Finite {
+                value: Finite {
                     bytes: VecDeque::from([184, 30, 133, 235, 81, 136, 2]),
                     exp: -6
                 },
@@ -155,7 +155,7 @@ mod test {
         assert_eq!(
             CASNum::from(0.0000019073486328125),
             CASNum {
-                value: crate::types::cas_num::CASValue::Finite {
+                value: Finite {
                     bytes: VecDeque::from([32]),
                     exp: -3
                 },
@@ -166,7 +166,7 @@ mod test {
         assert_eq!(
             CASNum::from(-2.34844396355274555919e-22),
             CASNum {
-                value: crate::types::cas_num::CASValue::Finite {
+                value: Finite {
                     bytes: VecDeque::from([210, 232, 27, 1]),
                     exp: -12
                 },
@@ -177,7 +177,7 @@ mod test {
         assert_eq!(
             CASNum::from(1.04091361631528862002e-27),
             CASNum {
-                value: crate::types::cas_num::CASValue::Finite {
+                value: Finite {
                     bytes: VecDeque::from([128, 60, 120, 82]),
                     exp: -15
                 },
@@ -188,7 +188,7 @@ mod test {
         assert_eq!(
             CASNum::from(-1.83996007268899958108e+31),
             CASNum {
-                value: crate::types::cas_num::CASValue::Finite {
+                value: Finite {
                     bytes: VecDeque::from([81, 60, 232]),
                     exp: 10
                 },
@@ -199,7 +199,7 @@ mod test {
         assert_eq!(
             CASNum::from(0.),
             CASNum {
-                value: crate::types::cas_num::CASValue::Finite {
+                value: Finite {
                     bytes: VecDeque::from([]),
                     exp: 0
                 },
@@ -210,7 +210,7 @@ mod test {
         assert_eq!(
             CASNum::from(902341.2532),
             CASNum {
-                value: crate::types::cas_num::CASValue::Finite {
+                value: Finite {
                     bytes: VecDeque::from([23, 183, 209, 64, 197, 196, 13]),
                     exp: -4,
                 },
@@ -221,7 +221,7 @@ mod test {
         assert_eq!(
             CASNum::from(0239402.2340923),
             CASNum {
-                value: crate::types::cas_num::CASValue::Finite {
+                value: Finite {
                     bytes: VecDeque::from([20, 121, 237, 59, 42, 167, 3]),
                     exp: -4
                 },
@@ -232,7 +232,7 @@ mod test {
         assert_eq!(
             CASNum::from(55.592082977294921875),
             CASNum {
-                value: crate::types::cas_num::CASValue::Finite {
+                value: Finite {
                     bytes: VecDeque::from([192, 146, 151, 55]),
                     exp: -3
                 },
@@ -243,7 +243,7 @@ mod test {
         assert_eq!(
             CASNum::from(13.384548187255859375),
             CASNum {
-                value: crate::types::cas_num::CASValue::Finite {
+                value: Finite {
                     bytes: VecDeque::from([192, 113, 98, 13]),
                     exp: -3
                 },
@@ -254,7 +254,7 @@ mod test {
         assert_eq!(
             CASNum::from(36029084781772800.0),
             CASNum {
-                value: crate::types::cas_num::CASValue::Finite {
+                value: Finite {
                     bytes: VecDeque::from([67, 0, 128]),
                     exp: 4
                 },
@@ -265,7 +265,7 @@ mod test {
         assert_eq!(
             CASNum::from(4.5741310728335148525e-26),
             CASNum {
-                value: crate::types::cas_num::CASValue::Finite {
+                value: Finite {
                     bytes: VecDeque::from([40, 14]),
                     exp: -12
                 },
@@ -276,7 +276,7 @@ mod test {
         assert_eq!(
             CASNum::from(5.35045224510513345425e-23),
             CASNum {
-                value: crate::types::cas_num::CASValue::Finite {
+                value: Finite {
                     bytes: VecDeque::from([217, 174, 64]),
                     exp: -12
                 },
@@ -287,7 +287,7 @@ mod test {
         assert_eq!(
             CASNum::from(2582772973568.0),
             CASNum {
-                value: crate::types::cas_num::CASValue::Finite {
+                value: Finite {
                     bytes: VecDeque::from([68, 89, 89, 2]),
                     exp: 2
                 },
@@ -298,7 +298,7 @@ mod test {
         assert_eq!(
             CASNum::from(1.95604696469614937424e-16),
             CASNum {
-                value: crate::types::cas_num::CASValue::Finite {
+                value: Finite {
                     bytes: VecDeque::from([16, 69, 24, 14]),
                     exp: -10
                 },
