@@ -1,6 +1,6 @@
 use operator::Operator;
 
-use crate::spec::CASNum;
+use crate::types::CASNum;
 
 pub mod operator;
 
@@ -14,7 +14,7 @@ pub enum Symbol<'a> {
     Num { value: CASNum },
     Const { name: &'a str },
 }
-//todo: consider replacing names with references to variable table entries
+//since the variable table is a hash map we can store variables and functions with their names and still have constant lookups
 
 impl Symbol<'_> {
     pub fn num_args(&self) -> usize {

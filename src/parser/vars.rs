@@ -1,6 +1,6 @@
 use std::{collections::HashMap, iter::zip};
 
-use crate::spec::types::{cas_error::CASErrorKind, cas_num::CASNum, symbol::Symbol};
+use crate::types::{cas_error::CASErrorKind, cas_num::CASNum, symbol::Symbol};
 
 use super::trees::{Tree, TreeNodeRef};
 

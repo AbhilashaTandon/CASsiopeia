@@ -1,4 +1,4 @@
-use crate::spec::types::cas_num::CASNum;
+use crate::types::cas_num::CASNum;
 
 mod expression;
 mod test;

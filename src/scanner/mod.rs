@@ -1,10 +1,10 @@
 use std::iter::{Enumerate, Peekable};
 use std::str;
 
-use crate::spec;
-use crate::spec::types::cas_error::{CASError, CASErrorKind};
-use crate::spec::types::symbol::operator::Operator;
-use crate::spec::types::token::{to_token_name, Token};
+use crate::types;
+use crate::types::cas_error::{CASError, CASErrorKind};
+use crate::types::symbol::operator::Operator;
+use crate::types::token::{to_token_name, Token};
 
 mod test;
 
@@ -169,7 +169,7 @@ fn parse_comp_ops(
 
 fn parse_ops(next_char: char) -> Option<Result<Token, CASErrorKind>> {
     //parses operators that are one character
-    if spec::OPERATORS.contains(&next_char) {
+    if types::OPERATORS.contains(&next_char) {
         return Some(Ok(to_token_name(
             String::from(next_char).to_lowercase().as_str(),
         )));
@@ -186,11 +186,11 @@ fn parse_names(
     let word: String = next_char.to_string() + &get_next_word(iter);
 
     if next_char.is_alphabetic() {
-        if spec::KEYWORDS.contains(&word.as_str()) {
+        if types::KEYWORDS.contains(&word.as_str()) {
             return Some(Ok(to_token_name(word.to_lowercase().as_str())));
-        } else if spec::RESERVED_FUNCTIONS.contains(&word.as_str()) {
+        } else if types::RESERVED_FUNCTIONS.contains(&word.as_str()) {
             return Some(Ok(Token::ResFun(word)));
-        } else if spec::RESERVED_CONSTANTS.contains(&word.as_str()) {
+        } else if types::RESERVED_CONSTANTS.contains(&word.as_str()) {
             return Some(Ok(Token::Const(word)));
         } else {
             return Some(Ok(Token::Name(word)));

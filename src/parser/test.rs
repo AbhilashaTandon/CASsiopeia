@@ -8,13 +8,13 @@ mod test {
             trees::{construct_tree, Parsing},
             CASNum,
         },
-        spec::types::{
+        types::{
             cas_error::{print_error, CASErrorKind},
             symbol::Symbol::*,
         },
     };
 
-    use crate::spec::types::symbol::operator::Operator::*;
+    use crate::types::symbol::operator::Operator::*;
 
     use crate::scanner::tokenize;
 

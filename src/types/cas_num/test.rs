@@ -3,10 +3,10 @@ mod test {
     use core::f32;
     use std::collections::VecDeque;
 
-    use crate::spec::types::cas_num::Sign;
+    use crate::types::cas_num::Sign;
 
-    use crate::spec::types::cas_num::CASValue::Finite;
-    use crate::spec::types::cas_num::CASValue::Infinite;
+    use crate::types::cas_num::CASValue::Finite;
+    use crate::types::cas_num::CASValue::Infinite;
 
     use super::super::CASNum;
 

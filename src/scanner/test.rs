@@ -4,11 +4,11 @@ mod test {
 
     use super::super::{tokenize, Tokenization};
 
-    use crate::spec::types::cas_error::{CASError, CASErrorKind};
+    use crate::types::cas_error::{CASError, CASErrorKind};
 
-    use crate::spec::types::symbol::operator::Operator::*;
+    use crate::types::symbol::operator::Operator::*;
 
-    use crate::spec::types::token::Token::*;
+    use crate::types::token::Token::*;
 
     fn run_test(line_of_code: &str, desired_output: Tokenization) {
         let computed_tokens: Tokenization = tokenize(line_of_code);

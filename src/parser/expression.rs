@@ -4,13 +4,13 @@ use super::trees::{Parsing, Tree, TreeNode, TreeNodeRef};
 use super::vars::{Var, VarTable};
 use super::CASNum;
 
-use crate::spec::types::cas_error::CASErrorKind;
-use crate::spec::types::symbol::operator::{
+use crate::types::cas_error::CASErrorKind;
+use crate::types::symbol::operator::{
     left_associative, precedence,
     Operator::{self, *},
 };
-use crate::spec::types::symbol::Symbol;
-use crate::spec::types::token::Token::{self, *};
+use crate::types::symbol::Symbol;
+use crate::types::token::Token::{self, *};
 use std::collections::HashMap;
 
 pub fn shunting_yard<'a>(

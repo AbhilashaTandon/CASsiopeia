@@ -1,8 +1,10 @@
-use std::fmt;
-
-use crate::spec::types::cas_num::CASNum;
-
-pub mod types;
+pub mod cas_error;
+pub mod cas_num;
+pub mod cas_vec;
+pub mod symbol;
+pub mod token; //elements of output of scanner //tokens that can only exist in expressions
+use crate::types::cas_num::CASNum;
+use std::collections::HashMap;
 
 pub const KEYWORDS: [&'static str; 4] = [
     //for calculating the value of an expression, uses variable values from symbol table

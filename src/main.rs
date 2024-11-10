@@ -13,7 +13,7 @@ use std::{
 
 mod parser;
 mod scanner;
-pub mod spec;
+pub mod types;
 
 fn main() {
     //cli stuff
