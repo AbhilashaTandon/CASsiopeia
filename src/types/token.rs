@@ -1,12 +1,9 @@
 use std::fmt;
 
-use super::{
-    cas_error::CASErrorKind,
-    symbol::{
-        constant::ResConst,
-        function::{Function, ResFun},
-        operator::Operator::{self, *},
-    },
+use super::symbol::{
+    constant::ResConst,
+    function::ResFun,
+    operator::Operator::{self, *},
 };
 
 #[derive(Debug, Clone, PartialEq)]

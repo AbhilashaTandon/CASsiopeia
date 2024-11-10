@@ -1,6 +1,7 @@
 use phf_macros::phf_map;
 
-pub enum Constant<'a> {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Const<'a> {
     ResConst(ResConst),
     Const { name: &'a str },
 }

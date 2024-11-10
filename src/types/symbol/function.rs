@@ -1,6 +1,7 @@
 use phf_macros::phf_map;
 
-pub enum Function {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Func {
     ResFun(ResFun),
     Function { num_args: usize, name: String },
 }
@@ -24,6 +25,12 @@ pub enum ResFun {
     Acsc,
     Asec,
     Acot,
+}
+
+impl ResFun {
+    pub fn num_args(self) -> usize {
+        return 1;
+    }
 }
 
 pub(crate) static RESERVED_FUNCTIONS: phf::Map<&'static str, ResFun> = phf_map! {

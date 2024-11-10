@@ -5,6 +5,7 @@ use super::vars::{Var, VarTable};
 use super::CASNum;
 
 use crate::types::cas_error::CASErrorKind;
+use crate::types::symbol::function::Func;
 use crate::types::symbol::operator::{
     left_associative, precedence,
     Operator::{self, *},
@@ -165,11 +166,11 @@ fn parse_right_paren<'a>(
                         //pop the operator from the operator stack into the output queue
                     }
                 },
-                Symbol::Function { num_args, name } => {
-                    output_queue.push_back(Symbol::Function {
+                Symbol::Function(Func::Function { num_args, name }) => {
+                    output_queue.push_back(Symbol::Function(Func::Function {
                         num_args: *num_args,
-                        name,
-                    });
+                        name: name.to_string(),
+                    }));
                     operator_stack.pop_back();
                     //pop the operator from the operator stack into the output queue
                 }
@@ -223,11 +224,11 @@ fn parse_numeric_operator<'a>(
                 output_queue.push_back(Symbol::Operator(*o2));
                 operator_stack.pop_back();
             }
-            Symbol::Function { num_args, name } => {
-                output_queue.push_back(Symbol::Function {
+            Symbol::Function(Func::Function { num_args, name }) => {
+                output_queue.push_back(Symbol::Function(Func::Function {
                     num_args: *num_args,
-                    name,
-                });
+                    name: name.to_string(),
+                }));
                 operator_stack.pop_back();
             }
             _ => {
@@ -258,7 +259,10 @@ fn parse_name<'a>(
             0 => output_queue.push_back(Symbol::Variable { name }),
 
             //if the token is a number put it into the output queue
-            x => operator_stack.push_back(Symbol::Function { num_args: x, name }),
+            x => operator_stack.push_back(Symbol::Function(Func::Function {
+                num_args: x,
+                name: name.to_string(),
+            })),
             //if the token is a function push it onto the operator stack
         }
     } else {

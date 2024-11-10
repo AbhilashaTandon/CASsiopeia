@@ -53,12 +53,14 @@ fn apply<'a>(expr: &mut TreeNodeRef<Symbol>, args: HashMap<&'a str, CASNum>) {
             if let Some(value) = args.get(name) {
                 expr.data = Symbol::Num {
                     value: value.clone(),
+                    //TODO: get rid of this clone
                 };
             }
         }
     } else {
         for child in &mut expr.children {
             apply(child, args.clone());
+            //TODO: get rid of this clone
         }
     }
 }
