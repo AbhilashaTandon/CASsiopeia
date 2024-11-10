@@ -13,6 +13,7 @@ use std::string::ToString;
     NoExpressionGiven,
     WrongNumberOfArgs,
     UndefinedFunction,
+    InvalidCharacter,
 }
 
 impl ToString for CASErrorKind {
@@ -24,6 +25,7 @@ impl ToString for CASErrorKind {
             | CASErrorKind::MalformedNumericLiteral
             | CASErrorKind::MalformedVariableName | CASErrorKind::AssignmentInExpression | CASErrorKind::UnknownSymbol | CASErrorKind::MismatchedParentheses | CASErrorKind::NoExpressionGiven => "Syntax Error",
             CASErrorKind::WrongNumberOfArgs | CASErrorKind::UndefinedFunction => "Runtime Error",
+            CASErrorKind::InvalidCharacter => "Syntax Error",
         });
     }
 }
@@ -48,6 +50,7 @@ impl CASErrorKind{
             CASErrorKind::NoExpressionGiven => "a variable or command was given an empty expression.",
             CASErrorKind::WrongNumberOfArgs => "the wrong number of arguments were given to a function.",
             CASErrorKind::UndefinedFunction => "arguments were passed to an undefined function.",
+            CASErrorKind::InvalidCharacter => "an invalid character was entered.",
             
         });
     }

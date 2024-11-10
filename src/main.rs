@@ -11,12 +11,9 @@ use std::{
     path::Path,
 };
 
-use scanner::{process_line, TokenItem};
-
 mod parser;
 mod scanner;
-mod spec;
-mod types;
+pub mod spec;
 
 fn main() {
     //cli stuff
@@ -30,9 +27,6 @@ fn main() {
     // if args.len() == 1 {
     //     prompt();
     // }
-
-    let mut tokens: Vec<TokenItem> = vec![];
-    process_line("y = .10.2342", &mut tokens, 0);
 
     for (idx, arg) in args.iter().enumerate() {
         println!("arg #{}: {}", idx, arg);
@@ -48,19 +42,19 @@ fn main() {
 
     let mut s: String = String::new();
 
-    match file.read_to_string(&mut s) {
-        Err(why) => panic!("Error: couldn't read {}. {}", display, why),
-        Ok(_) => run(s),
-    };
+    // match file.read_to_string(&mut s) {
+    //     Err(why) => panic!("Error: couldn't read {}. {}", display, why),
+    //     Ok(_) => run(s),
+    // };
 }
 
-fn run(code: String) {
-    //TODO: change this to iterate over each line of input, that way we can print the whole line out in case of an error
-    //and just add the tokens to a growing vec<token> for each line
+// fn run(code: String) {
+//     //TODO: change this to iterate over each line of input, that way we can print the whole line out in case of an error
+//     //and just add the tokens to a growing vec<token> for each line
 
-    let mut tokens: Vec<TokenItem> = vec![];
+//     let mut tokens: Vec<TokenItem> = vec![];
 
-    for (line_num, line) in code.lines().enumerate() {
-        process_line(line, &mut tokens, line_num);
-    }
-}
+//     for (line_num, line) in code.lines().enumerate() {
+//         process_line(line, &mut tokens, line_num);
+//     }
+// }

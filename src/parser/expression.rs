@@ -4,99 +4,95 @@ use super::trees::{Parsing, Tree, TreeNode, TreeNodeRef};
 use super::vars::{Var, VarTable};
 use super::CASNum;
 
-use crate::scanner::TokenItem;
-use crate::spec::{left_associative, Operator};
-use crate::spec::{precedence, Operator::*};
-use crate::spec::{Symbol, TokenType::*};
-use crate::types::error::CASErrorKind;
+use crate::spec::types::cas_error::CASErrorKind;
+use crate::spec::types::symbol::operator::{
+    left_associative, precedence,
+    Operator::{self, *},
+};
+use crate::spec::types::symbol::Symbol;
+use crate::spec::types::token::Token::{self, *};
 use std::collections::HashMap;
 
 pub fn shunting_yard<'a>(
-    tokens: &'a Vec<TokenItem>,
+    tokens: &'a Vec<Token>,
     var_table: VarTable<'a>,
     args: Vec<&str>,
 ) -> Parsing<'a> {
     let mut output_queue: VecDeque<Symbol> = VecDeque::new();
     let mut operator_stack: VecDeque<Symbol> = VecDeque::new();
 
-    let mut token_iter: std::iter::Peekable<std::slice::Iter<'_, TokenItem>> =
-        tokens.iter().peekable();
+    let mut token_iter: std::iter::Peekable<std::slice::Iter<'_, Token>> = tokens.iter().peekable();
 
     while let Some(token) = token_iter.next() {
         match token {
-            TokenItem::Token(token_type) => match token_type {
-                Name(name) => {
-                    if let Some(value) = parse_name(
-                        &args,
-                        &name,
-                        &mut output_queue,
-                        &var_table,
-                        &mut operator_stack,
-                    ) {
+            Name(name) => {
+                if let Some(value) = parse_name(
+                    &args,
+                    &name,
+                    &mut output_queue,
+                    &var_table,
+                    &mut operator_stack,
+                ) {
+                    return value;
+                }
+            }
+            Int(i) => {
+                output_queue.push_back(Symbol::Num {
+                    value: CASNum::from(*i),
+                });
+                //if the token is a number put it into the output queue
+            }
+            Float(f) => {
+                output_queue.push_back(Symbol::Num {
+                    value: CASNum::from(*f),
+                });
+                //if the token is a number put it into the output queue
+            }
+            Eof => {
+                break;
+            }
+            Assign => {
+                return Err(CASErrorKind::AssignmentInExpression);
+            }
+            Operator(o1) => match o1 {
+                Add | Sub | Mult | Div | Exp | Less | Greater | Equal | NotEqual | LessEqual
+                | GreaterEqual => {
+                    if let Some(value) =
+                        parse_numeric_operator(&mut operator_stack, &o1, &mut output_queue)
+                    {
                         return value;
                     }
                 }
-                Int(i) => {
-                    output_queue.push_back(Symbol::Num {
-                        value: CASNum::from(*i),
-                    });
-                    //if the token is a number put it into the output queue
-                }
-                Float(f) => {
-                    output_queue.push_back(Symbol::Num {
-                        value: CASNum::from(*f),
-                    });
-                    //if the token is a number put it into the output queue
-                }
-                Eof => {
-                    break;
-                }
-                Assign => {
-                    return Err(CASErrorKind::AssignmentInExpression);
-                }
-                Operator(o1) => match o1 {
-                    Add | Sub | Mult | Div | Exp | Less | Greater | Equal | NotEqual
-                    | LessEqual | GreaterEqual => {
-                        if let Some(value) =
-                            parse_numeric_operator(&mut operator_stack, &o1, &mut output_queue)
-                        {
-                            return value;
-                        }
-                    }
 
-                    LeftParen | LeftBracket => operator_stack.push_back(Symbol::Operator(*o1)),
+                LeftParen | LeftBracket => operator_stack.push_back(Symbol::Operator(*o1)),
 
-                    RightParen | RightBracket => {
-                        if let Some(value) =
-                            parse_right_paren(&mut operator_stack, &mut output_queue)
-                        {
-                            return value;
-                        }
-                    }
-                },
-
-                Comma => {
-                    while let Some(Symbol::Operator(o2)) = operator_stack.back() {
-                        if *o2 == Operator::LeftParen {
-                            break;
-                        }
-                        //while the operator at the top of the operator stack is not a left parenthesis:
-
-                        output_queue.push_back(Symbol::Operator(*o2));
-                        operator_stack.pop_back();
-                        //pop the operator from the operator stack into the output queue
+                RightParen | RightBracket => {
+                    if let Some(value) = parse_right_paren(&mut operator_stack, &mut output_queue) {
+                        return value;
                     }
                 }
-
-                Calc | Sim => todo!(),
-                Der => todo!(),
-                Integral => todo!(),
-
-                Const(name) => todo!(),
-                ResFun(name) => todo!(),
-                Error => todo!(),
             },
-            TokenItem::Error(err) => todo!(),
+
+            Comma => {
+                while let Some(Symbol::Operator(o2)) = operator_stack.back() {
+                    if *o2 == Operator::LeftParen {
+                        break;
+                    }
+                    //while the operator at the top of the operator stack is not a left parenthesis:
+
+                    output_queue.push_back(Symbol::Operator(*o2));
+                    operator_stack.pop_back();
+                    //pop the operator from the operator stack into the output queue
+                }
+            }
+
+            Calc | Sim => todo!(),
+            Der => todo!(),
+            Integral => todo!(),
+
+            Const(name) => todo!(),
+            ResFun(name) => todo!(),
+            Error => todo!(),
         }
     }
 

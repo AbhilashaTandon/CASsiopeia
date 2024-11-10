@@ -1,8 +1,8 @@
 use std::collections::VecDeque;
 
-use crate::types::error::CASErrorKind;
+use crate::spec::types::cas_error::CASErrorKind;
 
-use crate::spec::Symbol;
+use crate::spec::types::symbol::Symbol;
 
 pub type TreeNodeRef<T> = Box<TreeNode<T>>;
 

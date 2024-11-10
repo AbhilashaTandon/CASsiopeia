@@ -2,63 +2,45 @@
 
 mod test {
 
-    use super::super::{tokenize, TokenItem, Tokenization};
+    use super::super::{tokenize, Tokenization};
 
-    use crate::{
-        spec::TokenType::{self, *},
-        types::error::{CASError, CASErrorKind},
-    };
+    use crate::spec::types::cas_error::{CASError, CASErrorKind};
 
-    use crate::spec::Operator::*;
+    use crate::spec::types::symbol::operator::Operator::*;
 
-    fn make_token(token_name: TokenType) -> TokenItem {
-        return TokenItem::Token(token_name);
-    }
+    use crate::spec::types::token::Token::*;
 
-    fn run_test(line_of_code: &str, desired_tokens: Vec<TokenItem>, desired_errors: Vec<CASError>) {
+    fn run_test(line_of_code: &str, desired_output: Tokenization) {
         let computed_tokens: Tokenization = tokenize(line_of_code);
 
-        let desired_output: Tokenization = Tokenization {
-            tokens: desired_tokens,
-            errors: desired_errors,
-        };
         assert_eq!(computed_tokens, desired_output);
     }
 
     #[test]
     fn variable_declarations() {
-        run_test(
-            "x = 2",
-            vec![
-                make_token(Name("x".to_string())),
-                make_token(Assign),
-                make_token(Int(2)),
-            ],
-            vec![],
-        );
+        run_test("x = 2", Ok(vec![Name("x".to_string()), Assign, Int(2)]));
     }
 
     #[test]
     fn function_declarations() {
         run_test(
             "f(x,y) = 2 * x + 3 * y",
-            vec![
-                make_token(Name("f".to_string())),
-                make_token(Operator(LeftParen)),
-                make_token(Name("x".to_string())),
-                make_token(Comma),
-                make_token(Name("y".to_string())),
-                make_token(Operator(RightParen)),
-                make_token(Assign),
-                make_token(Int(2)),
-                make_token(Operator(Mult)),
-                make_token(Name("x".to_string())),
-                make_token(Operator(Add)),
-                make_token(Int(3)),
-                make_token(Operator(Mult)),
-                make_token(Name("y".to_string())),
-            ],
-            vec![],
+            Ok(vec![
+                Name("f".to_string()),
+                Operator(LeftParen),
+                Name("x".to_string()),
+                Comma,
+                Name("y".to_string()),
+                Operator(RightParen),
+                Assign,
+                Int(2),
+                Operator(Mult),
+                Name("x".to_string()),
+                Operator(Add),
+                Int(3),
+                Operator(Mult),
+                Name("y".to_string()),
+            ]),
         );
     }
 
@@ -66,43 +48,40 @@ mod test {
     fn keywords() {
         run_test(
             "calc 3 * x - 5",
-            vec![
-                make_token(Calc),
-                make_token(Int(3)),
-                make_token(Operator(Mult)),
-                make_token(Name("x".to_string())),
-                make_token(Operator(Sub)),
-                make_token(Int(5)),
-            ],
-            vec![],
+            Ok(vec![
+                Calc,
+                Int(3),
+                Operator(Mult),
+                Name("x".to_string()),
+                Operator(Sub),
+                Int(5),
+            ]),
         );
 
         run_test(
             "sim 3 * x - 5",
-            vec![
-                make_token(Sim),
-                make_token(Int(3)),
-                make_token(Operator(Mult)),
-                make_token(Name("x".to_string())),
-                make_token(Operator(Sub)),
-                make_token(Int(5)),
-            ],
-            vec![],
+            Ok(vec![
+                Sim,
+                Int(3),
+                Operator(Mult),
+                Name("x".to_string()),
+                Operator(Sub),
+                Int(5),
+            ]),
         );
 
         run_test(
             "der 3 * x - 5, x",
-            vec![
-                make_token(Der),
-                make_token(Int(3)),
-                make_token(Operator(Mult)),
-                make_token(Name("x".to_string())),
-                make_token(Operator(Sub)),
-                make_token(Int(5)),
-                make_token(Comma),
-                make_token(Name("x".to_string())),
-            ],
-            vec![],
+            Ok(vec![
+                Der,
+                Int(3),
+                Operator(Mult),
+                Name("x".to_string()),
+                Operator(Sub),
+                Int(5),
+                Comma,
+                Name("x".to_string()),
+            ]),
         );
     }
 
@@ -110,51 +89,39 @@ mod test {
     fn dashes() {
         run_test(
             "x-y_z = -5 + 3 - 2 - -4",
-            vec![
-                make_token(Name("x-y_z".to_string())),
-                make_token(Assign),
-                make_token(Operator(Sub)),
-                make_token(Int(5)),
-                make_token(Operator(Add)),
-                make_token(Int(3)),
-                make_token(Operator(Sub)),
-                make_token(Int(2)),
-                make_token(Operator(Sub)),
-                make_token(Operator(Sub)),
-                make_token(Int(4)),
-            ],
-            vec![],
+            Ok(vec![
+                Name("x-y_z".to_string()),
+                Assign,
+                Operator(Sub),
+                Int(5),
+                Operator(Add),
+                Int(3),
+                Operator(Sub),
+                Int(2),
+                Operator(Sub),
+                Operator(Sub),
+                Int(4),
+            ]),
         );
     }
 
     #[test]
     fn invalid_names() {
         //variable names can't begin w underscore
-        // let mut tokens: Vec<TokenItem> = vec![];
+        // let mut tokens: Vec<Token> = );
         // process_line("_x = 2", &mut tokens, 0);
 
         run_test(
             "_x = 2",
-            vec![
-                make_token(Name("x".to_string())),
-                make_token(Assign),
-                make_token(Int(2)),
-            ],
-            vec![CASError {
+            Err(vec![CASError {
                 line_pos: 1,
                 kind: CASErrorKind::MalformedVariableName,
-            }],
+            }]),
         );
 
         run_test(
             "-x = 2",
-            vec![
-                make_token(Operator(Sub)),
-                make_token(Name("x".to_string())),
-                make_token(Assign),
-                make_token(Int(2)),
-            ],
-            vec![],
+            Ok(vec![Operator(Sub), Name("x".to_string()), Assign, Int(2)]),
         );
     }
 
@@ -162,42 +129,30 @@ mod test {
     fn floats() {
         run_test(
             "x = 3.3343",
-            vec![
-                make_token(Name("x".to_string())),
-                make_token(Assign),
-                make_token(Float(3.3343)),
-            ],
-            vec![],
+            Ok(vec![Name("x".to_string()), Assign, Float(3.3343)]),
         );
 
         run_test(
             "y = -102342.",
-            vec![
-                make_token(Name("y".to_string())),
-                make_token(Assign),
-                make_token(Operator(Sub)),
-                make_token(Float(102342.0)),
-            ],
-            vec![],
+            Ok(vec![
+                Name("y".to_string()),
+                Assign,
+                Operator(Sub),
+                Float(102342.0),
+            ]),
         );
 
         run_test(
             "y = .102342",
-            vec![
-                make_token(Name("y".to_string())),
-                make_token(Assign),
-                make_token(Float(0.102342)),
-            ],
-            vec![],
+            Ok(vec![Name("y".to_string()), Assign, Float(0.102342)]),
         );
 
         run_test(
             "y = .10.2342",
-            vec![make_token(Name("y".to_string())), make_token(Assign)],
-            vec![CASError {
+            Err(vec![CASError {
                 line_pos: 12,
                 kind: CASErrorKind::MalformedNumericLiteral,
-            }],
+            }]),
         );
     }
 
@@ -205,62 +160,56 @@ mod test {
     fn comparison() {
         run_test(
             "x == y",
-            vec![
-                make_token(Name("x".to_string())),
-                make_token(Operator(Equal)),
-                make_token(Name("y".to_string())),
-            ],
-            vec![],
+            Ok(vec![
+                Name("x".to_string()),
+                Operator(Equal),
+                Name("y".to_string()),
+            ]),
         );
 
         run_test(
             "x <= y",
-            vec![
-                make_token(Name("x".to_string())),
-                make_token(Operator(LessEqual)),
-                make_token(Name("y".to_string())),
-            ],
-            vec![],
+            Ok(vec![
+                Name("x".to_string()),
+                Operator(LessEqual),
+                Name("y".to_string()),
+            ]),
         );
 
         run_test(
             "x != y",
-            vec![
-                make_token(Name("x".to_string())),
-                make_token(Operator(NotEqual)),
-                make_token(Name("y".to_string())),
-            ],
-            vec![],
+            Ok(vec![
+                Name("x".to_string()),
+                Operator(NotEqual),
+                Name("y".to_string()),
+            ]),
         );
 
         run_test(
             "x >= y",
-            vec![
-                make_token(Name("x".to_string())),
-                make_token(Operator(GreaterEqual)),
-                make_token(Name("y".to_string())),
-            ],
-            vec![],
+            Ok(vec![
+                Name("x".to_string()),
+                Operator(GreaterEqual),
+                Name("y".to_string()),
+            ]),
         );
 
         run_test(
             "x < y",
-            vec![
-                make_token(Name("x".to_string())),
-                make_token(Operator(Less)),
-                make_token(Name("y".to_string())),
-            ],
-            vec![],
+            Ok(vec![
+                Name("x".to_string()),
+                Operator(Less),
+                Name("y".to_string()),
+            ]),
         );
 
         run_test(
             "x > y",
-            vec![
-                make_token(Name("x".to_string())),
-                make_token(Operator(Greater)),
-                make_token(Name("y".to_string())),
-            ],
-            vec![],
+            Ok(vec![
+                Name("x".to_string()),
+                Operator(Greater),
+                Name("y".to_string()),
+            ]),
         );
     }
 }

@@ -1,11 +1,8 @@
 use std::{collections::HashMap, iter::zip};
 
-use crate::{spec::Symbol, types::error::CASErrorKind};
+use crate::spec::types::{cas_error::CASErrorKind, cas_num::CASNum, symbol::Symbol};
 
-use super::{
-    trees::{Tree, TreeNodeRef},
-    CASNum,
-};
+use super::trees::{Tree, TreeNodeRef};
 
 type Expression<'a> = Tree<Symbol<'a>>;
 
