@@ -110,20 +110,6 @@ mod test {
 
     #[test]
     fn invalid_names() {
-        //variable names can't begin w underscore
-        // let mut tokens: Vec<Token> = );
-        // process_line("_x = 2", &mut tokens, 0);
-
-        run_test(
-            "_x = 2",
-            Err(vec![CASError {
-                line_pos: 1,
-                kind: CASErrorKind::MalformedVariableName {
-                    name: "_x".to_string(),
-                },
-            }]),
-        );
-
         run_test(
             "-x = 2",
             Ok(vec![
@@ -138,11 +124,6 @@ mod test {
     #[test]
     fn floats() {
         run_test(
-            "x = 3.3343",
-            Ok(vec![Name("x".to_string()), Operator(Assign), Float(3.3343)]),
-        );
-
-        run_test(
             "y = -102342.",
             Ok(vec![
                 Name("y".to_string()),
@@ -150,6 +131,11 @@ mod test {
                 Operator(Sub),
                 Float(102342.0),
             ]),
+        );
+
+        run_test(
+            "x = 3.3343",
+            Ok(vec![Name("x".to_string()), Operator(Assign), Float(3.3343)]),
         );
 
         run_test(

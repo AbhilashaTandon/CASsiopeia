@@ -1,29 +1,36 @@
 use std::fmt;
 
-use super::symbol::operator::Operator::{self, *};
+use super::{
+    cas_error::CASErrorKind,
+    symbol::{
+        constant::ResConst,
+        function::{Function, ResFun},
+        operator::Operator::{self, *},
+    },
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     //type of tokens outputted by scanner
-    Name(String), //variable name
-    Int(i128),    //integer literal
-    Float(f64),   //floating point literal
-    Eof,          //end of file
-    //operators
-    Operator(Operator),
+    Name(String),       //variable name
+    Int(i128),          //integer literal
+    Float(f64),         //floating point literal
+    Operator(Operator), //operators
+    Const(ResConst),    //constants like pi, e, etc.
+    ResFun(ResFun),     //reserved function
     Calc,
     Sim,
     Der,
     Integral,
-    Const(String),  //constants like pi, e, etc.
-    ResFun(String), //reserved function
-    Error,
+    Eof, //end of file
 }
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let display: &str = match self {
-            Token::Name(name) | Token::Const(name) | Token::ResFun(name) => name,
+            Token::Name(name) => name,
+            Token::Const(_) => "CONST",
+            Token::ResFun(_) => "RES_FUN",
             Token::Int(value) => &format!("{}", value),
             Token::Float(value) => &format!("{}", value),
             Token::Eof => "EOF",
@@ -51,32 +58,8 @@ impl fmt::Display for Token {
             Token::Sim => "SIM",
             Token::Der => "DER",
             Token::Integral => "INTEGRAL",
-            Token::Error => "ERR",
         };
         write!(f, "{}", display)
-    }
-}
-
-pub fn to_token_name(symbol: &str) -> Token {
-    match symbol {
-        "=" => Token::Operator(Assign),
-        "+" => Token::Operator(Add),
-        "-" => Token::Operator(Sub),
-        "*" => Token::Operator(Mult),
-        "/" => Token::Operator(Div),
-        "^" => Token::Operator(Exp),
-        "(" => Token::Operator(LeftParen),
-        ")" => Token::Operator(RightParen),
-        "," => Token::Operator(Comma),
-        "<" => Token::Operator(Less),
-        ">" => Token::Operator(Greater),
-        "calc" => Token::Calc,
-        "sim" => Token::Sim,
-        "der" => Token::Der,
-        "int" => Token::Integral,
-        "[" => Token::Operator(LeftBracket),
-        "]" => Token::Operator(RightBracket),
-        _ => Token::Error,
     }
 }
 

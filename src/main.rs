@@ -28,9 +28,9 @@ fn main() {
     //     prompt();
     // }
 
-    for (idx, arg) in args.iter().enumerate() {
-        println!("arg #{}: {}", idx, arg);
-    }
+    // for (idx, arg) in args.iter().enumerate() {
+    //     println!("arg #{}: {}", idx, arg);
+    // }
 
     let path: &Path = Path::new(&args[1]);
     let display: std::path::Display<'_> = path.display();

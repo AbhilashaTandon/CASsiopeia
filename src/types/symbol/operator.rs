@@ -1,3 +1,7 @@
+use std::collections::HashMap;
+
+use phf_macros::phf_map;
+
 #[derive(Clone, PartialEq, Debug, Copy)]
 
 pub enum Operator {
@@ -48,6 +52,22 @@ pub fn precedence(op: &Operator) -> u8 {
     }
 }
 
-pub const OPERATORS: [char; 13] = [
-    '+', '-', '*', '/', '^', '(', ')', ',', '<', '=', '>', '[', ']',
-];
+pub(crate) static OPERATORS: phf::Map<&'static str, Operator> = phf_map! {
+    "+" => Operator::Add,
+    "-" => Operator::Sub,
+    "*" => Operator::Mult,
+    "/" => Operator::Div,
+    "^" => Operator::Exp,
+    "[" => Operator::LeftBracket,
+    "(" => Operator::LeftParen,
+    "]" => Operator::RightBracket,
+    ")" => Operator::RightParen,
+    "<" => Operator::Less,
+    ">" => Operator::Greater,
+    "==" => Operator::Equal,
+    "!=" => Operator::NotEqual,
+    "<=" => Operator::LessEqual,
+    ">=" => Operator::GreaterEqual,
+    "," => Operator::Comma,
+    "=" => Operator::Assign,
+};

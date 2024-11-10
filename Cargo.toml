@@ -5,3 +5,5 @@ edition = "2021"
 
 [dependencies]
 num-traits = "0.2.19"
+phf = "0.11.2"
+phf_macros = "0.11.2"

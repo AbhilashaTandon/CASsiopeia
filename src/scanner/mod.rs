@@ -3,8 +3,11 @@ use std::str;
 
 use crate::types;
 use crate::types::cas_error::{CASError, CASErrorKind};
-use crate::types::symbol::operator::Operator;
-use crate::types::token::{to_token_name, Token};
+use crate::types::symbol::constant::RESERVED_CONSTANTS;
+use crate::types::symbol::function::RESERVED_FUNCTIONS;
+use crate::types::symbol::operator::*;
+
+use crate::types::token::Token;
 
 mod test;
 
@@ -18,9 +21,8 @@ pub fn tokenize(line_of_code: &str) -> Tokenization {
     let mut tokens: Vec<Token> = vec![];
     let mut errors: Vec<CASError> = vec![];
 
-    while let Some(_) = char_iter.peek() {
+    while char_iter.peek().is_some() {
         //while not at the end of file
-
         let current_token: Result<Token, CASErrorKind> = get_token(&mut char_iter);
         match current_token {
             Ok(token) => tokens.push(token),
@@ -59,6 +61,7 @@ fn get_token(iter: &mut Peekable<Enumerate<str::Chars>>) -> Result<Token, CASErr
     //WHITESPACE
     if let Some(value) = skip_over_whitespace(&mut next_char, iter) {
         //this only happens when we get to the end of the file, where we return EOF
+
         return Ok(value);
     }
 
@@ -72,19 +75,12 @@ fn get_token(iter: &mut Peekable<Enumerate<str::Chars>>) -> Result<Token, CASErr
         return value;
     }
 
-    //COMPARISON OPERATORS
-    if let Some(value) = parse_comp_ops(next_char, iter) {
-        return value;
-    }
-
     //OTHER OPERATORS
-    if let Some(value) = parse_ops(next_char) {
+    if let Some(value) = parse_ops(next_char, iter) {
         return value;
     }
 
-    return Ok(to_token_name(
-        String::from(next_char).to_lowercase().as_str(),
-    ));
+    return Err(CASErrorKind::InvalidCharacter { chr: next_char });
 }
 
 fn parse_number(
@@ -92,6 +88,7 @@ fn parse_number(
     iter: &mut Peekable<Enumerate<str::Chars>>,
 ) -> Option<Result<Token, CASErrorKind>> {
     //parses numerical literals like 3.4, 1234, -1523
+
     if next_char.is_numeric() || next_char == '.' {
         match get_next_number(next_char, iter) {
             //check if its a float, int, or something that cant be either
@@ -110,6 +107,7 @@ fn parse_number(
 
 fn get_next_number(chr: char, iter: &mut Peekable<Enumerate<str::Chars>>) -> Result<Token, String> {
     let mut num: String = chr.to_string();
+
     while let Some(&(_, chr)) = iter.peek() {
         if !chr.is_numeric() && chr != '.' {
             break;
@@ -145,36 +143,30 @@ fn skip_over_whitespace(
     None //we return none once we reach a non whitespace char
 }
 
-fn parse_comp_ops(
+fn parse_ops(
     next_char: char,
     iter: &mut Peekable<Enumerate<str::Chars>>,
 ) -> Option<Result<Token, CASErrorKind>> {
-    //gets comparison operators
-    if "=<>!".contains(next_char) {
-        if iter.peek().is_some() {
-            if iter.peek().unwrap().1 == '=' {
-                iter.next();
-                return match next_char {
-                    '<' => Some(Ok(Token::Operator(Operator::LessEqual))),
-                    '>' => Some(Ok(Token::Operator(Operator::GreaterEqual))),
-                    '!' => Some(Ok(Token::Operator(Operator::NotEqual))),
-                    '=' => Some(Ok(Token::Operator(Operator::Equal))),
-                    c => Some(Err(CASErrorKind::InvalidCharacter { chr: c })),
-                };
+    //parses operators that are one character
+    let one_char = next_char.to_string();
+
+    if iter.peek().is_some() {
+        if iter.peek().unwrap().1 == '=' {
+            match OPERATORS.get(&(next_char.to_string() + "=")) {
+                Some(op) => {
+                    iter.next(); //advance iterator if success
+                    return Some(Ok(Token::Operator(*op)));
+                }
+                None => {}
             }
         }
     }
-    None
-}
-
-fn parse_ops(next_char: char) -> Option<Result<Token, CASErrorKind>> {
-    //parses operators that are one character
-    if types::symbol::operator::OPERATORS.contains(&next_char) {
-        return Some(Ok(to_token_name(
-            String::from(next_char).to_lowercase().as_str(),
-        )));
-    }
-    None
+    match OPERATORS.get(&one_char) {
+        Some(op) => {
+            return Some(Ok(Token::Operator(*op)));
+        }
+        None => return None,
+    };
 }
 
 fn parse_names(
@@ -183,21 +175,23 @@ fn parse_names(
 ) -> Option<Result<Token, CASErrorKind>> {
     //parses variable or function names or constants (alphabetic chars)
 
-    let word: String = next_char.to_string() + &get_next_word(iter);
-
-    if next_char.is_alphabetic() {
+    if next_char.is_alphabetic() || next_char == '_' {
+        let word: String = next_char.to_string() + &get_next_word(iter);
         if types::KEYWORDS.contains(&word.as_str()) {
-            return Some(Ok(to_token_name(word.to_lowercase().as_str())));
-        } else if types::symbol::function::RESERVED_FUNCTIONS.contains(&word.as_str()) {
-            return Some(Ok(Token::ResFun(word)));
-        } else if types::symbol::constant::RESERVED_CONSTANTS.contains(&word.as_str()) {
-            return Some(Ok(Token::Const(word)));
+            match word.as_str() {
+                "calc" => return Some(Ok(Token::Calc)),
+                "sim" => return Some(Ok(Token::Sim)),
+                "der" => return Some(Ok(Token::Der)),
+                "int" => return Some(Ok(Token::Integral)),
+                _ => {}
+            }
+        } else if let Some(func) = RESERVED_FUNCTIONS.get(&word) {
+            return Some(Ok(Token::ResFun(*func)));
+        } else if let Some(res_const) = RESERVED_CONSTANTS.get(&word) {
+            return Some(Ok(Token::Const(*res_const)));
         } else {
             return Some(Ok(Token::Name(word)));
         }
-    } else if next_char == '_' {
-        //if variable name starts with _ or -
-        return Some(Err(CASErrorKind::MalformedVariableName { name: word }));
     }
     None
 }
