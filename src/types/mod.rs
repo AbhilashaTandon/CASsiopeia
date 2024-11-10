@@ -17,13 +17,3 @@ pub const KEYWORDS: [&'static str; 4] = [
     "int",
     // integrates, indefinite
 ];
-
-pub const RESERVED_FUNCTIONS: [&'static str; 17] = [
-    "sqrt", "cbrt", "log2", "log10", "ln", "sin", "cos", "tan", "csc", "sec", "cot", "asin",
-    "acos", "atan", "acsc", "asec", "acot",
-];
-
-pub const RESERVED_CONSTANTS: [&'static str; 5] = ["pi", "e", "phi", "tau", "i"];
-pub const OPERATORS: [char; 13] = [
-    '+', '-', '*', '/', '^', '(', ')', ',', '<', '=', '>', '[', ']',
-];

@@ -10,9 +10,7 @@ pub enum Token {
     Float(f64),   //floating point literal
     Eof,          //end of file
     //operators
-    Assign,
     Operator(Operator),
-    Comma,
     Calc,
     Sim,
     Der,
@@ -29,8 +27,9 @@ impl fmt::Display for Token {
             Token::Int(value) => &format!("{}", value),
             Token::Float(value) => &format!("{}", value),
             Token::Eof => "EOF",
-            Token::Assign => "ASSIGN",
+
             Token::Operator(op) => match op {
+                Assign => "ASSIGN",
                 Add => "ADD",
                 Sub => "SUB",
                 Mult => "MULT",
@@ -46,8 +45,8 @@ impl fmt::Display for Token {
                 NotEqual => "NOT_EQUAL",
                 LessEqual => "LESS_EQUAL",
                 GreaterEqual => "GREATER_EQUAL",
+                Comma => "COMMA",
             },
-            Token::Comma => "COMMA",
             Token::Calc => "CALC",
             Token::Sim => "SIM",
             Token::Der => "DER",
@@ -60,7 +59,7 @@ impl fmt::Display for Token {
 
 pub fn to_token_name(symbol: &str) -> Token {
     match symbol {
-        "=" => Token::Assign,
+        "=" => Token::Operator(Assign),
         "+" => Token::Operator(Add),
         "-" => Token::Operator(Sub),
         "*" => Token::Operator(Mult),
@@ -68,7 +67,7 @@ pub fn to_token_name(symbol: &str) -> Token {
         "^" => Token::Operator(Exp),
         "(" => Token::Operator(LeftParen),
         ")" => Token::Operator(RightParen),
-        "," => Token::Comma,
+        "," => Token::Operator(Comma),
         "<" => Token::Operator(Less),
         ">" => Token::Operator(Greater),
         "calc" => Token::Calc,

@@ -18,7 +18,10 @@ mod test {
 
     #[test]
     fn variable_declarations() {
-        run_test("x = 2", Ok(vec![Name("x".to_string()), Assign, Int(2)]));
+        run_test(
+            "x = 2",
+            Ok(vec![Name("x".to_string()), Operator(Assign), Int(2)]),
+        );
     }
 
     #[test]
@@ -29,10 +32,10 @@ mod test {
                 Name("f".to_string()),
                 Operator(LeftParen),
                 Name("x".to_string()),
-                Comma,
+                Operator(Comma),
                 Name("y".to_string()),
                 Operator(RightParen),
-                Assign,
+                Operator(Assign),
                 Int(2),
                 Operator(Mult),
                 Name("x".to_string()),
@@ -79,7 +82,7 @@ mod test {
                 Name("x".to_string()),
                 Operator(Sub),
                 Int(5),
-                Comma,
+                Operator(Comma),
                 Name("x".to_string()),
             ]),
         );
@@ -91,7 +94,7 @@ mod test {
             "x-y_z = -5 + 3 - 2 - -4",
             Ok(vec![
                 Name("x-y_z".to_string()),
-                Assign,
+                Operator(Assign),
                 Operator(Sub),
                 Int(5),
                 Operator(Add),
@@ -123,7 +126,12 @@ mod test {
 
         run_test(
             "-x = 2",
-            Ok(vec![Operator(Sub), Name("x".to_string()), Assign, Int(2)]),
+            Ok(vec![
+                Operator(Sub),
+                Name("x".to_string()),
+                Operator(Assign),
+                Int(2),
+            ]),
         );
     }
 
@@ -131,14 +139,14 @@ mod test {
     fn floats() {
         run_test(
             "x = 3.3343",
-            Ok(vec![Name("x".to_string()), Assign, Float(3.3343)]),
+            Ok(vec![Name("x".to_string()), Operator(Assign), Float(3.3343)]),
         );
 
         run_test(
             "y = -102342.",
             Ok(vec![
                 Name("y".to_string()),
-                Assign,
+                Operator(Assign),
                 Operator(Sub),
                 Float(102342.0),
             ]),
@@ -146,7 +154,11 @@ mod test {
 
         run_test(
             "y = .102342",
-            Ok(vec![Name("y".to_string()), Assign, Float(0.102342)]),
+            Ok(vec![
+                Name("y".to_string()),
+                Operator(Assign),
+                Float(0.102342),
+            ]),
         );
 
         run_test(

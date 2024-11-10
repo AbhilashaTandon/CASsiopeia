@@ -1,4 +1,5 @@
 #[derive(Clone, PartialEq, Debug, Copy)]
+
 pub enum Operator {
     Add,
     Sub,
@@ -15,11 +16,13 @@ pub enum Operator {
     NotEqual,
     LessEqual,
     GreaterEqual,
+    Comma,
+    Assign,
 }
 
 pub fn left_associative(operator: &Operator) -> bool {
     match operator {
-        Operator::Exp => false,
+        Operator::Exp | Operator::Assign => false,
         _ => true,
     }
 }
@@ -40,5 +43,11 @@ pub fn precedence(op: &Operator) -> u8 {
         | Operator::LeftParen
         | Operator::RightBracket
         | Operator::RightParen => 9,
+        Operator::Comma => todo!(),
+        Operator::Assign => todo!(),
     }
 }
+
+pub const OPERATORS: [char; 13] = [
+    '+', '-', '*', '/', '^', '(', ')', ',', '<', '=', '>', '[', ']',
+];

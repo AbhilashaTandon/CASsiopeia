@@ -2,6 +2,8 @@ use operator::Operator;
 
 use crate::types::CASNum;
 
+pub mod constant;
+pub mod function;
 pub mod operator;
 
 #[derive(Debug, PartialEq, Clone)]

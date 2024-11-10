@@ -169,7 +169,7 @@ fn parse_comp_ops(
 
 fn parse_ops(next_char: char) -> Option<Result<Token, CASErrorKind>> {
     //parses operators that are one character
-    if types::OPERATORS.contains(&next_char) {
+    if types::symbol::operator::OPERATORS.contains(&next_char) {
         return Some(Ok(to_token_name(
             String::from(next_char).to_lowercase().as_str(),
         )));
@@ -188,9 +188,9 @@ fn parse_names(
     if next_char.is_alphabetic() {
         if types::KEYWORDS.contains(&word.as_str()) {
             return Some(Ok(to_token_name(word.to_lowercase().as_str())));
-        } else if types::RESERVED_FUNCTIONS.contains(&word.as_str()) {
+        } else if types::symbol::function::RESERVED_FUNCTIONS.contains(&word.as_str()) {
             return Some(Ok(Token::ResFun(word)));
-        } else if types::RESERVED_CONSTANTS.contains(&word.as_str()) {
+        } else if types::symbol::constant::RESERVED_CONSTANTS.contains(&word.as_str()) {
             return Some(Ok(Token::Const(word)));
         } else {
             return Some(Ok(Token::Name(word)));

@@ -51,9 +51,7 @@ pub fn shunting_yard<'a>(
             Eof => {
                 break;
             }
-            Assign => {
-                return Err(CASErrorKind::AssignmentInExpression);
-            }
+
             Operator(o1) => match o1 {
                 Add | Sub | Mult | Div | Exp | Less | Greater | Equal | NotEqual | LessEqual
                 | GreaterEqual => {
@@ -71,20 +69,22 @@ pub fn shunting_yard<'a>(
                         return value;
                     }
                 }
-            },
+                Comma => {
+                    while let Some(Symbol::Operator(o2)) = operator_stack.back() {
+                        if *o2 == Operator::LeftParen {
+                            break;
+                        }
+                        //while the operator at the top of the operator stack is not a left parenthesis:
 
-            Comma => {
-                while let Some(Symbol::Operator(o2)) = operator_stack.back() {
-                    if *o2 == Operator::LeftParen {
-                        break;
+                        output_queue.push_back(Symbol::Operator(*o2));
+                        operator_stack.pop_back();
+                        //pop the operator from the operator stack into the output queue
                     }
-                    //while the operator at the top of the operator stack is not a left parenthesis:
-
-                    output_queue.push_back(Symbol::Operator(*o2));
-                    operator_stack.pop_back();
-                    //pop the operator from the operator stack into the output queue
                 }
-            }
+                Assign => {
+                    return Err(CASErrorKind::AssignmentInExpression);
+                }
+            },
 
             Calc | Sim => todo!(),
             Der => todo!(),
