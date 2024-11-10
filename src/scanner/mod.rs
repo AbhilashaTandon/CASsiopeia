@@ -8,28 +8,9 @@ use crate::spec::types::token::{to_token_name, Token};
 
 mod test;
 
-// #[derive(PartialEq, Debug)]
-
 pub type Tokenization = Result<Vec<Token>, Vec<CASError>>;
-// struct Tokenization {
-//     //result of tokenizing code
-//     tokens: Vec<Token>,
-//     errors: Vec<CASError>,
-// }
 
-// pub fn process_line(line: &str, tokens: &mut Vec<Token>, line_num: usize) {
-//     let result = tokenize(line);
-//     if result.errors.len() == 0 {
-//         tokens.extend(result.tokens);
-//     } else {
-//         //if theres any error print it out
-//         for error in result.errors {
-//             print_error(error, line, line_num);
-//         }
-//     }
-// }
-
-fn tokenize(line_of_code: &str) -> Tokenization {
+pub fn tokenize(line_of_code: &str) -> Tokenization {
     //splits file into tokens
     let mut char_iter: Peekable<Enumerate<str::Chars>> =
         line_of_code.chars().enumerate().peekable(); //peekable to look forward for multichar tokens

@@ -14,6 +14,7 @@ pub enum Symbol<'a> {
     Num { value: CASNum },
     Const { name: &'a str },
 }
+//todo: consider replacing names with references to variable table entries
 
 impl Symbol<'_> {
     pub fn num_args(&self) -> usize {
