@@ -464,6 +464,46 @@ impl Into<f32> for CASNum {
 
 impl Into<f64> for CASNum {
     fn into(self) -> f64 {
-        todo!()
+        match self {
+            Self {
+                value: CASValue::Finite { bytes, exp },
+                sign,
+            } => {
+                let sign: u64 = if sign == Sign::Pos {
+                    0x8000000000000000
+                } else {
+                    0x0
+                };
+                let mut exponent: u64 = ((exp * 8 + 1023 + 52) as u64 + (bytes.len() as u64));
+                let mut mantissa: Vec<&u8> = bytes.iter().rev().take(6).collect();
+                while mantissa.len() < 7 {
+                    exponent -= 8;
+                    mantissa.push(&0);
+                }
+
+                let mut mantissa_bits: u64 = 0;
+                for byte in mantissa {
+                    mantissa_bits += *byte as u64; //concatenate bytes
+                    mantissa_bits <<= 8;
+                }
+
+                mantissa_bits &= 0x00FFFFFFFFFFFFFF; //get rid of trailing 1
+                mantissa_bits >>= 4; //get it from 56 to 52 bits
+
+                return f64::from_bits(sign | (exponent << 52) | mantissa_bits);
+            }
+            Self {
+                value: CASValue::Indeterminate,
+                ..
+            } => return f64::NAN,
+            Self {
+                value: CASValue::Infinite,
+                sign: Sign::Pos,
+            } => return f64::INFINITY,
+            Self {
+                value: CASValue::Infinite,
+                sign: Sign::Neg,
+            } => return f64::NEG_INFINITY,
+        }
     }
 }

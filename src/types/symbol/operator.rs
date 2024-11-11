@@ -1,4 +1,7 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    fmt::{write, Display},
+};
 
 use phf_macros::phf_map;
 
@@ -71,3 +74,31 @@ pub(crate) static OPERATORS: phf::Map<&'static str, Operator> = phf_map! {
     "," => Operator::Comma,
     "=" => Operator::Assign,
 };
+
+impl Display for Operator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Operator::Add => "+",
+                Operator::Sub => "-",
+                Operator::Mult => "*",
+                Operator::Div => "/",
+                Operator::Exp => "^",
+                Operator::LeftBracket => "[",
+                Operator::LeftParen => "(",
+                Operator::RightBracket => "]",
+                Operator::RightParen => ")",
+                Operator::Less => "<",
+                Operator::Greater => ">",
+                Operator::Equal => "==",
+                Operator::NotEqual => "!=",
+                Operator::LessEqual => "<=",
+                Operator::GreaterEqual => ">=",
+                Operator::Comma => ",",
+                Operator::Assign => "=",
+            },
+        )
+    }
+}

@@ -73,7 +73,7 @@ impl CASErrorKind{
 }
 
 
- pub fn print_error(err: CASError, line: &str, line_num: usize) {
+pub fn print_error(err: CASError, line: &str, line_num: usize) {
     eprintln!("{} on line {}.", err.kind.to_string(), line_num + 1);
     //we number lines starting w 1 instead of 0
     eprintln!("{}", line);

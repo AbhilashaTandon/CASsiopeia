@@ -8,7 +8,7 @@ type Expression<'a> = Tree<Symbol<'a>>;
 
 #[derive(PartialEq, Debug)]
 pub struct Var<'a> {
-    expr: Expression<'a>,
+    pub(crate) expr: Expression<'a>,
     pub args: Box<[&'a str]>, //if args is empty it is a numeric or symbolic variable, 2, 3, pi, x, etc.
 }
 

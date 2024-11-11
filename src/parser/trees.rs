@@ -47,18 +47,30 @@ impl<T> From<TreeNode<T>> for Tree<T> {
 }
 
 impl<T> TreeNode<T> {
-    pub fn add_child(&mut self, child: T) {
-        self.children.push_back(Box::new(TreeNode::from(child)));
+    pub fn add_child(&mut self, child: TreeNode<T>) {
+        self.children.push_back(Box::new(child));
     }
 
-    pub fn add_children(&mut self, children: Vec<T>) {
+    pub fn add_children(&mut self, children: Vec<TreeNode<T>>) {
         for child in children {
-            self.children.push_back(Box::new(TreeNode::from(child)));
+            self.children.push_back(Box::new(child));
         }
     }
 }
 
-pub fn construct_tree<T>(data: T, children: Vec<T>) -> Tree<T> {
+pub fn construct_node<T>(data: T, children: Vec<T>) -> TreeNode<T> {
+    let node_data = data;
+    let mut node_children = VecDeque::new();
+    for child in children {
+        node_children.push_back(Box::new(TreeNode::from(child)));
+    }
+    return TreeNode {
+        data: node_data,
+        children: node_children,
+    };
+}
+
+pub fn construct_tree<T>(data: T, children: Vec<TreeNode<T>>) -> Tree<T> {
     let mut root = TreeNode::from(data);
     root.add_children(children);
     return Tree::from(root);

@@ -1,7 +1,3 @@
-// use std::cmp::max;
-// use std::ops;
-// use std::path::Iter;
-
 use std::{cmp::max, collections::VecDeque};
 
 use std::cmp::Ordering::{Equal, Greater, Less};
@@ -343,5 +339,32 @@ impl CASValue {
             }
             _ => {}
         };
+    }
+}
+
+use std::fmt::Display;
+
+impl Display for CASNum {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CASNum {
+                value: CASValue::Finite { bytes, exp },
+                sign,
+            } => {
+                write!("{} {} x 256 ^ {} ",)
+            }
+            CASNum {
+                value: CASValue::Infinite,
+                sign: Sign::Pos,
+            } => write!(f, "∞"),
+            CASNum {
+                value: CASValue::Infinite,
+                sign: Sign::Neg,
+            } => write!(f, "-∞"),
+            CASNum {
+                value: CASValue::Indeterminate,
+                ..
+            } => write!(f, "NaN"),
+        }
     }
 }

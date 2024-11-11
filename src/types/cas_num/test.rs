@@ -1,6 +1,5 @@
 #[cfg(test)]
 mod test {
-    use core::f32;
     use std::collections::VecDeque;
 
     use crate::types::cas_num::Sign;
@@ -9,6 +8,9 @@ mod test {
     use crate::types::cas_num::CASValue::Infinite;
 
     use super::super::CASNum;
+
+    use rand::Rng;
+    use rand::RngCore;
 
     fn comparison(a: i128, b: i128) {
         assert_eq!(CASNum::from(a) < CASNum::from(b), a < b);
@@ -680,20 +682,26 @@ mod test {
         }
     }
 
-    // #[test]
-    // fn division_tests_float() {
-    //     let values_to_test: Vec<f64> = vec![
-    //         1304870518784.0,
-    //         2.17444695539569153215e-38,
-    //         7.56240493161290485401e+37,
-    //         165512.90625,
-    //         0.0,
-    //     ];
+    #[test]
+    fn float_conversions() {
+        // let f64_range = Uniform::from(0..0xFFFFFFFFFFFFFFFF);
+        let mut rng = rand::thread_rng();
 
-    //     for value_1 in &values_to_test {
-    //         for value_2 in &values_to_test {
-    //             division_float(*value_1, *value_2);
-    //         }
-    //     }
-    // }
+        for _ in 0..100 {
+            let rand_float = f64::from_bits(RngCore::next_u64(&mut rng));
+            let cas_num = CASNum::from(rand_float);
+            let reconstructed: f64 = cas_num.clone().into();
+            if rand_float != reconstructed {
+                println!("original : {} bits: {:x}", rand_float, rand_float.to_bits());
+                println!("cas_num : {:?}", cas_num);
+                println!(
+                    "reconstructed : {} bits: {:x}",
+                    reconstructed,
+                    reconstructed.to_bits()
+                );
+                println!();
+                assert!(false);
+            }
+        }
+    }
 }

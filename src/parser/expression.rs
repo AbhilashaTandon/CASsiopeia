@@ -109,28 +109,82 @@ pub fn shunting_yard<'a>(
     let mut tree_stack: VecDeque<TreeNodeRef<Symbol<'a>>> = VecDeque::new();
     //temporary stack for constructing the tree
 
+    let mut prev_sub: bool = false;
+    //if last token was Operator::Sub
+
     for token in output_queue {
-        match token.num_args() {
-            0 => tree_stack.push_back(Box::new(TreeNode {
+        println!("{:?} {:?}", tree_stack, token);
+        let mut args = VecDeque::new();
+        if Symbol::Operator(Sub) == token {
+            //'-' is a special case since it can be both a unary negative operator and a binary subtraction operator
+            tree_stack.push_back(Box::new(TreeNode {
                 data: token,
                 children: VecDeque::new(),
-            })),
-            x => {
-                let mut args = VecDeque::new();
-                for _ in 0..x {
-                    match tree_stack.pop_back() {
-                        Some(symbol) => args.push_front(symbol),
-                        //since we're getting them backwards we need to add them backwards
-                        None => {
+            }));
+            prev_sub = true;
+            continue;
+        }
+        if prev_sub {
+            let neg = tree_stack.pop_back();
+            match neg {
+                //check if 0 args so we can unwrap it
+                Some(mut operator) => {
+                    match tree_stack.len() {
+                        1 => {
+                            //unary negative
+                            operator.children.push_back(Box::new(TreeNode {
+                                data: token,
+                                children: VecDeque::new(),
+                            }));
+                            //add next token as child to make -token
+                        }
+                        2 => {
+                            //binary minus
+
+                            let minuend = tree_stack.pop_back().unwrap();
+                            //minuend is a fancy word for the value being subtracted from
+                            operator.children.push_back(minuend);
+                            operator.children.push_back(Box::new(TreeNode {
+                                data: token,
+                                children: VecDeque::new(),
+                            }));
+                        }
+                        _ => {
+                            assert!(false);
                             return Err(CASErrorKind::SyntaxError);
+                        } //more than 2 args
+                    }
+
+                    tree_stack.push_back(operator);
+                }
+
+                None => {
+                    assert!(false);
+                    return Err(CASErrorKind::SyntaxError);
+                } //0 args
+            }
+        } else {
+            match token.num_args() {
+                0 => {}
+                x => {
+                    for _ in 0..x {
+                        match tree_stack.pop_back() {
+                            Some(symbol) => args.push_front(symbol),
+                            //since we're getting them backwards we need to add them backwards
+                            None => {
+                                {
+                                    assert!(false);
+                                    return Err(CASErrorKind::SyntaxError);
+                                };
+                            }
                         }
                     }
                 }
-                tree_stack.push_back(Box::new(TreeNode {
-                    data: token,
-                    children: args,
-                }));
             }
+            tree_stack.push_back(Box::new(TreeNode {
+                data: token,
+                children: args,
+            }));
         }
     }
     //construct tree
