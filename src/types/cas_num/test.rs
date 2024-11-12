@@ -62,7 +62,7 @@ mod test {
         let prod_1 = CASNum::from(a * b);
         let prod_2 = CASNum::from(a) * CASNum::from(b);
         if prod_1 != prod_2 {
-            println!("{:?} {:?}", a, b);
+            println!("{} {}", a, b);
         }
         assert_eq!(prod_1, prod_2);
     }
@@ -71,7 +71,7 @@ mod test {
         let quot_1 = CASNum::from(a / b);
         let quot_2 = CASNum::from(a) / CASNum::from(b);
         if quot_1 != quot_2 {
-            println!("{:?} {:?}", a, b);
+            println!("{} {}", a, b);
         }
         assert_eq!(quot_1, quot_2);
     }
@@ -683,7 +683,7 @@ mod test {
     }
 
     #[test]
-    fn float_conversions() {
+    fn float_conversions_64() {
         // let f64_range = Uniform::from(0..0xFFFFFFFFFFFFFFFF);
         let mut rng = rand::thread_rng();
 
@@ -693,7 +693,7 @@ mod test {
             let reconstructed: f64 = cas_num.clone().into();
             if rand_float != reconstructed {
                 println!("original : {} bits: {:x}", rand_float, rand_float.to_bits());
-                println!("cas_num : {:?}", cas_num);
+                println!("cas_num : {}", cas_num);
                 println!(
                     "reconstructed : {} bits: {:x}",
                     reconstructed,

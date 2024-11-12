@@ -474,7 +474,7 @@ impl Into<f64> for CASNum {
                 } else {
                     0x0
                 };
-                let mut exponent: u64 = ((exp * 8 + 1023 + 52) as u64 + (bytes.len() as u64));
+                let mut exponent: u64 = (exp * 8 + 1023 + 52) as u64 + (bytes.len() as u64);
                 let mut mantissa: Vec<&u8> = bytes.iter().rev().take(6).collect();
                 while mantissa.len() < 7 {
                     exponent -= 8;

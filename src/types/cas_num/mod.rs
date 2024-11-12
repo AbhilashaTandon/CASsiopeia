@@ -342,7 +342,7 @@ impl CASValue {
     }
 }
 
-use std::fmt::Display;
+use std::fmt::{format, Display};
 
 impl Display for CASNum {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -351,7 +351,19 @@ impl Display for CASNum {
                 value: CASValue::Finite { bytes, exp },
                 sign,
             } => {
-                write!("{} {} x 256 ^ {} ",)
+                let float: f64 = (*self).clone().into();
+                let hex_str: String = bytes
+                    .into_iter()
+                    .map(|byte| format!("0x{:0>2x}", byte))
+                    .collect();
+                write!(
+                    f,
+                    "{}{} x 256 ^ {} ({})",
+                    if *sign == Sign::Pos { "" } else { "-" },
+                    hex_str,
+                    exp,
+                    float,
+                )
             }
             CASNum {
                 value: CASValue::Infinite,
