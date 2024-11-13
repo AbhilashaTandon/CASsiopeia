@@ -11,6 +11,8 @@ use std::{
     path::Path,
 };
 
+use types::cas_num::CASNum;
+
 mod parser;
 mod scanner;
 pub mod types;
@@ -24,28 +26,28 @@ fn main() {
         return;
     }
 
-    // if args.len() == 1 {
-    //     prompt();
-    // }
+    let floats = vec![
+        2.5325,
+        0.0000019073486328125,
+        -2.34844396355274555919e-22,
+        1.04091361631528862002e-27,
+        -1.83996007268899958108e+31,
+        0.,
+        902341.2532,
+        0239402.2340923,
+        55.592082977294921875,
+        13.384548187255859375,
+        36029084781772800.0,
+        4.5741310728335148525e-26,
+        5.35045224510513345425e-23,
+        2582772973568.0,
+        1.95604696469614937424e-16,
+        3.942e192,
+    ];
 
-    // for (idx, arg) in args.iter().enumerate() {
-    //     println!("arg #{}: {}", idx, arg);
-    // }
-
-    let path: &Path = Path::new(&args[1]);
-    let display: std::path::Display<'_> = path.display();
-
-    let mut file = match File::open(&path) {
-        Err(why) => panic!("Error: couldn't open {}. {}", display, why),
-        Ok(f) => f,
-    };
-
-    let mut s: String = String::new();
-
-    // match file.read_to_string(&mut s) {
-    //     Err(why) => panic!("Error: couldn't read {}. {}", display, why),
-    //     Ok(_) => run(s),
-    // };
+    for float in floats {
+        println!("{} {:?}", float, CASNum::from(float));
+    }
 }
 
 // fn run(code: String) {

@@ -3,6 +3,9 @@ use std::{cmp::max, collections::VecDeque};
 use std::cmp::Ordering::{Equal, Greater, Less};
 use std::cmp::{min, Ordering};
 
+type DigitType = u64;
+const NUM_BITS: i128 = 64;
+
 mod comp;
 mod conversion;
 mod iter;
@@ -22,10 +25,10 @@ pub(crate) struct CASNum {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-enum CASValue {
+pub enum CASValue {
     Finite {
-        bytes: VecDeque<u8>, //little endian
-        exp: i128,           //base 256
+        digits: VecDeque<DigitType>, //little endian
+        exp: isize,                  //base 256
     },
     Infinite,
     Indeterminate,
@@ -48,7 +51,7 @@ const INDETERMINATE: CASNum = CASNum {
 
 const ZERO: CASNum = CASNum {
     value: CASValue::Finite {
-        bytes: VecDeque::new(),
+        digits: VecDeque::new(),
         exp: 0,
     },
     sign: Sign::Pos,
@@ -85,17 +88,17 @@ impl CASNum {
         match (self, other) {
             (
                 CASNum {
-                    value: CASValue::Finite { .. },
+                    value: CASValue::Finite { exp: self_exp, .. },
                     sign: self_sign,
                 },
                 CASNum {
-                    value: CASValue::Finite { .. },
+                    value: CASValue::Finite { exp: other_exp, .. },
                     sign: other_sign,
                 },
             ) => match (self_sign, other_sign) {
                 (Sign::Pos, Sign::Pos) => {
-                    let self_max_digit = self.value.max_digit().unwrap();
-                    let other_max_digit = other.value.max_digit().unwrap();
+                    let self_max_digit = self_exp;
+                    let other_max_digit = other_exp;
                     //we can safely unwrap since these are finite
 
                     if self_max_digit > other_max_digit {
@@ -104,8 +107,8 @@ impl CASNum {
                         return Less;
                     } else {
                         let alignment = self.value.align(&other.value).unwrap();
-                        for (a_byte, b_byte, _) in alignment.iter().rev() {
-                            match a_byte.cmp(b_byte) {
+                        for (a_num, b_num, _) in alignment.iter().rev() {
+                            match a_num.cmp(b_num) {
                                 Less => return Less,
                                 Equal => continue,
                                 Greater => return Greater,
@@ -118,8 +121,8 @@ impl CASNum {
                 (Sign::Neg, Sign::Pos) => Less,
                 (Sign::Neg, Sign::Neg) => {
                     {
-                        let self_max_digit = self.value.max_digit().unwrap();
-                        let other_max_digit = other.value.max_digit().unwrap();
+                        let self_max_digit = self_exp;
+                        let other_max_digit = other_exp;
 
                         //we can safely unwrap since these are finite
 
@@ -129,8 +132,8 @@ impl CASNum {
                             return Greater;
                         } else {
                             let alignment = self.value.align(&other.value).unwrap();
-                            for (a_byte, b_byte, _) in alignment.iter().rev() {
-                                match a_byte.cmp(b_byte) {
+                            for (a_num, b_num, _) in alignment.iter().rev() {
+                                match a_num.cmp(b_num) {
                                     Less => return Greater,
                                     Equal => continue,
                                     Greater => return Less,
@@ -157,26 +160,25 @@ impl CASValue {
         return i.into();
     }
 
-    fn max_digit(self: &Self) -> Option<i128> {
-        //exponent position of first digit
-        return match self {
-            CASValue::Finite { bytes, exp } => Some((bytes.len() as i128) - 1 + exp),
+    fn max_digit(&self) -> Option<isize> {
+        match self {
+            CASValue::Finite { exp, .. } => Some(exp - 1),
             CASValue::Infinite => None,
             CASValue::Indeterminate => None,
-        };
+        }
     }
 
     fn normalize(mut self: Self) -> Self {
         match self {
             CASValue::Finite {
-                ref mut bytes,
+                ref mut digits,
                 ref mut exp,
             } => {
-                while let Some(least_order_byte) = bytes.front() {
-                    if *least_order_byte == 0 {
+                while let Some(least_order_num) = digits.front() {
+                    if *least_order_num == 0 {
                         //if has trailing 0 remove it
                         *exp += 1;
-                        bytes.pop_front();
+                        digits.pop_front();
                     } else {
                         break;
                     }
@@ -190,10 +192,10 @@ impl CASValue {
 
     fn is_zero(&self) -> bool {
         match &self {
-            CASValue::Finite { bytes, .. } => {
-                for byte in bytes {
+            CASValue::Finite { digits, .. } => {
+                for num in digits {
                     //this could be made more efficient
-                    if *byte != 0 {
+                    if *num != 0 {
                         return false;
                     }
                 }
@@ -228,7 +230,7 @@ impl CASValue {
         }
     }
 
-    fn align(self: &Self, other: &Self) -> Option<VecDeque<(u8, u8, i128)>> {
+    fn align(self: &Self, other: &Self) -> Option<VecDeque<(DigitType, DigitType, isize)>> {
         //digits aligned by exponent and zipped together
         //base 10 example
 
@@ -236,47 +238,65 @@ impl CASValue {
         // (1, 0, 3) (2, 0, 2) (0, 0, 1) (0, 0, 0) . (0, 0, -1) (0, 0, -2) (0, 3, -3)
         //thousands place, hundreds place, tens place, ones place, tenths place, hundredths place, thousandths place
 
-        if let CASValue::Finite {
-            bytes: self_bytes,
-            exp: self_exp,
-        } = self
-        {
-            if let CASValue::Finite {
-                bytes: other_bytes,
-                exp: other_exp,
-            } = other
-            {
-                let a_max_digit = self.max_digit().unwrap(); //we can safely unwrap this since it only returns none if not finite
-                let a_min_digit = *self_exp;
-                let b_max_digit = other.max_digit().unwrap(); //we can safely unwrap this since it only returns none if not finite
-                let b_min_digit = *other_exp;
-                let max_digit = max(a_max_digit, b_max_digit);
-                let min_digit = min(a_min_digit, b_min_digit);
+        let self_digits: &VecDeque<DigitType>;
+        let self_exp: isize;
 
-                let mut out: VecDeque<(u8, u8, i128)> = VecDeque::new();
-                for i in min_digit..=max_digit {
-                    out.push_back((
-                        if a_min_digit <= i && i <= a_max_digit {
-                            self_bytes[(i - a_min_digit).try_into().unwrap()]
-                        } else {
-                            0
-                        },
-                        if b_min_digit <= i && i <= b_max_digit {
-                            other_bytes[(i - b_min_digit).try_into().unwrap()]
-                        } else {
-                            0
-                        },
-                        i,
-                    ));
-                }
-                return Some(out);
+        let other_digits: &VecDeque<DigitType>;
+        let other_exp: isize;
+
+        match self {
+            CASValue::Finite { digits, exp } => {
+                self_digits = digits;
+                self_exp = *exp;
             }
+            _ => return None,
         }
 
-        return None;
+        match other {
+            CASValue::Finite { digits, exp } => {
+                other_digits = digits;
+                other_exp = *exp;
+            }
+            _ => return None,
+        }
+
+        let self_max_exp: isize = self_exp;
+        //exponent of max digit of self_digits
+        let self_min_exp = self_max_exp - (self_digits.len() - 1) as isize;
+        //exponent of min digit of self_digits
+        let self_num_digits = self_digits.len() as isize;
+
+        let other_max_exp = other_exp;
+        //exponent of max digit of other_digits
+        let other_min_exp = other_max_exp - (other_digits.len() - 1) as isize;
+
+        let other_num_digits = other_digits.len() as isize;
+
+        //exponent of min digit of other_digits
+
+        let max_exp = max(self_max_exp, other_max_exp);
+        let min_exp = max(self_min_exp, other_min_exp);
+
+        let mut out: VecDeque<(DigitType, DigitType, isize)> = VecDeque::new();
+        for i in min_exp..=max_exp {
+            out.push_back((
+                if self_min_exp <= i && i <= self_max_exp {
+                    self_digits[(i - self_min_exp).try_into().unwrap()]
+                } else {
+                    0
+                },
+                if other_min_exp <= i && i <= other_max_exp {
+                    other_digits[(i - other_min_exp).try_into().unwrap()]
+                } else {
+                    0
+                },
+                i,
+            ));
+        }
+        return Some(out);
     }
 
-    fn cartesian(&self, other: &Self) -> Option<VecDeque<VecDeque<(u8, u8, i128)>>> {
+    fn cartesian(&self, other: &Self) -> Option<VecDeque<VecDeque<(DigitType, DigitType, isize)>>> {
         //aligned cartesian product of base 256 digits
         //base 10 example
 
@@ -287,38 +307,45 @@ impl CASValue {
         // (1, 7, -1) (2, 7, -2)  . (4, 7, -4) (5, 7, -5)
 
         if let CASValue::Finite {
-            bytes: self_bytes,
+            digits: self_digits,
             exp: self_exp,
         } = self
         {
             if let CASValue::Finite {
-                bytes: other_bytes,
+                digits: other_digits,
                 exp: other_exp,
             } = other
             {
-                let self_max_digit = self.max_digit().unwrap(); //we can safely unwrap this since it only returns none if not finite
-                let self_min_digit = *self_exp;
-                let other_max_digit = other.max_digit().unwrap(); //we can safely unwrap this since it only returns none if not finite
-                let other_min_digit = *other_exp;
+                let self_max_exp: isize = *self_exp;
+                //exponent of max digit of self_digits
+                let self_min_exp = self_max_exp - (self_digits.len() - 1) as isize;
+                //exponent of min digit of self_digits
+                let self_num_digits = self_digits.len() as isize;
 
-                let mut out: VecDeque<VecDeque<(u8, u8, i128)>> = VecDeque::new();
-                for i in self_min_digit..=self_max_digit {
-                    let self_byte = self_bytes[(i - self_min_digit).try_into().unwrap()];
+                let other_max_exp = other_exp;
+                //exponent of max digit of other_digits
+                let other_min_exp = other_max_exp - (other_digits.len() - 1) as isize;
 
-                    if self_byte == 0 {
+                let other_num_digits = other_digits.len() as isize;
+
+                let mut out: VecDeque<VecDeque<(DigitType, DigitType, isize)>> = VecDeque::new();
+                for i in self_min_exp..=self_max_exp {
+                    let self_num = self_digits[(i - self_min_exp).try_into().unwrap()];
+
+                    if self_num == 0 {
                         //0s don't contribute to multiplication
                         continue;
                     }
 
-                    let mut row: VecDeque<(u8, u8, i128)> = VecDeque::new();
+                    let mut row: VecDeque<(DigitType, DigitType, isize)> = VecDeque::new();
 
-                    for j in other_min_digit..=other_max_digit {
-                        let other_byte = other_bytes[(j - other_min_digit).try_into().unwrap()];
+                    for j in other_min_exp..=*other_max_exp {
+                        let other_num = other_digits[(j - other_min_exp).try_into().unwrap()];
 
-                        if other_byte == 0 {
+                        if other_num == 0 {
                             continue;
                         }
-                        row.push_back((self_byte, other_byte, i + j));
+                        row.push_back((self_num, other_num, i + j));
                     }
                     out.push_back(row);
                 }
@@ -329,11 +356,11 @@ impl CASValue {
         return None;
     }
 
-    fn set_precision(&mut self, num_bytes: usize) {
+    fn set_precision(&mut self, num_digits: usize) {
         return match self {
-            CASValue::Finite { bytes, exp } => {
-                while bytes.len() > num_bytes {
-                    bytes.pop_front();
+            CASValue::Finite { digits, exp } => {
+                while digits.len() > num_digits {
+                    digits.pop_front();
                     *exp += 1;
                 }
             }
@@ -344,39 +371,39 @@ impl CASValue {
 
 use std::fmt::{format, Display};
 
-impl Display for CASNum {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            CASNum {
-                value: CASValue::Finite { bytes, exp },
-                sign,
-            } => {
-                let float: f64 = (*self).clone().into();
-                let hex_str: String = bytes
-                    .into_iter()
-                    .map(|byte| format!("0x{:0>2x}", byte))
-                    .collect();
-                write!(
-                    f,
-                    "{}{} x 256 ^ {} ({})",
-                    if *sign == Sign::Pos { "" } else { "-" },
-                    hex_str,
-                    exp,
-                    float,
-                )
-            }
-            CASNum {
-                value: CASValue::Infinite,
-                sign: Sign::Pos,
-            } => write!(f, "∞"),
-            CASNum {
-                value: CASValue::Infinite,
-                sign: Sign::Neg,
-            } => write!(f, "-∞"),
-            CASNum {
-                value: CASValue::Indeterminate,
-                ..
-            } => write!(f, "NaN"),
-        }
-    }
-}
+// impl Display for CASNum {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             CASNum {
+//                 value: CASValue::Finite { digits, exp },
+//                 sign,
+//             } => {
+//                 let float: f64 = (*self).clone().into();
+//                 let hex_str: String = digits
+//                     .into_iter()
+//                     .map(|num| format!("0x{:0>2x}", num))
+//                     .collect();
+//                 write!(
+//                     f,
+//                     "{}{} x 256 ^ {} ({})",
+//                     if *sign == Sign::Pos { "" } else { "-" },
+//                     hex_str,
+//                     exp,
+//                     float,
+//                 )
+//             }
+//             CASNum {
+//                 value: CASValue::Infinite,
+//                 sign: Sign::Pos,
+//             } => write!(f, "∞"),
+//             CASNum {
+//                 value: CASValue::Infinite,
+//                 sign: Sign::Neg,
+//             } => write!(f, "-∞"),
+//             CASNum {
+//                 value: CASValue::Indeterminate,
+//                 ..
+//             } => write!(f, "NaN"),
+//         }
+//     }
+// }

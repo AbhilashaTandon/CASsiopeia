@@ -4,6 +4,8 @@ use std::{
     ops::{self},
 };
 
+use crate::types::cas_num::{DigitType, NUM_BITS};
+
 use super::{CASNum, CASValue, Sign, INDETERMINATE, INFINITY, NEG_INFINITY, ZERO};
 
 impl ops::Neg for CASNum {
@@ -24,12 +26,12 @@ impl ops::Add<CASNum> for CASNum {
     type Output = CASNum;
 
     fn add(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
+        match (self.clone(), rhs.clone()) {
             (
                 CASNum {
                     value:
                         CASValue::Finite {
-                            bytes: self_bytes,
+                            digits: self_digits,
                             exp: self_exp,
                         },
                     sign: self_sign,
@@ -37,7 +39,7 @@ impl ops::Add<CASNum> for CASNum {
                 CASNum {
                     value:
                         CASValue::Finite {
-                            bytes: other_bytes,
+                            digits: other_digits,
                             exp: other_exp,
                         },
                     sign: rhs_sign,
@@ -45,14 +47,14 @@ impl ops::Add<CASNum> for CASNum {
             ) => {
                 let self_copy = CASNum {
                     value: CASValue::Finite {
-                        bytes: self_bytes,
+                        digits: self_digits,
                         exp: self_exp,
                     },
                     sign: self_sign,
                 };
                 let rhs_copy = CASNum {
                     value: CASValue::Finite {
-                        bytes: other_bytes,
+                        digits: other_digits,
                         exp: other_exp,
                     },
                     sign: rhs_sign,
@@ -115,7 +117,7 @@ fn addition_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
     }
     match (lhs.sign, rhs.sign) {
         (Sign::Pos, Sign::Pos) => {
-            let mut bytes: VecDeque<u8> = VecDeque::new();
+            let mut digits: VecDeque<DigitType> = VecDeque::new();
             let mut carry = 0;
 
             let self_value = lhs.value;
@@ -125,24 +127,24 @@ fn addition_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
 
             let exp = alignment.front().unwrap().2;
 
-            for (a_byte, b_byte, _) in alignment {
-                let mut sum: u16 = a_byte as u16 + b_byte as u16 + carry;
-                if sum >= 256 {
+            for (a_digit, b_digit, _) in alignment {
+                let mut sum: u128 = a_digit as u128 + b_digit as u128 + carry;
+                if sum > 0xFFFFFFFFFFFFFFFF {
                     carry = 1;
-                    sum -= 256;
+                    sum -= 0x10000000000000000;
                 } else {
                     carry = 0;
                 }
-                let new_byte: u8 = sum.try_into().unwrap();
-                bytes.push_back(new_byte);
+                let new_digit: DigitType = sum.try_into().unwrap();
+                digits.push_back(new_digit);
             }
 
             if carry != 0 {
-                bytes.push_back(carry as u8);
+                digits.push_back(carry as DigitType);
             }
 
             return CASNum {
-                value: CASValue::Finite { bytes, exp },
+                value: CASValue::Finite { digits, exp },
                 sign: Sign::Pos,
             };
         }
@@ -162,7 +164,7 @@ impl ops::Sub<CASNum> for CASNum {
                 CASNum {
                     value:
                         CASValue::Finite {
-                            bytes: self_bytes,
+                            digits: self_digits,
                             exp: self_exp,
                         },
                     sign: self_sign,
@@ -170,7 +172,7 @@ impl ops::Sub<CASNum> for CASNum {
                 CASNum {
                     value:
                         CASValue::Finite {
-                            bytes: other_bytes,
+                            digits: other_digits,
                             exp: other_exp,
                         },
                     sign: rhs_sign,
@@ -178,20 +180,20 @@ impl ops::Sub<CASNum> for CASNum {
             ) => {
                 let self_copy = CASNum {
                     value: CASValue::Finite {
-                        bytes: self_bytes,
+                        digits: self_digits,
                         exp: self_exp,
                     },
                     sign: self_sign,
                 };
                 let rhs_copy = CASNum {
                     value: CASValue::Finite {
-                        bytes: other_bytes,
+                        digits: other_digits,
                         exp: other_exp,
                     },
                     sign: rhs_sign,
                 };
 
-                //TODO: find a better way than reconstructing CASnums
+                //TODO: find a better way than reconstructing CASdigits
 
                 subtraction_finite(self_copy, rhs_copy)
             }
@@ -254,8 +256,8 @@ fn subtraction_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
                 //a - b = -(b - a)
                 return -(rhs - lhs);
             }
-            let mut bytes: VecDeque<u8> = VecDeque::new();
-            let mut carry: i16 = 0;
+            let mut digits: VecDeque<DigitType> = VecDeque::new();
+            let mut carry = 0;
 
             let self_value = lhs.value;
             let rhs_value = rhs.value;
@@ -264,20 +266,20 @@ fn subtraction_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
 
             let exp = alignment.front().unwrap().2;
 
-            for (self_byte, other_byte, _) in alignment {
-                let mut diff: i16 = (self_byte as i16) - (other_byte as i16) + carry;
+            for (self_digit, other_digit, _) in alignment {
+                let mut diff: i128 = (self_digit as i128) - (other_digit as i128) + carry;
 
                 if diff < 0 {
-                    diff = 256 + diff;
+                    diff = 0x10000000000000000 + diff;
                     carry = -1;
                 } else {
                     carry = 0;
                 }
-                bytes.push_back(diff.try_into().unwrap());
+                digits.push_back(diff.try_into().unwrap());
             }
 
             return CASNum {
-                value: CASValue::Finite { bytes, exp },
+                value: CASValue::Finite { digits, exp },
                 sign: Sign::Pos,
             };
         }
@@ -332,38 +334,40 @@ impl ops::Mul<CASNum> for CASNum {
 fn multiplication_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
     let cartesian = lhs.value.cartesian(&rhs.value).unwrap();
 
+    println!("{:?} {:?}", lhs, rhs);
+
     let max_digit = cartesian.back().unwrap().back().unwrap().2;
     let min_digit = cartesian.front().unwrap().front().unwrap().2;
 
     assert!(max_digit >= min_digit);
 
-    let mut temp_arr: Vec<u32> = vec![];
+    let mut temp_arr: Vec<u128> = vec![];
     for _ in min_digit..=max_digit {
         temp_arr.push(0);
     }
 
     for row in cartesian {
-        for (self_byte, rhs_byte, exp) in row {
-            temp_arr[(exp - min_digit) as usize] += (self_byte as u32) * (rhs_byte as u32);
+        for (self_digit, rhs_digit, exp) in row {
+            temp_arr[(exp - min_digit) as usize] += (self_digit as u128) * (rhs_digit as u128);
         }
     }
 
     let mut carry = 0;
-    let mut bytes: VecDeque<u8> = VecDeque::new();
+    let mut digits: VecDeque<DigitType> = VecDeque::new();
 
     for &value in temp_arr.iter() {
         let adjusted = value + carry;
-        bytes.push_back((adjusted % 256) as u8);
-        carry = adjusted / 256;
+        digits.push_back((adjusted & 0xFFFFFFFFFFFFFFFF) as DigitType);
+        carry = adjusted >> NUM_BITS;
     }
     while carry > 0 {
-        bytes.push_back((carry % 256).try_into().unwrap());
-        carry /= 256;
+        digits.push_back((carry & 0xFFFFFFFFFFFFFFFF).try_into().unwrap());
+        carry >>= NUM_BITS;
     }
 
     return CASNum {
         value: CASValue::Finite {
-            bytes,
+            digits,
             exp: min_digit,
         }
         .normalize(),

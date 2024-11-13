@@ -30,17 +30,17 @@ impl PartialEq<CASNum> for CASNum {
         match (&self.value, &other.value) {
             (
                 Finite {
-                    bytes: self_bytes,
+                    digits: self_digits,
                     exp: self_exp,
                 },
                 Finite {
-                    bytes: other_bytes,
+                    digits: other_digits,
                     exp: other_exp,
                 },
             ) => {
                 //this will not work if values aren't normalized
                 //so we must ensure theyre normalized after all possible operations
-                self_bytes == other_bytes && self_exp == other_exp
+                self_digits == other_digits && self_exp == other_exp
                 //at this point we've ensured that self and other are two finite nonzero numbers with the same sign
             }
             (Finite { .. }, Infinite) => false,
