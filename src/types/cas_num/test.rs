@@ -43,23 +43,9 @@ mod test {
     }
 
     fn comparison_float(a: f32, b: f32) {
-        let casnum_a = CASNum::from(a);
-        let casnum_b = CASNum::from(b);
-<<<<<<< HEAD
-
-        if !((casnum_a < casnum_b) && (a < b)) {
-            println!("{:?}", CASNum::from(-2.34844396355274555919e-22));
-            println!("{}", a == -2.34844396355274555919e-22);
-            println!("values {} {}", a, b);
-            println!("casnums {:?} {:?}", CASNum::from(a), CASNum::from(b));
-        }
-
-=======
-        println!("{:?} {:?}", casnum_a, casnum_b);
->>>>>>> 53fd65d (Changed CASValue to use 64 bit ints instead of 8 bit)
-        assert_eq!(casnum_a < casnum_b, a < b);
-        assert_eq!(casnum_a > casnum_b, a > b);
-        assert_eq!(casnum_a == casnum_b, a == b);
+        assert_eq!(CASNum::from(a) < CASNum::from(b), a < b);
+        assert_eq!(CASNum::from(a) > CASNum::from(b), a > b);
+        assert_eq!(CASNum::from(a) == CASNum::from(b), a == b);
     }
 
     fn addition_float(a: f32, b: f32, result: CASNum) {
@@ -74,7 +60,6 @@ mod test {
         assert_eq!(diff, result);
     }
 
-<<<<<<< HEAD
     fn test_conversion(value: f64, desired_output_32: CASNum, desired_output_64: CASNum) {
         let thirty_two_bit = value as f32;
         let sixty_four_bit = value as f64;
@@ -91,25 +76,14 @@ mod test {
     //     assert_eq!(prod_1, prod_2);
     // }
 
-=======
-    // fn multiplication_float(a: f64, b: f64) {
-    //     let prod_1 = CASNum::from(a * b);
-    //     let prod_2 = CASNum::from(a) * CASNum::from(b);
-    //     if prod_1 != prod_2 {
-    //         println!("{} {}", a, b);
-    //     }
-    //     assert_eq!(prod_1, prod_2);
-    // }
-
->>>>>>> 53fd65d (Changed CASValue to use 64 bit ints instead of 8 bit)
-    // fn division_float(a: f64, b: f64) {
-    //     let quot_1 = CASNum::from(a / b);
-    //     let quot_2 = CASNum::from(a) / CASNum::from(b);
-    //     if quot_1 != quot_2 {
-    //         println!("{} {}", a, b);
-    //     }
-    //     assert_eq!(quot_1, quot_2);
-    // }
+    fn division_float(a: f64, b: f64) {
+        let quot_1 = CASNum::from(a / b);
+        let quot_2 = CASNum::from(a) / CASNum::from(b);
+        if quot_1 != quot_2 {
+            println!("{} {}", a, b);
+        }
+        assert_eq!(quot_1, quot_2);
+    }
 
     #[test]
     fn conversion_tests() {
@@ -182,20 +156,15 @@ mod test {
             0.0000019073486328125,
             CASNum {
                 value: Finite {
-<<<<<<< HEAD
-                    digits: VecDeque::from([35184372088832]),
-                    exp: -1,
+                    bytes: VecDeque::from([184, 30, 133, 235, 81, 136, 2]),
+                    exp: -6
                 },
                 sign: Sign::Pos,
             },
             CASNum {
                 value: Finite {
-                    digits: VecDeque::from([35184372088832]),
-                    exp: -1,
-=======
-                    digits: VecDeque::from([9822891219250339840, 2]),
-                    exp: -1
->>>>>>> 53fd65d (Changed CASValue to use 64 bit ints instead of 8 bit)
+                    bytes: VecDeque::from([32]),
+                    exp: -3
                 },
                 sign: Sign::Pos,
             },
@@ -234,10 +203,8 @@ mod test {
             },
             CASNum {
                 value: Finite {
-                    digits: VecDeque::from([354204549120]),
-                    exp: -2,
-=======
->>>>>>> 53fd65d (Changed CASValue to use 64 bit ints instead of 8 bit)
+                    bytes: VecDeque::from([128, 60, 120, 82]),
+                    exp: -15
                 },
                 sign: Sign::Pos,
             },
@@ -254,11 +221,8 @@ mod test {
             },
             CASNum {
                 value: Finite {
-                    digits: VecDeque::from([997444354048]),
-                    exp: 1,
-=======
-                    exp: 1
->>>>>>> 53fd65d (Changed CASValue to use 64 bit ints instead of 8 bit)
+                    bytes: VecDeque::from([81, 60, 232]),
+                    exp: 10
                 },
                 sign: Sign::Neg,
             },
@@ -275,9 +239,7 @@ mod test {
             },
             CASNum {
                 value: Finite {
-                    digits: VecDeque::from([]),
-                    exp: 0,
-=======
+                    bytes: VecDeque::from([]),
                     exp: 0
 >>>>>>> 53fd65d (Changed CASValue to use 64 bit ints instead of 8 bit)
                 },
@@ -347,8 +309,8 @@ mod test {
             },
             CASNum {
                 value: Finite {
-                    digits: VecDeque::from([56019041081957608]),
-                    exp: -13,
+                    bytes: VecDeque::from([23, 183, 209, 64, 197, 196, 13]),
+                    exp: -4,
                 },
                 sign: Sign::Pos,
             },
@@ -361,8 +323,8 @@ mod test {
             },
             CASNum {
                 value: Finite {
-                    digits: VecDeque::from([11491643866163970048, 2946572]),
-                    exp: 5,
+                    bytes: VecDeque::from([20, 121, 237, 59, 42, 167, 3]),
+                    exp: -4
                 },
                 sign: Sign::Pos,
             },
@@ -378,46 +340,19 @@ mod test {
             },
             CASNum {
                 value: Finite {
-                    digits: VecDeque::from([9223372036854775808]),
-                    exp: -1,
+                    bytes: VecDeque::from([192, 146, 151, 55]),
+                    exp: -3
                 },
                 sign: Sign::Pos,
             },
         );
-        test_conversion(
-            -2.34844396355274555919e-22,
+
+        assert_eq!(
+            CASNum::from(13.384548187255859375),
             CASNum {
                 value: Finite {
-                    digits: VecDeque::from([79913407049891840]),
-                    exp: -2,
-                },
-                sign: Sign::Neg,
-            },
-            CASNum {
-                value: Finite {
-                    digits: VecDeque::from([79913407049891840]),
-                    exp: -2,
-                },
-                sign: Sign::Neg,
-            },
-        );
-        test_conversion(
-            1.04091361631528862002e-27,
-            CASNum {
-                value: Finite {
-                    digits: VecDeque::from([354204549120]),
-                    exp: -2,
-                },
-                sign: Sign::Pos,
-            },
-            CASNum {
-                value: Finite {
-                    digits: VecDeque::from([354204549120]),
-                    exp: -2,
-=======
-                    digits: VecDeque::from([4670715600119529472, 902341]),
-                    exp: -1,
->>>>>>> 53fd65d (Changed CASValue to use 64 bit ints instead of 8 bit)
+                    bytes: VecDeque::from([192, 113, 98, 13]),
+                    exp: -3
                 },
                 sign: Sign::Pos,
             },
@@ -432,55 +367,55 @@ mod test {
         // -0.00304204920000,
 =======
         assert_eq!(
-            CASNum::from(0239402.2340923),
+            CASNum::from(36029084781772800.0),
             CASNum {
                 value: Finite {
-                    digits: VecDeque::from([4318240747745705984, 0239402]),
-                    exp: -1
+                    bytes: VecDeque::from([67, 0, 128]),
+                    exp: 4
                 },
                 sign: Sign::Pos,
             },
         );
 
         assert_eq!(
-            CASNum::from(55.592082977294921875),
+            CASNum::from(4.5741310728335148525e-26),
             CASNum {
                 value: Finite {
-                    digits: VecDeque::from([10922003152559407104, 55]),
-                    exp: -1
+                    bytes: VecDeque::from([40, 14]),
+                    exp: -12
                 },
                 sign: Sign::Pos,
             },
         );
 
         assert_eq!(
-            CASNum::from(1.95604696469614937424e-234),
+            CASNum::from(5.35045224510513345425e-23),
             CASNum {
                 value: Finite {
-                    digits: VecDeque::from([56019041081957608]),
-                    exp: -13
+                    bytes: VecDeque::from([217, 174, 64]),
+                    exp: -12
                 },
                 sign: Sign::Pos,
             },
         );
 
         assert_eq!(
-            CASNum::from(6.2938409230490e102),
+            CASNum::from(2582772973568.0),
             CASNum {
                 value: Finite {
-                    digits: VecDeque::from([11491643866163970048, 2946572]),
-                    exp: 5
+                    bytes: VecDeque::from([68, 89, 89, 2]),
+                    exp: 2
                 },
                 sign: Sign::Pos,
             },
         );
 
         assert_eq!(
-            CASNum::from(0.5),
+            CASNum::from(1.95604696469614937424e-16),
             CASNum {
                 value: Finite {
-                    digits: VecDeque::from([9223372036854775808]),
-                    exp: -1
+                    bytes: VecDeque::from([16, 69, 24, 14]),
+                    exp: -10
                 },
                 sign: Sign::Pos,
             },

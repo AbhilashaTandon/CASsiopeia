@@ -207,11 +207,7 @@ impl From<f32> for CASNum {
             }
             _ => {}
         }
-<<<<<<< HEAD
-
-=======
->>>>>>> 53fd65d (Changed CASValue to use 64 bit ints instead of 8 bit)
-        let mut digits: VecDeque<DigitType> = VecDeque::new();
+        let mut bytes: VecDeque<u8> = VecDeque::new();
         let bits = value.to_bits();
         const SIGN_MASK: u32 = 0x80000000;
         const MANTISSA_MASK: u32 = 0x007FFFFF;
@@ -285,31 +281,24 @@ impl From<f32> for CASNum {
             //bit mask of exp_rem 1s to extract highest exp_rem bits from mantissa
             mantissa_higher = (mantissa & mantissa_higher_mask) >> (NUM_BITS as i64 - exp_rem);
         } else {
-            let exp_rem = (-exp) % NUM_BITS as i64;
-            mantissa_higher = mantissa >> exp_rem;
-            let mantissa_lower_mask: DigitType = (1 << exp_rem) - 1;
-            mantissa_lower = (mantissa & mantissa_lower_mask) << (NUM_BITS as i64 - exp_rem);
+            mantissa >>= (-exp) % 8;
         }
 
-        if mantissa_higher == 0 {
-            digits.push_back(mantissa_lower);
-        } else if mantissa_lower == 0 {
-            digits.push_back(mantissa_higher);
-            exp += 1;
-        } else {
-            digits.push_front(mantissa_higher);
-            digits.push_front(mantissa_lower);
+        while mantissa > 0 {
+            bytes.push_back((mantissa % 256).try_into().unwrap());
+            mantissa /= 256;
         }
->>>>>>> 53fd65d (Changed CASValue to use 64 bit ints instead of 8 bit)
+
+        while bytes.len() > 3 {
+            //32 bit floats should only have a 3 byte significand
+            bytes.pop_front();
+            exp += 8;
+        }
 
         return CASNum {
             value: CASValue::Finite {
-                digits,
-<<<<<<< HEAD
-                exp: ((exp / NUM_BITS) + (num_digits as i128) - 1) as isize,
-=======
-                exp: ((exp / 128) as isize),
->>>>>>> 53fd65d (Changed CASValue to use 64 bit ints instead of 8 bit)
+                bytes,
+                exp: i128::from(exp / 8),
             }
             .normalize(),
             sign,
