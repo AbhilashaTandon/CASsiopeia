@@ -218,7 +218,7 @@ impl From<f32> for CASNum {
         } else {
             Sign::Neg
         };
-        let mut exp: i128 = i128::from((bits >> MANTISSA_BITS) & 0xff) - 127 - MANTISSA_BITS;
+        let mut exp: i128 = i128::from((bits >> MANTISSA_BITS) & 0xFF) - 127 - MANTISSA_BITS;
         let mantissa: DigitType = DigitType::from(bits & MANTISSA_MASK) + 0x800000;
         //fp values are 1.(mantissa) * 2^exp * (-1)^sign
         //so we add the 1 back in

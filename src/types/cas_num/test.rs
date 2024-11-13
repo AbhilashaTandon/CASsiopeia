@@ -45,22 +45,29 @@ mod test {
     fn comparison_float(a: f32, b: f32) {
         let casnum_a = CASNum::from(a);
         let casnum_b = CASNum::from(b);
-        println!("{:?} {:?}", casnum_a, casnum_b);
         assert_eq!(casnum_a < casnum_b, a < b);
         assert_eq!(casnum_a > casnum_b, a > b);
         assert_eq!(casnum_a == casnum_b, a == b);
     }
 
-    fn addition_float(a: f32, b: f32, result: CASNum) {
+    fn addition_float(a: f64, b: f64, result: CASNum) {
         let mut sum = CASNum::from(a) + CASNum::from(b);
+        sum.value = sum.value.normalize();
+        assert_eq!(sum, result);
+
+        sum = CASNum::from(a as f32) + CASNum::from(b as f32);
         sum.value = sum.value.normalize();
         assert_eq!(sum, result);
     }
 
-    fn subtraction_float(a: f32, b: f32, result: CASNum) {
-        let mut diff = CASNum::from(a) - CASNum::from(b);
-        diff.value = diff.value.normalize();
-        assert_eq!(diff, result);
+    fn subtraction_float(a: f64, b: f64, result: CASNum) {
+        let mut sum = CASNum::from(a) - CASNum::from(b);
+        sum.value = sum.value.normalize();
+        assert_eq!(sum, result);
+
+        sum = CASNum::from(a as f32) - CASNum::from(b as f32);
+        sum.value = sum.value.normalize();
+        assert_eq!(sum, result);
     }
 
     fn test_conversion(value: f64, desired_output_32: CASNum, desired_output_64: CASNum) {
@@ -73,18 +80,12 @@ mod test {
     // fn multiplication_float(a: f64, b: f64) {
     //     let prod_1 = CASNum::from(a * b);
     //     let prod_2 = CASNum::from(a) * CASNum::from(b);
-    //     if prod_1 != prod_2 {
-    //         println!("{} {}", a, b);
-    //     }
     //     assert_eq!(prod_1, prod_2);
     // }
 
     // fn division_float(a: f64, b: f64) {
     //     let quot_1 = CASNum::from(a / b);
     //     let quot_2 = CASNum::from(a) / CASNum::from(b);
-    //     if quot_1 != quot_2 {
-    //         println!("{} {}", a, b);
-    //     }
     //     assert_eq!(quot_1, quot_2);
     // }
 
@@ -498,7 +499,6 @@ mod test {
 
         for a in &floats_of_choice {
             for b in &floats_of_choice {
-                println!("{} {}", a, b);
                 comparison_float(*a, *b);
             }
         }
@@ -578,8 +578,8 @@ mod test {
         );
 
         addition_float(
-            f32::INFINITY,
-            f32::INFINITY,
+            f64::INFINITY,
+            f64::INFINITY,
             CASNum {
                 value: Infinite,
                 sign: Sign::Pos,
@@ -587,8 +587,8 @@ mod test {
         );
 
         addition_float(
-            f32::NEG_INFINITY,
-            f32::NEG_INFINITY,
+            f64::NEG_INFINITY,
+            f64::NEG_INFINITY,
             CASNum {
                 value: Infinite,
                 sign: Sign::Neg,
@@ -600,20 +600,8 @@ mod test {
             13.384548187255859375,
             CASNum {
                 value: Finite {
-                    digits: VecDeque::from([3, 250, 68]),
-                    exp: -2,
-                },
-                sign: Sign::Pos,
-            },
-        );
-
-        addition_float(
-            2582772973568.0,
-            1.95604696469614937424e-16,
-            CASNum {
-                value: Finite {
-                    digits: VecDeque::from([69, 24, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 89, 89, 2]),
-                    exp: -9,
+                    digits: VecDeque::from([18015665146877181952, 68]),
+                    exp: -1,
                 },
                 sign: Sign::Pos,
             },
@@ -687,8 +675,8 @@ mod test {
             13.384548187255859375,
             CASNum {
                 value: Finite {
-                    digits: VecDeque::from([33, 53, 42]),
-                    exp: -2,
+                    digits: VecDeque::from([3828341158241632256, 42]),
+                    exp: -1,
                 },
                 sign: Sign::Pos,
             },
@@ -699,8 +687,8 @@ mod test {
             55.592082977294921875,
             CASNum {
                 value: Finite {
-                    digits: VecDeque::from([33, 53, 42]),
-                    exp: -2,
+                    digits: VecDeque::from([3828341158241632256, 42]),
+                    exp: -1,
                 },
                 sign: Sign::Neg,
             },
@@ -711,8 +699,8 @@ mod test {
             13.384548187255859375,
             CASNum {
                 value: Finite {
-                    digits: VecDeque::from([3, 250, 68]),
-                    exp: -2,
+                    digits: VecDeque::from([18015665146877181952, 68]),
+                    exp: -1,
                 },
                 sign: Sign::Neg,
             },
@@ -723,8 +711,8 @@ mod test {
             -55.592082977294921875,
             CASNum {
                 value: Finite {
-                    digits: VecDeque::from([3, 250, 68]),
-                    exp: -2,
+                    digits: VecDeque::from([18015665146877181952, 68]),
+                    exp: -1,
                 },
                 sign: Sign::Pos,
             },
@@ -735,10 +723,8 @@ mod test {
             56173.81640625,
             CASNum {
                 value: Finite {
-                    digits: VecDeque::from([
-                        111, 235, 184, 255, 255, 255, 255, 255, 255, 255, 255, 208, 109, 219,
-                    ]),
-                    exp: -12,
+                    digits: VecDeque::from([18426736737360281600, 15060037153926938623, 56173]),
+                    exp: -2,
                 },
                 sign: Sign::Neg,
             },
@@ -767,45 +753,4 @@ mod test {
             }
         }
     }
-
-    // #[test]
-    // fn multiplication_tests_float() {
-    //     let values_to_test: Vec<f64> = vec![
-    //         1304870518784.0,
-    //         2.17444695539569153215e-38,
-    //         7.56240493161290485401e+37,
-    //         165512.90625,
-    //         0.0,
-    //         -0.0,
-    //     ];
-
-    //     for value_1 in &values_to_test {
-    //         for value_2 in &values_to_test {
-    //             multiplication_float(*value_1, *value_2);
-    //         }
-    //     }
-    // }
-
-    // #[test]
-    // fn float_conversions_64() {
-    //     // let f64_range = Uniform::from(0..0xFFFFFFFFFFFFFFFF);
-    //     let mut rng = rand::thread_rng();
-
-    //     for _ in 0..100 {
-    //         let rand_float = f64::from_bits(RngCore::next_u64(&mut rng));
-    //         let cas_num = CASNum::from(rand_float);
-    //         let reconstructed: f64 = cas_num.clone().into();
-    //         if rand_float != reconstructed {
-    //             println!("original : {} bits: {:x}", rand_float, rand_float.to_bits());
-    //             println!("cas_num : {}", cas_num);
-    //             println!(
-    //                 "reconstructed : {} bits: {:x}",
-    //                 reconstructed,
-    //                 reconstructed.to_bits()
-    //             );
-    //             println!();
-    //             assert!(false);
-    //         }
-    //     }
-    // }
 }

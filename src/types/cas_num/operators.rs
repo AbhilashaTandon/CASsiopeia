@@ -334,8 +334,6 @@ impl ops::Mul<CASNum> for CASNum {
 fn multiplication_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
     let cartesian = lhs.value.cartesian(&rhs.value).unwrap();
 
-    println!("{:?} {:?}", lhs, rhs);
-
     let max_digit = cartesian.back().unwrap().back().unwrap().2;
     let min_digit = cartesian.front().unwrap().front().unwrap().2;
 

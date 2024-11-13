@@ -260,22 +260,19 @@ impl CASValue {
             _ => return None,
         }
 
-        let self_max_exp: isize = self_exp;
+        let self_max_exp: isize = self_exp + (self_digits.len() - 1) as isize;
         //exponent of max digit of self_digits
-        let self_min_exp = self_max_exp - (self_digits.len() - 1) as isize;
+        let self_min_exp = self_exp;
         //exponent of min digit of self_digits
-        let self_num_digits = self_digits.len() as isize;
 
-        let other_max_exp = other_exp;
+        let other_max_exp = other_exp + (other_digits.len() - 1) as isize;
         //exponent of max digit of other_digits
-        let other_min_exp = other_max_exp - (other_digits.len() - 1) as isize;
-
-        let other_num_digits = other_digits.len() as isize;
+        let other_min_exp = other_exp;
 
         //exponent of min digit of other_digits
 
         let max_exp = max(self_max_exp, other_max_exp);
-        let min_exp = max(self_min_exp, other_min_exp);
+        let min_exp = min(self_min_exp, other_min_exp);
 
         let mut out: VecDeque<(DigitType, DigitType, isize)> = VecDeque::new();
         for i in min_exp..=max_exp {
