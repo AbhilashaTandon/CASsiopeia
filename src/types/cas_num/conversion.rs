@@ -207,18 +207,18 @@ impl From<f32> for CASNum {
             }
             _ => {}
         }
-        let mut bytes: VecDeque<u8> = VecDeque::new();
+
+        let mut digits: VecDeque<DigitType> = VecDeque::new();
         let bits = value.to_bits();
         const SIGN_MASK: u32 = 0x80000000;
-        const MANTISSA_MASK: u32 = 0x007FFFFF;
-        const MANTISSA_SIZE: i128 = 23;
+        const MANTISSA_MASK: u32 = 0x7FFFFF;
+        const MANTISSA_BITS: i128 = 23;
         let sign: Sign = if bits & SIGN_MASK == 0 {
             Sign::Pos
         } else {
             Sign::Neg
         };
-<<<<<<< HEAD
-        let mut exp: i128 = i128::from((bits >> MANTISSA_SIZE) & 0xff) - 127 - MANTISSA_SIZE;
+        let mut exp: i128 = i128::from((bits >> MANTISSA_BITS) & 0xff) - 127 - MANTISSA_BITS;
         let mantissa: DigitType = DigitType::from(bits & MANTISSA_MASK) + 0x800000;
         //fp values are 1.(mantissa) * 2^exp * (-1)^sign
         //so we add the 1 back in
@@ -263,42 +263,11 @@ impl From<f32> for CASNum {
         }
 
         let num_digits = digits.len();
-=======
-        let mut exp: i64 = i64::from((bits >> 23) & 255) - 127 - 23;
-        let mantissa: DigitType = ((bits & MANTISSA_MASK) + 0x00800000) as DigitType;
-        //fp values are 1.(mantissa) * 2^exp * (-1)^sign
-        //so we add the 1 back in
-
-        let mantissa_lower: DigitType;
-        let mantissa_higher: DigitType;
-
-        if exp > 0 {
-            //we have to split mantissa in half if it straddles the boundary
-            let exp_rem = exp % NUM_BITS as i64;
-            mantissa_lower = mantissa << exp_rem;
-            let mantissa_higher_mask: DigitType =
-                ((1 << exp_rem) - 1) << (NUM_BITS as i64 - exp_rem);
-            //bit mask of exp_rem 1s to extract highest exp_rem bits from mantissa
-            mantissa_higher = (mantissa & mantissa_higher_mask) >> (NUM_BITS as i64 - exp_rem);
-        } else {
-            mantissa >>= (-exp) % 8;
-        }
-
-        while mantissa > 0 {
-            bytes.push_back((mantissa % 256).try_into().unwrap());
-            mantissa /= 256;
-        }
-
-        while bytes.len() > 3 {
-            //32 bit floats should only have a 3 byte significand
-            bytes.pop_front();
-            exp += 8;
-        }
 
         return CASNum {
             value: CASValue::Finite {
-                bytes,
-                exp: i128::from(exp / 8),
+                digits,
+                exp: ((exp / NUM_BITS) + (num_digits as i128) - 1) as isize,
             }
             .normalize(),
             sign,
