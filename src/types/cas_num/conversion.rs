@@ -473,13 +473,25 @@ impl Into<f64> for CASNum {
         }
         match self {
             Self {
+                value: CASValue::Indeterminate,
+                ..
+            } => return f64::NAN,
+            Self {
+                value: CASValue::Infinite,
+                sign: Sign::Pos,
+            } => return f64::INFINITY,
+            Self {
+                value: CASValue::Infinite,
+                sign: Sign::Neg,
+            } => return f64::NEG_INFINITY,
+            Self {
                 value: CASValue::Finite { mut digits, exp },
                 sign,
             } => {
                 let sign: u64 = if sign == Sign::Neg {
                     (1 as u64) << 63
                 } else {
-                    0x0
+                    0
                 };
 
                 let mut exponent: i64 = ((exp - ((digits.len() - 1) as isize)) * 64 + 52) as i64;
@@ -499,8 +511,8 @@ impl Into<f64> for CASNum {
                     }
                 }
 
-                let lower_digit: Option<u64> = digits.pop_back();
                 if first_1 < 53 {
+                    let lower_digit: Option<u64> = digits.pop_back();
                     //if has less than 53 bits we need to extend with next digit
 
                     higher_digit <<= 53 as i64 - first_1; //should make first 1 have position 53
@@ -527,18 +539,6 @@ impl Into<f64> for CASNum {
 
                 return f64::from_bits(sign | (((exponent + 1023) as u64) << 52) | mantissa);
             }
-            Self {
-                value: CASValue::Indeterminate,
-                ..
-            } => return f64::NAN,
-            Self {
-                value: CASValue::Infinite,
-                sign: Sign::Pos,
-            } => return f64::INFINITY,
-            Self {
-                value: CASValue::Infinite,
-                sign: Sign::Neg,
-            } => return f64::NEG_INFINITY,
         }
     }
 }

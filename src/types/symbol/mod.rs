@@ -41,7 +41,7 @@ impl Display for Symbol<'_> {
             Symbol::Variable { name } => write!(f, "{}", name),
             Symbol::Operator(operator) => write!(f, "{}", operator),
             Symbol::Function(func) => write!(f, "{}", func),
-            Symbol::Num { value } => todo!(),
+            Symbol::Num { value } => write!(f, "{}", value),
             Symbol::Const(constant) => write!(f, "{}", constant),
         }
     }

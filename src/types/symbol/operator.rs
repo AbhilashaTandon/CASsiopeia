@@ -23,6 +23,7 @@ pub enum Operator {
     NotEqual,
     LessEqual,
     GreaterEqual,
+    Neg,
     Comma,
     Assign,
 }
@@ -36,22 +37,19 @@ pub fn left_associative(operator: &Operator) -> bool {
 
 pub fn precedence(op: &Operator) -> u8 {
     match op {
-        Operator::Less
-        | Operator::Greater
-        | Operator::Equal
-        | Operator::NotEqual
-        | Operator::LessEqual
-        | Operator::GreaterEqual => 4,
+        Operator::Comma => 0,
+        Operator::Assign => 1,
+        Operator::Equal | Operator::NotEqual => 2,
+        Operator::Less | Operator::LessEqual | Operator::Greater | Operator::GreaterEqual => 3,
+        Operator::Add | Operator::Sub => 4,
+        Operator::Mult | Operator::Div => 5,
+        Operator::Exp => 6,
+        Operator::Neg => 7,
 
-        Operator::Add | Operator::Sub => 5,
-        Operator::Mult | Operator::Div => 6,
-        Operator::Exp => 7,
         Operator::LeftBracket
         | Operator::LeftParen
         | Operator::RightBracket
-        | Operator::RightParen => 9,
-        Operator::Comma => todo!(),
-        Operator::Assign => todo!(),
+        | Operator::RightParen => 8,
     }
 }
 
@@ -82,7 +80,7 @@ impl Display for Operator {
             "{}",
             match self {
                 Operator::Add => "+",
-                Operator::Sub => "-",
+                Operator::Sub | Operator::Neg => "-",
                 Operator::Mult => "*",
                 Operator::Div => "/",
                 Operator::Exp => "^",

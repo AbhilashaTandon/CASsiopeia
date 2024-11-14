@@ -4,7 +4,10 @@ use super::trees::{Parsing, Tree, TreeNode, TreeNodeRef};
 use super::vars::{Var, VarTable};
 use super::CASNum;
 
+pub type PostFix<'a> = Result<VecDeque<Symbol<'a>>, CASErrorKind>;
+
 use crate::types::cas_error::CASErrorKind;
+use crate::types::symbol::constant::Const;
 use crate::types::symbol::function::Func;
 use crate::types::symbol::operator::{
     left_associative, precedence,
@@ -14,17 +17,47 @@ use crate::types::symbol::Symbol;
 use crate::types::token::Token::{self, *};
 use std::collections::HashMap;
 
-pub fn shunting_yard<'a>(
+pub fn to_postfix<'a>(
     tokens: &'a Vec<Token>,
     var_table: VarTable<'a>,
     args: Vec<&str>,
-) -> Parsing<'a> {
+) -> PostFix<'a> {
+    let mut token_iter: std::iter::Peekable<std::slice::Iter<'_, Token>> = tokens.iter().peekable();
+
+    let mut prev_neg = false; //if previous token was a Negative sign
+
+    if let Some(token) = token_iter.peek() {
+        if token == &&Operator(Sub) {
+            //if first token is negative sign
+            prev_neg = true;
+            token_iter.next(); //skip over
+        }
+    } else {
+        //if tokens has length 0
+        return Err(CASErrorKind::NoExpressionGiven);
+    }
+
     let mut output_queue: VecDeque<Symbol> = VecDeque::new();
     let mut operator_stack: VecDeque<Symbol> = VecDeque::new();
 
-    let mut token_iter: std::iter::Peekable<std::slice::Iter<'_, Token>> = tokens.iter().peekable();
-
     while let Some(token) = token_iter.next() {
+        if token_iter.peek() == Some(&&Operator(Sub)) {
+            match token {
+                Name(..) | Int(..) | Float(..) | Const(..) | ResFun(..) => {}
+                //minus sign means subtraction when after these
+                Operator(..) | Der | Integral => {
+                    //minus sign means negative when after these
+                    prev_neg = true;
+                    token_iter.next(); //skip over
+                }
+                Calc | Sim => {
+                    return Err(CASErrorKind::CommandInExpression {
+                        command: token.clone(),
+                    })
+                }
+                Eof => return Err(CASErrorKind::SyntaxError),
+            }
+        }
         match token {
             Name(name) => {
                 if let Some(value) = parse_name(
@@ -34,19 +67,34 @@ pub fn shunting_yard<'a>(
                     &var_table,
                     &mut operator_stack,
                 ) {
-                    return value;
+                    return Err(value);
                 }
             }
             Int(i) => {
-                output_queue.push_back(Symbol::Num {
-                    value: CASNum::from(*i),
-                });
+                if prev_neg {
+                    prev_neg = false;
+                    output_queue.push_back(Symbol::Num {
+                        value: CASNum::from(-*i),
+                    });
+                } else {
+                    output_queue.push_back(Symbol::Num {
+                        value: CASNum::from(*i),
+                    });
+                }
+
                 //if the token is a number put it into the output queue
             }
             Float(f) => {
-                output_queue.push_back(Symbol::Num {
-                    value: CASNum::from(*f),
-                });
+                if prev_neg {
+                    prev_neg = false;
+                    output_queue.push_back(Symbol::Num {
+                        value: CASNum::from(-*f),
+                    });
+                } else {
+                    output_queue.push_back(Symbol::Num {
+                        value: CASNum::from(*f),
+                    });
+                }
                 //if the token is a number put it into the output queue
             }
             Eof => {
@@ -59,7 +107,7 @@ pub fn shunting_yard<'a>(
                     if let Some(value) =
                         parse_numeric_operator(&mut operator_stack, &o1, &mut output_queue)
                     {
-                        return value;
+                        return Err(value);
                     }
                 }
 
@@ -67,7 +115,7 @@ pub fn shunting_yard<'a>(
 
                 RightParen | RightBracket => {
                     if let Some(value) = parse_right_paren(&mut operator_stack, &mut output_queue) {
-                        return value;
+                        return Err(value);
                     }
                 }
                 Comma => {
@@ -85,14 +133,36 @@ pub fn shunting_yard<'a>(
                 Assign => {
                     return Err(CASErrorKind::AssignmentInExpression);
                 }
+                Neg => assert!(false),
             },
 
-            Calc | Sim => todo!(),
+            Calc | Sim => {
+                return Err(CASErrorKind::CommandInExpression {
+                    command: token.clone(),
+                });
+            }
             Der => todo!(),
             Integral => todo!(),
 
-            Const(name) => todo!(),
-            ResFun(name) => todo!(),
+            Const(name) => output_queue.push_back(Symbol::Const(Const::ResConst(*name))),
+            ResFun(name) => operator_stack.push_back(Symbol::Function(Func::ResFun(*name))),
+        }
+        if prev_neg {
+            match token {
+                Float(..) | Int(..) | Der | Integral => {}
+                Name(_) | Const(_) | ResFun(_) | Operator(RightBracket) | Operator(RightParen) => {
+                    output_queue.push_back(Symbol::Operator(Neg));
+                    //make previous element negative
+                }
+                Operator(LeftParen) | Operator(LeftBracket) => {
+                    operator_stack.push_back(Symbol::Operator(Neg));
+                    //make parenthetical negative, once we get to the matching right paren/bracket
+                }
+                Token::Operator(..) | Calc | Sim | Eof => {
+                    return Err(CASErrorKind::SyntaxError);
+                }
+            }
+            prev_neg = false;
         }
     }
 
@@ -105,109 +175,118 @@ pub fn shunting_yard<'a>(
         output_queue.push_back(token);
     }
 
-    let mut tree_stack: VecDeque<TreeNodeRef<Symbol<'a>>> = VecDeque::new();
-    //temporary stack for constructing the tree
-
-    let mut prev_sub: bool = false;
-    //if last token was Operator::Sub
-
-    for token in output_queue {
-        //
-        //
-        // println!();
-        let mut args = VecDeque::new();
-        if Symbol::Operator(Sub) == token {
-            //'-' is a special case since it can be both a unary negative operator and a binary subtraction operator
-            tree_stack.push_back(Box::new(TreeNode {
-                data: token,
-                children: VecDeque::new(),
-            }));
-            prev_sub = true;
-            continue;
-        }
-        if prev_sub {
-            let neg = tree_stack.pop_back();
-            match neg {
-                //check if 0 args so we can unwrap it
-                Some(mut operator) => {
-                    match tree_stack.len() {
-                        1 => {
-                            //unary negative
-                            operator.children.push_back(Box::new(TreeNode {
-                                data: token,
-                                children: VecDeque::new(),
-                            }));
-                            //add next token as child to make -token
-                        }
-                        2 => {
-                            //binary minus
-
-                            let minuend = tree_stack.pop_back().unwrap();
-                            //minuend is a fancy word for the value being subtracted from
-                            operator.children.push_back(minuend);
-                            operator.children.push_back(Box::new(TreeNode {
-                                data: token,
-                                children: VecDeque::new(),
-                            }));
-                        }
-                        _ => {
-                            assert!(false);
-                            return Err(CASErrorKind::SyntaxError);
-                        } //more than 2 args
-                    }
-
-                    tree_stack.push_back(operator);
-                }
-
-                None => {
-                    assert!(false);
-                    return Err(CASErrorKind::SyntaxError);
-                } //0 args
-            }
-        } else {
-            match token.num_args() {
-                0 => {}
-                x => {
-                    for _ in 0..x {
-                        match tree_stack.pop_back() {
-                            Some(symbol) => args.push_front(symbol),
-                            //since we're getting them backwards we need to add them backwards
-                            None => {
-                                {
-                                    assert!(false);
-                                    return Err(CASErrorKind::SyntaxError);
-                                };
-                            }
-                        }
-                    }
-                }
-            }
-            tree_stack.push_back(Box::new(TreeNode {
-                data: token,
-                children: args,
-            }));
-        }
-    }
-    //construct tree
-    return match tree_stack.len() {
-        0 => Err(CASErrorKind::NoExpressionGiven),
-
-        //if there are no tokens in tree stack no expression was given
-        1 => {
-            return Ok(Tree {
-                root: Some(tree_stack.front().unwrap().clone()),
-                //TODO: get rid of this clone
-            });
-        }
-        _ => Err(CASErrorKind::SyntaxError),
-        //if there are multiple
-    };
+    return Ok(output_queue);
 }
+
+// pub fn shunting_yard() {
+//     let mut tree_stack: VecDeque<TreeNodeRef<Symbol<'a>>> = VecDeque::new();
+//     //temporary stack for constructing the tree
+
+//     let mut prev_sub: bool = false;
+//     //if last token was Operator::Sub
+
+//     for token in &output_queue {
+//         print!("{}, ", token);
+//     }
+//     println!();
+
+//     for token in output_queue {
+//         for token_2 in &tree_stack {
+//             print!("{}, ", token_2.data);
+//         }
+//         println!();
+//         let mut args = VecDeque::new();
+//         if Symbol::Operator(Sub) == token {
+//             //'-' is a special case since it can be both a unary negative operator and a binary subtraction operator
+//             tree_stack.push_back(Box::new(TreeNode {
+//                 data: token,
+//                 children: VecDeque::new(),
+//             }));
+//             prev_sub = true;
+//             continue;
+//         } else if prev_sub {
+//             let neg = tree_stack.pop_back();
+//             match neg {
+//                 //check if 0 args so we can unwrap it
+//                 Some(mut operator) => {
+//                     match tree_stack.len() {
+//                         1 => {
+//                             //unary negative
+//                             operator.children.push_back(Box::new(TreeNode {
+//                                 data: token,
+//                                 children: VecDeque::new(),
+//                             }));
+//                             //add next token as child to make -token
+//                         }
+//                         2 => {
+//                             //binary minus
+
+//                             let minuend = tree_stack.pop_back().unwrap();
+//                             //minuend is a fancy word for the value being subtracted from
+//                             operator.children.push_back(minuend);
+//                             operator.children.push_back(Box::new(TreeNode {
+//                                 data: token,
+//                                 children: VecDeque::new(),
+//                             }));
+//                         }
+//                         _ => {
+//                             assert!(false);
+//                             return Err(CASErrorKind::SyntaxError);
+//                         } //more than 2 args
+//                     }
+
+//                     tree_stack.push_back(operator);
+//                 }
+
+//                 None => {
+//                     assert!(false);
+//                     return Err(CASErrorKind::SyntaxError);
+//                 } //0 args
+//             }
+//         } else {
+//             assert_ne!(token, Symbol::Operator(Operator::Sub));
+//             match token.num_args() {
+//                 0 => {}
+//                 x => {
+//                     for _ in 0..x {
+//                         match tree_stack.pop_back() {
+//                             Some(symbol) => args.push_front(symbol),
+//                             //since we're getting them backwards we need to add them backwards
+//                             None => {
+//                                 println!("{}", token);
+//                                 assert!(false);
+//                                 return Err(CASErrorKind::SyntaxError);
+//                             }
+//                         }
+//                     }
+//                 }
+//             }
+//             tree_stack.push_back(Box::new(TreeNode {
+//                 data: token,
+//                 children: args,
+//             }));
+//         }
+//     }
+//     //construct tree
+//     return match tree_stack.len() {
+//         0 => Err(CASErrorKind::NoExpressionGiven),
+
+//         //if there are no tokens in tree stack no expression was given
+//         1 => {
+//             return Ok(Tree {
+//                 root: Some(tree_stack.front().unwrap().clone()),
+//                 //TODO: get rid of this clone
+//             });
+//         }
+//         _ => Err(CASErrorKind::SyntaxError),
+//         //if there are multiple
+//     };
+// }
 
 fn parse_right_paren<'a>(
     operator_stack: &mut VecDeque<Symbol<'a>>,
     output_queue: &mut VecDeque<Symbol<'a>>,
-) -> Option<Result<Tree<Symbol<'a>>, CASErrorKind>> {
+) -> Option<CASErrorKind> {
     loop {
         let top_of_stack: Option<&Symbol<'a>> = operator_stack.back();
         match top_of_stack {
@@ -230,11 +309,11 @@ fn parse_right_paren<'a>(
                     //pop the operator from the operator stack into the output queue
                 }
                 _ => {
-                    return Some(Err(CASErrorKind::SyntaxError));
+                    return Some(CASErrorKind::SyntaxError);
                 }
             },
             None => {
-                return Some(Err(CASErrorKind::MismatchedParentheses));
+                return Some(CASErrorKind::MismatchedParentheses);
                 // assert the operator stack is not empty//
                 /* If the stack runs out without finding a left parenthesis, then there are mismatched parentheses. */
             }
@@ -244,7 +323,7 @@ fn parse_right_paren<'a>(
         && operator_stack.back() != Some(&Symbol::Operator(LeftBracket))
     {
         //{assert there is a left parenthesis at the top of the operator stack}
-        return Some(Err(CASErrorKind::MismatchedParentheses));
+        return Some(CASErrorKind::MismatchedParentheses);
     }
     operator_stack.pop_back();
     //  pop the left parenthesis from the operator stack and discard it
@@ -260,7 +339,7 @@ fn parse_numeric_operator<'a>(
     operator_stack: &mut VecDeque<Symbol<'a>>,
     o1: &Operator,
     output_queue: &mut VecDeque<Symbol<'a>>,
-) -> Option<Parsing<'a>> {
+) -> Option<CASErrorKind> {
     while let Some(sym) = operator_stack.back() {
         match sym {
             Symbol::Operator(o2) => {
@@ -287,7 +366,7 @@ fn parse_numeric_operator<'a>(
                 operator_stack.pop_back();
             }
             _ => {
-                return Some(Err(CASErrorKind::SyntaxError));
+                return Some(CASErrorKind::SyntaxError);
             }
         }
 
@@ -304,7 +383,7 @@ fn parse_name<'a>(
     output_queue: &mut VecDeque<Symbol<'a>>,
     var_table: &HashMap<&str, Var<'a>>,
     operator_stack: &mut VecDeque<Symbol<'a>>,
-) -> Option<Parsing<'a>> {
+) -> Option<CASErrorKind> {
     //unknown variable name
     if args.contains(&name.as_str()) {
         output_queue.push_back(Symbol::Variable { name });
@@ -321,9 +400,9 @@ fn parse_name<'a>(
             //if the token is a function push it onto the operator stack
         }
     } else {
-        return Some(Err(CASErrorKind::UnknownSymbol {
+        return Some(CASErrorKind::UnknownSymbol {
             symbol: name.to_string(),
-        }));
+        });
     }
     None
 }

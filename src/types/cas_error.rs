@@ -1,6 +1,8 @@
 use std::string::ToString;
 
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+use super::token::Token;
+
+#[derive(Clone, PartialEq, Debug)]
  pub(crate) enum CASErrorKind {
     NoError,
     SyntaxError,
@@ -28,6 +30,9 @@ use std::string::ToString;
     InvalidCharacter{
         chr: char
     },
+    CommandInExpression{
+        command: Token
+    },
 }
 
 impl ToString for CASErrorKind {
@@ -37,9 +42,8 @@ impl ToString for CASErrorKind {
             CASErrorKind::TypeError => "Type Error",
             CASErrorKind::SyntaxError
             | CASErrorKind::MalformedNumericLiteral{..}
-            | CASErrorKind::MalformedVariableName{..} | CASErrorKind::AssignmentInExpression | CASErrorKind::UnknownSymbol{..} | CASErrorKind::MismatchedParentheses | CASErrorKind::NoExpressionGiven => "Syntax Error",
+            | CASErrorKind::MalformedVariableName{..} | CASErrorKind::AssignmentInExpression | CASErrorKind::UnknownSymbol{..} | CASErrorKind::MismatchedParentheses | CASErrorKind::NoExpressionGiven | CASErrorKind::InvalidCharacter{..} | CASErrorKind::CommandInExpression { .. } => "Syntax Error",
             CASErrorKind::WrongNumberOfArgs{..} | CASErrorKind::UndefinedFunction{..} => "Runtime Error",
-            CASErrorKind::InvalidCharacter{..} => "Syntax Error",
         });
     }
 }
@@ -67,6 +71,7 @@ impl CASErrorKind{
             CASErrorKind::WrongNumberOfArgs{args_given, args_needed, func_name} => format!("function {} requires {} arguments, but was given {}.", func_name, args_needed, args_given),
             CASErrorKind::UndefinedFunction{func_name} => format!("arguments were passed to an undefined function {}.", func_name),
             CASErrorKind::InvalidCharacter{chr} => format!("an invalid character {} was entered.", chr),
+            CASErrorKind::CommandInExpression { command } => format!("the {} command is not allowed within an expression.", command),
             
         };
     }

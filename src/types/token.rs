@@ -50,6 +50,7 @@ impl fmt::Display for Token {
                 LessEqual => "LESS_EQUAL",
                 GreaterEqual => "GREATER_EQUAL",
                 Comma => "COMMA",
+                Neg => "NEG",
             },
             Token::Calc => "CALC",
             Token::Sim => "SIM",
