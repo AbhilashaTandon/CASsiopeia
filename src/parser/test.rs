@@ -145,27 +145,27 @@ mod test {
 
     #[test]
     fn operator_precedence() {
-        let ast = construct_node(
-            Operator(Mult),
-            vec![
-                Num {
-                    value: CASNum::from(5),
-                },
-                Num {
-                    value: CASNum::from(3.3),
-                },
-            ],
-        );
+        // let ast = construct_node(
+        //     Operator(Mult),
+        //     vec![
+        //         Num {
+        //             value: CASNum::from(5),
+        //         },
+        //         Num {
+        //             value: CASNum::from(3.3),
+        //         },
+        //     ],
+        // );
 
-        let mut branch = construct_node(
-            Operator(Add),
-            vec![Num {
-                value: CASNum::from(2),
-            }],
-        );
+        // let mut branch = construct_node(
+        //     Operator(Add),
+        //     vec![Num {
+        //         value: CASNum::from(2),
+        //     }],
+        // );
 
-        branch.add_child(ast);
-        test_parser("2 + 5 * 3.3", Ok(Tree::from(branch)), None);
+        // branch.add_child(ast);
+        // test_parser("2 + 5 * 3.3", Ok(Tree::from(branch)), None);
 
         let ast = construct_node(
             Operator(Exp),

@@ -93,7 +93,6 @@ pub fn shunting_yard<'a>(
 
             Const(name) => todo!(),
             ResFun(name) => todo!(),
-            Error => todo!(),
         }
     }
 
@@ -113,6 +112,9 @@ pub fn shunting_yard<'a>(
     //if last token was Operator::Sub
 
     for token in output_queue {
+        //
+        //
+        // println!();
         let mut args = VecDeque::new();
         if Symbol::Operator(Sub) == token {
             //'-' is a special case since it can be both a unary negative operator and a binary subtraction operator

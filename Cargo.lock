@@ -22,6 +22,7 @@ dependencies = [
  "phf",
  "phf_macros",
  "rand",
+ "rand_chacha",
 ]
 
 [[package]]

@@ -312,6 +312,7 @@ impl From<f64> for CASNum {
 
         let mut digits: VecDeque<DigitType> = VecDeque::new();
         let bits = value.to_bits();
+
         const SIGN_MASK: u64 = 0x8000000000000000;
         const MANTISSA_MASK: u64 = 0x000FFFFFFFFFFFFF;
         let sign: Sign = if bits & SIGN_MASK == 0 {
@@ -319,8 +320,11 @@ impl From<f64> for CASNum {
         } else {
             Sign::Neg
         };
-        let mut exp: i128 = i128::from((bits >> 52) & 0x7ff) - 1023 - 52;
-        let mantissa: DigitType = DigitType::from(bits & MANTISSA_MASK) + 0x10000000000000;
+        let raw_exp = ((bits >> 52) & 0x7ff) as i128;
+        let raw_mantissa = (bits & MANTISSA_MASK) as DigitType;
+
+        let mut exp: i128 = raw_exp - 1023 - 52;
+        let mantissa: DigitType = raw_mantissa + 0x10000000000000;
         //fp values are 1.(mantissa) * 2^exp * (-1)^sign
         //so we add the 1 back in
 
@@ -331,10 +335,14 @@ impl From<f64> for CASNum {
             //we have to split mantissa in half if it straddles the boundary
             let exp_rem = exp % NUM_BITS as i128;
             mantissa_lower = mantissa << exp_rem;
-            let mantissa_higher_mask: DigitType =
-                ((1 << exp_rem) - 1) << (NUM_BITS as i128 - exp_rem);
-            //bit mask of exp_rem 1s to extract highest exp_rem bits from mantissa
-            mantissa_higher = (mantissa & mantissa_higher_mask) >> (NUM_BITS - exp_rem);
+            if exp_rem != 0 {
+                let mantissa_higher_mask: DigitType =
+                    ((1 << exp_rem) - 1) << (NUM_BITS as i128 - exp_rem);
+                //bit mask of exp_rem 1s to extract highest exp_rem bits from mantissa
+                mantissa_higher = (mantissa & mantissa_higher_mask) >> (NUM_BITS - exp_rem);
+            } else {
+                mantissa_higher = 0;
+            }
 
             if mantissa_higher == 0 {
                 digits.push_back(mantissa_lower);
@@ -349,7 +357,11 @@ impl From<f64> for CASNum {
             let exp_rem = (-exp) % NUM_BITS as i128;
             mantissa_higher = mantissa >> exp_rem;
             let mantissa_lower_mask: DigitType = (1 << exp_rem) - 1;
-            mantissa_lower = (mantissa & mantissa_lower_mask) << (NUM_BITS - exp_rem);
+            if exp_rem == 0 {
+                mantissa_lower = 0;
+            } else {
+                mantissa_lower = (mantissa & mantissa_lower_mask) << (NUM_BITS - exp_rem);
+            }
 
             if mantissa_higher == 0 {
                 digits.push_back(mantissa_lower);
@@ -375,6 +387,8 @@ impl From<f64> for CASNum {
         };
     }
 }
+
+//exp * num bits - num_digits + 1
 
 // impl Into<u8> for CASNum {
 //     fn into(self) -> u8 {
@@ -451,48 +465,80 @@ impl From<f64> for CASNum {
 //     }
 // }
 
-// impl Into<f64> for CASNum {
-//     fn into(self) -> f64 {
-//         match self {
-//             Self {
-//                 value: CASValue::Finite { digits, exp },
-//                 sign,
-//             } => {
-//                 let sign: u64 = if sign == Sign::Pos {
-//                     0x8000000000000000
-//                 } else {
-//                     0x0
-//                 };
-//                 let mut exponent: u64 = (exp * 8 + 1023 + 52) as u64 + (digits.len() as u64);
-//                 let mut mantissa: Vec<&u8> = digits.iter().rev().take(6).collect();
-//                 while mantissa.len() < 7 {
-//                     exponent -= 8;
-//                     mantissa.push(&0);
-//                 }
+impl Into<f64> for CASNum {
+    fn into(self) -> f64 {
+        //
+        if self.value.is_zero() {
+            return 0.;
+        }
+        match self {
+            Self {
+                value: CASValue::Finite { mut digits, exp },
+                sign,
+            } => {
+                let sign: u64 = if sign == Sign::Neg {
+                    (1 as u64) << 63
+                } else {
+                    0x0
+                };
 
-//                 let mut mantissa_bits: u64 = 0;
-//                 for num in mantissa {
-//                     mantissa_bits += *num as u64; //concatenate digits
-//                     mantissa_bits <<= 8;
-//                 }
+                let mut exponent: i64 = ((exp - ((digits.len() - 1) as isize)) * 64 + 52) as i64;
 
-//                 mantissa_bits &= 0x00FFFFFFFFFFFFFF; //get rid of trailing 1
-//                 mantissa_bits >>= 4; //get it from 56 to 52 bits
+                let mut higher_digit: u64 = digits.pop_back().unwrap();
+                //we can safely unwrap since digits is only empty if self == 0
 
-//                 return f64::from_bits(sign | (exponent << 52) | mantissa_bits);
-//             }
-//             Self {
-//                 value: CASValue::Indeterminate,
-//                 ..
-//             } => return f64::NAN,
-//             Self {
-//                 value: CASValue::Infinite,
-//                 sign: Sign::Pos,
-//             } => return f64::INFINITY,
-//             Self {
-//                 value: CASValue::Infinite,
-//                 sign: Sign::Neg,
-//             } => return f64::NEG_INFINITY,
-//         }
-//     }
-// }
+                let mut first_1: i64 = 0;
+                //index starting at 1 of first 1 in bits of higher_digit
+
+                while (higher_digit >> first_1) > 0 {
+                    first_1 += 1;
+                    if first_1 >= 64 {
+                        //avoid overflow
+                        first_1 = 64;
+                        break;
+                    }
+                }
+
+                let lower_digit: Option<u64> = digits.pop_back();
+                if first_1 < 53 {
+                    //if has less than 53 bits we need to extend with next digit
+
+                    higher_digit <<= 53 as i64 - first_1; //should make first 1 have position 53
+                                                          //has first_1 digits
+                    if let Some(mut bits) = lower_digit {
+                        bits >>= 64 - (53 - first_1);
+                        higher_digit |= bits;
+                        if exponent < 0 {
+                            exponent += 64; //i have no idea why this works
+                        }
+                    } else {
+                        exponent -= 64; //i have no idea why this works
+                    }
+
+                    exponent += 64 - (53 - first_1);
+                } else {
+                    //if has 53 or more we need to get rid of excess bits
+                    higher_digit >>= first_1 - 53;
+
+                    exponent += first_1 - 53;
+                }
+
+                let mantissa = higher_digit & 0xFFFFFFFFFFFFF; //get rid of leading 1
+
+                return f64::from_bits(sign | (((exponent + 1023) as u64) << 52) | mantissa);
+            }
+            Self {
+                value: CASValue::Indeterminate,
+                ..
+            } => return f64::NAN,
+            Self {
+                value: CASValue::Infinite,
+                sign: Sign::Pos,
+            } => return f64::INFINITY,
+            Self {
+                value: CASValue::Infinite,
+                sign: Sign::Neg,
+            } => return f64::NEG_INFINITY,
+        }
+    }
+}

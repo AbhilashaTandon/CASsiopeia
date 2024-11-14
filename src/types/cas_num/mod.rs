@@ -20,7 +20,7 @@ enum Sign {
 
 #[derive(Debug, Clone)]
 pub(crate) struct CASNum {
-    value: CASValue,
+    pub value: CASValue,
     sign: Sign,
 }
 
@@ -179,6 +179,14 @@ impl CASValue {
                         //if has trailing 0 remove it
                         *exp += 1;
                         digits.pop_front();
+                    } else {
+                        break;
+                    }
+                }
+                while let Some(least_order_num) = digits.back() {
+                    if *least_order_num == 0 {
+                        //if has leading 0 remove it
+                        digits.pop_back();
                     } else {
                         break;
                     }
@@ -368,39 +376,40 @@ impl CASValue {
 
 use std::fmt::{format, Display};
 
-// impl Display for CASNum {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         match self {
-//             CASNum {
-//                 value: CASValue::Finite { digits, exp },
-//                 sign,
-//             } => {
-//                 let float: f64 = (*self).clone().into();
-//                 let hex_str: String = digits
-//                     .into_iter()
-//                     .map(|num| format!("0x{:0>2x}", num))
-//                     .collect();
-//                 write!(
-//                     f,
-//                     "{}{} x 256 ^ {} ({})",
-//                     if *sign == Sign::Pos { "" } else { "-" },
-//                     hex_str,
-//                     exp,
-//                     float,
-//                 )
-//             }
-//             CASNum {
-//                 value: CASValue::Infinite,
-//                 sign: Sign::Pos,
-//             } => write!(f, "∞"),
-//             CASNum {
-//                 value: CASValue::Infinite,
-//                 sign: Sign::Neg,
-//             } => write!(f, "-∞"),
-//             CASNum {
-//                 value: CASValue::Indeterminate,
-//                 ..
-//             } => write!(f, "NaN"),
-//         }
-//     }
-// }
+impl Display for CASNum {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let float: f64 = <CASNum as Clone>::clone(&(*self)).into();
+        //TODO: get rid of this clone
+        match self {
+            CASNum {
+                value: CASValue::Finite { digits, exp },
+                sign,
+            } => {
+                let hex_str: String = digits
+                    .into_iter()
+                    .map(|num| format!("0x{:0>2x}", num))
+                    .collect();
+                write!(
+                    f,
+                    "{}{} x (2^64) ^ {} ({:e})",
+                    if *sign == Sign::Pos { "" } else { "-" },
+                    hex_str,
+                    exp,
+                    float,
+                )
+            }
+            CASNum {
+                value: CASValue::Infinite,
+                sign: Sign::Pos,
+            } => write!(f, "∞"),
+            CASNum {
+                value: CASValue::Infinite,
+                sign: Sign::Neg,
+            } => write!(f, "-∞"),
+            CASNum {
+                value: CASValue::Indeterminate,
+                ..
+            } => write!(f, "NaN"),
+        }
+    }
+}
