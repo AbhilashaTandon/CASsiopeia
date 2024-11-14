@@ -10,7 +10,7 @@ mod test {
             CASNum,
         },
         types::{
-            cas_error::{print_error, CASErrorKind},
+            cas_error::{print_error, CASError, CASErrorKind},
             symbol::{
                 operator::Operator::*,
                 Symbol::{self, *},
@@ -57,33 +57,51 @@ mod test {
     }
     #[test]
     fn no_expression() {
-        let err = Err(CASErrorKind::NoExpressionGiven);
+        let err = Err(CASError {
+            kind: CASErrorKind::NoExpressionGiven,
+            line_pos: 0,
+        });
 
         test_parser("", err, None);
     }
 
     #[test]
     fn mismatched_parens() {
-        let err = Err(CASErrorKind::MismatchedParentheses);
+        let err = Err(CASError {
+            kind: CASErrorKind::NoExpressionGiven,
+            line_pos: 3,
+        });
 
         test_parser("(2 +", err, None);
 
-        let err = Err(CASErrorKind::MismatchedParentheses);
+        let err = Err(CASError {
+            kind: CASErrorKind::NoExpressionGiven,
+            line_pos: 3,
+        });
 
         test_parser("2 +)", err, None);
 
-        let err = Err(CASErrorKind::MismatchedParentheses);
+        let err = Err(CASError {
+            kind: CASErrorKind::NoExpressionGiven,
+            line_pos: 2,
+        });
 
         test_parser("())()()))", err, None);
 
-        let err = Err(CASErrorKind::MismatchedParentheses);
+        let err = Err(CASError {
+            kind: CASErrorKind::NoExpressionGiven,
+            line_pos: 6,
+        });
 
         test_parser("[][][]][", err, None);
     }
 
     #[test]
     fn var_table() {
-        let err = Err(CASErrorKind::AssignmentInExpression);
+        let err = Err(CASError {
+            kind: CASErrorKind::AssignmentInExpression,
+            line_pos: 2,
+        });
 
         test_parser(
             "x = 2",
@@ -99,8 +117,11 @@ mod test {
             )])),
         );
 
-        let err = Err(CASErrorKind::UnknownSymbol {
-            symbol: "x".to_string(),
+        let err = Err(CASError {
+            kind: CASErrorKind::UnknownSymbol {
+                symbol: "x".to_string(),
+            },
+            line_pos: 0,
         });
 
         test_parser(
@@ -117,8 +138,11 @@ mod test {
             )])),
         );
 
-        let err = Err(CASErrorKind::UnknownSymbol {
-            symbol: "y".to_string(),
+        let err = Err(CASError {
+            kind: CASErrorKind::UnknownSymbol {
+                symbol: "y".to_string(),
+            },
+            line_pos: 0,
         });
 
         test_parser(

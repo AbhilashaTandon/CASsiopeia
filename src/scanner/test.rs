@@ -8,19 +8,42 @@ mod test {
 
     use crate::types::symbol::operator::Operator::*;
 
-    use crate::types::token::Token::*;
+    use crate::types::token::Token;
+    use crate::types::token::TokenType::{self, *};
 
-    fn run_test(line_of_code: &str, desired_output: Tokenization) {
-        let computed_tokens: Tokenization = tokenize(line_of_code);
+    fn run_test(
+        line_of_code: &str,
+        desired_output: Result<Vec<(TokenType, usize)>, Vec<CASError>>,
+    ) {
+        let computed_tokens: Tokenization = tokenize(&line_of_code);
+        match desired_output {
+            Err(err) => assert_eq!(computed_tokens, Err(err)),
+            Ok(tokens) => {
+                let desired_tokens: Tokenization = Ok(tokens
+                    .iter()
+                    .map(|(token_type, line_pos)| make_token(token_type.clone(), *line_pos))
+                    .collect());
+                assert_eq!(computed_tokens, desired_tokens);
+            }
+        }
+    }
 
-        assert_eq!(computed_tokens, desired_output);
+    fn make_token(token_type: TokenType, line_pos: usize) -> Token {
+        return Token {
+            token_type,
+            line_pos,
+        };
     }
 
     #[test]
     fn variable_declarations() {
         run_test(
             "x = 2",
-            Ok(vec![Name("x".to_string()), Operator(Assign), Int(2)]),
+            Ok(vec![
+                (Name("x".to_string()), 0),
+                (Operator(Assign), 2),
+                (Int(2), 4),
+            ]),
         );
     }
 
@@ -29,20 +52,20 @@ mod test {
         run_test(
             "f(x,y) = 2 * x + 3 * y",
             Ok(vec![
-                Name("f".to_string()),
-                Operator(LeftParen),
-                Name("x".to_string()),
-                Operator(Comma),
-                Name("y".to_string()),
-                Operator(RightParen),
-                Operator(Assign),
-                Int(2),
-                Operator(Mult),
-                Name("x".to_string()),
-                Operator(Add),
-                Int(3),
-                Operator(Mult),
-                Name("y".to_string()),
+                (Name("f".to_string()), 0),
+                (Operator(LeftParen), 1),
+                (Name("x".to_string()), 2),
+                (Operator(Comma), 3),
+                (Name("y".to_string()), 4),
+                (Operator(RightParen), 5),
+                (Operator(Assign), 7),
+                (Int(2), 9),
+                (Operator(Mult), 11),
+                (Name("x".to_string()), 13),
+                (Operator(Add), 15),
+                (Int(3), 17),
+                (Operator(Mult), 19),
+                (Name("y".to_string()), 21),
             ]),
         );
     }
@@ -52,38 +75,38 @@ mod test {
         run_test(
             "calc 3 * x - 5",
             Ok(vec![
-                Calc,
-                Int(3),
-                Operator(Mult),
-                Name("x".to_string()),
-                Operator(Sub),
-                Int(5),
+                (Calc, 3),
+                (Int(3), 5),
+                (Operator(Mult), 7),
+                (Name("x".to_string()), 9),
+                (Operator(Sub), 11),
+                (Int(5), 13),
             ]),
         );
 
         run_test(
             "sim 3 * x - 5",
             Ok(vec![
-                Sim,
-                Int(3),
-                Operator(Mult),
-                Name("x".to_string()),
-                Operator(Sub),
-                Int(5),
+                (Sim, 2),
+                (Int(3), 4),
+                (Operator(Mult), 6),
+                (Name("x".to_string()), 8),
+                (Operator(Sub), 10),
+                (Int(5), 12),
             ]),
         );
 
         run_test(
             "der 3 * x - 5, x",
             Ok(vec![
-                Der,
-                Int(3),
-                Operator(Mult),
-                Name("x".to_string()),
-                Operator(Sub),
-                Int(5),
-                Operator(Comma),
-                Name("x".to_string()),
+                (Der, 2),
+                (Int(3), 4),
+                (Operator(Mult), 6),
+                (Name("x".to_string()), 8),
+                (Operator(Sub), 10),
+                (Int(5), 12),
+                (Operator(Comma), 13),
+                (Name("x".to_string()), 15),
             ]),
         );
     }
@@ -93,17 +116,17 @@ mod test {
         run_test(
             "x-y_z = -5 + 3 - 2 - -4",
             Ok(vec![
-                Name("x-y_z".to_string()),
-                Operator(Assign),
-                Operator(Sub),
-                Int(5),
-                Operator(Add),
-                Int(3),
-                Operator(Sub),
-                Int(2),
-                Operator(Sub),
-                Operator(Sub),
-                Int(4),
+                (Name("x-y_z".to_string()), 4),
+                (Operator(Assign), 6),
+                (Operator(Sub), 8),
+                (Int(5), 9),
+                (Operator(Add), 11),
+                (Int(3), 13),
+                (Operator(Sub), 15),
+                (Int(2), 17),
+                (Operator(Sub), 19),
+                (Operator(Sub), 21),
+                (Int(4), 22),
             ]),
         );
     }
@@ -113,10 +136,10 @@ mod test {
         run_test(
             "-x = 2",
             Ok(vec![
-                Operator(Sub),
-                Name("x".to_string()),
-                Operator(Assign),
-                Int(2),
+                (Operator(Sub), 0),
+                (Name("x".to_string()), 1),
+                (Operator(Assign), 3),
+                (Int(2), 5),
             ]),
         );
     }
@@ -126,24 +149,28 @@ mod test {
         run_test(
             "y = -102342.",
             Ok(vec![
-                Name("y".to_string()),
-                Operator(Assign),
-                Operator(Sub),
-                Float(102342.0),
+                (Name("y".to_string()), 0),
+                (Operator(Assign), 2),
+                (Operator(Sub), 4),
+                (Float(102342.0), 11),
             ]),
         );
 
         run_test(
             "x = 3.3343",
-            Ok(vec![Name("x".to_string()), Operator(Assign), Float(3.3343)]),
+            Ok(vec![
+                (Name("x".to_string()), 0),
+                (Operator(Assign), 2),
+                (Float(3.3343), 9),
+            ]),
         );
 
         run_test(
             "y = .102342",
             Ok(vec![
-                Name("y".to_string()),
-                Operator(Assign),
-                Float(0.102342),
+                (Name("y".to_string()), 0),
+                (Operator(Assign), 2),
+                (Float(0.102342), 10),
             ]),
         );
 
@@ -163,54 +190,54 @@ mod test {
         run_test(
             "x == y",
             Ok(vec![
-                Name("x".to_string()),
-                Operator(Equal),
-                Name("y".to_string()),
+                (Name("x".to_string()), 0),
+                (Operator(Equal), 3),
+                (Name("y".to_string()), 5),
             ]),
         );
 
         run_test(
             "x <= y",
             Ok(vec![
-                Name("x".to_string()),
-                Operator(LessEqual),
-                Name("y".to_string()),
+                (Name("x".to_string()), 0),
+                (Operator(LessEqual), 3),
+                (Name("y".to_string()), 5),
             ]),
         );
 
         run_test(
-            "x != y",
+            "x != y ",
             Ok(vec![
-                Name("x".to_string()),
-                Operator(NotEqual),
-                Name("y".to_string()),
+                (Name("x".to_string()), 0),
+                (Operator(NotEqual), 3),
+                (Name("y".to_string()), 5),
             ]),
         );
 
         run_test(
             "x >= y",
             Ok(vec![
-                Name("x".to_string()),
-                Operator(GreaterEqual),
-                Name("y".to_string()),
+                (Name("x".to_string()), 0),
+                (Operator(GreaterEqual), 3),
+                (Name("y".to_string()), 5),
             ]),
         );
 
         run_test(
             "x < y",
             Ok(vec![
-                Name("x".to_string()),
-                Operator(Less),
-                Name("y".to_string()),
+                (Name("x".to_string()), 0),
+                (Operator(Less), 2),
+                (Name("y".to_string()), 4),
             ]),
         );
 
         run_test(
             "x > y",
             Ok(vec![
-                Name("x".to_string()),
-                Operator(Greater),
-                Name("y".to_string()),
+                (Name("x".to_string()), 0),
+                (Operator(Greater), 2),
+                (Name("y".to_string()), 4),
             ]),
         );
     }

@@ -7,7 +7,7 @@ use super::symbol::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Token {
+pub enum TokenType {
     //type of tokens outputted by scanner
     Name(String),       //variable name
     Int(i128),          //integer literal
@@ -21,18 +21,23 @@ pub enum Token {
     Integral,
     Eof, //end of file
 }
+#[derive(Debug, Clone, PartialEq)]
+pub struct Token {
+    pub token_type: TokenType,
+    pub line_pos: usize,
+}
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let display: &str = match self {
-            Token::Name(name) => name,
-            Token::Const(_) => "CONST",
-            Token::ResFun(_) => "RES_FUN",
-            Token::Int(value) => &format!("{}", value),
-            Token::Float(value) => &format!("{}", value),
-            Token::Eof => "EOF",
+        let display: &str = match &self.token_type {
+            TokenType::Name(name) => &name,
+            TokenType::Const(_) => "CONST",
+            TokenType::ResFun(_) => "RES_FUN",
+            TokenType::Int(value) => &format!("{}", value),
+            TokenType::Float(value) => &format!("{}", value),
+            TokenType::Eof => "EOF",
 
-            Token::Operator(op) => match op {
+            TokenType::Operator(op) => match op {
                 Assign => "ASSIGN",
                 Add => "ADD",
                 Sub => "SUB",
@@ -52,10 +57,10 @@ impl fmt::Display for Token {
                 Comma => "COMMA",
                 Neg => "NEG",
             },
-            Token::Calc => "CALC",
-            Token::Sim => "SIM",
-            Token::Der => "DER",
-            Token::Integral => "INTEGRAL",
+            TokenType::Calc => "CALC",
+            TokenType::Sim => "SIM",
+            TokenType::Der => "DER",
+            TokenType::Integral => "INTEGRAL",
         };
         write!(f, "{}", display)
     }
