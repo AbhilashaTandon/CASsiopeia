@@ -12,7 +12,7 @@ pub mod operator;
 
 #[derive(Debug, PartialEq, Clone)]
 
-pub enum Symbol<'a> {
+pub enum SymbolType<'a> {
     //type of tokens of output of parsing
     Variable { name: &'a str },
     Operator(Operator),
@@ -20,29 +20,35 @@ pub enum Symbol<'a> {
     Num { value: CASNum },
     Const(Const<'a>),
 }
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct Symbol<'a> {
+    pub symbol_type: SymbolType<'a>,
+    pub(crate) line_pos: usize,
+}
 //since the variable table is a hash map we can store variables and functions with their names and still have constant lookups
 
-impl Symbol<'_> {
+impl SymbolType<'_> {
     pub fn num_args(&self) -> usize {
         match self {
-            Symbol::Variable { .. } => 0,
-            Symbol::Operator(..) => 2, //this is technically untrue for - because it can also be used for negation, but we will handle that separately
-            Symbol::Num { .. } => 0,
-            Symbol::Const { .. } => 0,
-            Symbol::Function(Func::Function { num_args, .. }) => *num_args,
+            SymbolType::Variable { .. } => 0,
+            SymbolType::Operator(..) => 2, //this is technically untrue for - because it can also be used for negation, but we will handle that separately
+            SymbolType::Num { .. } => 0,
+            SymbolType::Const { .. } => 0,
+            SymbolType::Function(Func::Function { num_args, .. }) => *num_args,
             Self::Function(Func::ResFun(res_fun)) => res_fun.num_args(),
         }
     }
 }
 
-impl Display for Symbol<'_> {
+impl Display for SymbolType<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Symbol::Variable { name } => write!(f, "{}", name),
-            Symbol::Operator(operator) => write!(f, "{}", operator),
-            Symbol::Function(func) => write!(f, "{}", func),
-            Symbol::Num { value } => write!(f, "{}", value),
-            Symbol::Const(constant) => write!(f, "{}", constant),
+            SymbolType::Variable { name } => write!(f, "{}", name),
+            SymbolType::Operator(operator) => write!(f, "{}", operator),
+            SymbolType::Function(func) => write!(f, "{}", func),
+            SymbolType::Num { value } => write!(f, "{}", value),
+            SymbolType::Const(constant) => write!(f, "{}", constant),
         }
     }
 }

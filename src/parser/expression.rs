@@ -13,7 +13,7 @@ use crate::types::symbol::operator::{
     left_associative, precedence,
     Operator::{self, *},
 };
-use crate::types::symbol::Symbol;
+use crate::types::symbol::{Symbol, SymbolType};
 use crate::types::token::Token;
 use crate::types::token::TokenType::{self, *};
 use std::collections::HashMap;
@@ -97,13 +97,19 @@ pub fn to_postfix<'a>(
             Int(i) => {
                 if prev_neg {
                     prev_neg = false;
-                    output_queue.push_back(Symbol::Num {
-                        value: CASNum::from(-*i),
+                    output_queue.push_back(Symbol {
+                        symbol_type: SymbolType::Num {
+                            value: CASNum::from(-*i),
+                        },
+                        line_pos: *line_pos,
                     });
                 } else {
-                    output_queue.push_back(Symbol::Num {
-                        value: CASNum::from(*i),
-                    });
+                    output_queue.push_back(Symbol {
+                        symbol_type: SymbolType::Num {
+                            value: CASNum::from(*i),
+                        },
+                        line_pos: *line_pos,
+                    })
                 }
 
                 //if the token is a number put it into the output queue
@@ -111,13 +117,19 @@ pub fn to_postfix<'a>(
             Float(f) => {
                 if prev_neg {
                     prev_neg = false;
-                    output_queue.push_back(Symbol::Num {
-                        value: CASNum::from(-*f),
+                    output_queue.push_back(Symbol {
+                        symbol_type: SymbolType::Num {
+                            value: CASNum::from(-*f),
+                        },
+                        line_pos: *line_pos,
                     });
                 } else {
-                    output_queue.push_back(Symbol::Num {
-                        value: CASNum::from(*f),
-                    });
+                    output_queue.push_back(Symbol {
+                        symbol_type: SymbolType::Num {
+                            value: CASNum::from(*f),
+                        },
+                        line_pos: *line_pos,
+                    })
                 }
                 //if the token is a number put it into the output queue
             }
@@ -138,7 +150,10 @@ pub fn to_postfix<'a>(
                     }
                 }
 
-                LeftParen | LeftBracket => operator_stack.push_back(Symbol::Operator(*o1)),
+                LeftParen | LeftBracket => operator_stack.push_back(Symbol {
+                    symbol_type: SymbolType::Operator(*o1),
+                    line_pos: *line_pos,
+                }),
 
                 RightParen | RightBracket => {
                     if let Some(value) =
@@ -148,14 +163,14 @@ pub fn to_postfix<'a>(
                     }
                 }
                 Comma => {
-                    while let Some(Symbol::Operator(o2)) = operator_stack.back() {
-                        if *o2 == Operator::LeftParen {
+                    while let Some(o2) = operator_stack.pop_back() {
+                        if o2.symbol_type == SymbolType::Operator(Operator::LeftParen) {
+                            operator_stack.push_back(o2);
                             break;
                         }
                         //while the operator at the top of the operator stack is not a left parenthesis:
 
-                        output_queue.push_back(Symbol::Operator(*o2));
-                        operator_stack.pop_back();
+                        output_queue.push_back(o2);
                         //pop the operator from the operator stack into the output queue
                     }
                 }
@@ -182,18 +197,28 @@ pub fn to_postfix<'a>(
             Der => todo!(),
             Integral => todo!(),
 
-            Const(name) => output_queue.push_back(Symbol::Const(Const::ResConst(*name))),
-            ResFun(name) => operator_stack.push_back(Symbol::Function(Func::ResFun(*name))),
+            Const(name) => output_queue.push_back(Symbol {
+                symbol_type: SymbolType::Const(Const::ResConst(*name)),
+                line_pos: *line_pos,
+            }),
+            ResFun(name) => operator_stack.push_back(Symbol {
+                symbol_type: SymbolType::Function(Func::ResFun(*name)),
+                line_pos: *line_pos,
+            }),
         }
         if prev_neg {
+            let neg_op = Symbol {
+                symbol_type: SymbolType::Operator(Neg),
+                line_pos: *line_pos,
+            };
             match token_type {
                 Float(..) | Int(..) | Der | Integral => {}
                 Name(_) | Const(_) | ResFun(_) | Operator(RightBracket) | Operator(RightParen) => {
-                    output_queue.push_back(Symbol::Operator(Neg));
+                    output_queue.push_back(neg_op);
                     //make previous element negative
                 }
                 Operator(LeftParen) | Operator(LeftBracket) => {
-                    operator_stack.push_back(Symbol::Operator(Neg));
+                    operator_stack.push_back(neg_op);
                     //make parenthetical negative, once we get to the matching right paren/bracket
                 }
                 Operator(..) | Calc | Sim | Eof => {
@@ -210,7 +235,9 @@ pub fn to_postfix<'a>(
     /* After the while loop, pop the remaining items from the operator stack into the output queue. */
     // while there are tokens on the operator stack:
     while let Some(token) = operator_stack.pop_back() {
-        if token == Symbol::Operator(LeftParen) || token == Symbol::Operator(LeftBracket) {
+        if token.symbol_type == SymbolType::Operator(LeftParen)
+            || token.symbol_type == SymbolType::Operator(LeftBracket)
+        {
             return Err(CASError {
                 line_pos: 0,
                 kind: CASErrorKind::MismatchedParentheses,
@@ -240,7 +267,7 @@ pub fn to_postfix<'a>(
 //         }
 //         println!();
 //         let mut args = VecDeque::new();
-//         if Symbol::Operator(Sub) == token {
+//         if SymbolType::Operator(Sub) == token {
 //             //'-' is a special case since it can be both a unary negative operator and a binary subtraction operator
 //             tree_stack.push_back(Box::new(TreeNode {
 //                 data: token,
@@ -288,7 +315,7 @@ pub fn to_postfix<'a>(
 //                 } //0 args
 //             }
 //         } else {
-//             assert_ne!(token, Symbol::Operator(Operator::Sub));
+//             assert_ne!(token, SymbolType::Operator(Operator::Sub));
 //             match token.num_args() {
 //                 0 => {}
 //                 x => {
@@ -335,21 +362,18 @@ fn parse_right_paren<'a>(
     loop {
         let top_of_stack: Option<&Symbol<'a>> = operator_stack.back();
         match top_of_stack {
-            Some(symbol) => match symbol {
-                Symbol::Operator(o2) => match o2 {
+            Some(symbol) => match &symbol.symbol_type {
+                SymbolType::Operator(o2) => match o2 {
                     LeftBracket | LeftParen => break,
                     //while the operator at the top of the operator stack is not a left parenthesis:
                     _ => {
-                        output_queue.push_back(Symbol::Operator(*o2));
+                        output_queue.push_back(symbol.clone());
                         operator_stack.pop_back();
                         //pop the operator from the operator stack into the output queue
                     }
                 },
-                Symbol::Function(Func::Function { num_args, name }) => {
-                    output_queue.push_back(Symbol::Function(Func::Function {
-                        num_args: *num_args,
-                        name: name.to_string(),
-                    }));
+                SymbolType::Function(Func::Function { .. }) => {
+                    output_queue.push_back(symbol.clone());
                     operator_stack.pop_back();
                     //pop the operator from the operator stack into the output queue
                 }
@@ -370,18 +394,34 @@ fn parse_right_paren<'a>(
             }
         }
     }
-    if operator_stack.back() != Some(&Symbol::Operator(LeftParen))
-        && operator_stack.back() != Some(&Symbol::Operator(LeftBracket))
-    {
-        //{assert there is a left parenthesis at the top of the operator stack}
-        return Some(CASError {
-            line_pos,
-            kind: CASErrorKind::MismatchedParentheses,
-        });
+    match operator_stack.back() {
+        Some(symbol) => match symbol.symbol_type {
+            SymbolType::Operator(LeftParen) | SymbolType::Operator(LeftBracket) => {
+                //{assert there is a left parenthesis at the top of the operator stack}
+            }
+            _ => {
+                return Some(CASError {
+                    line_pos,
+                    kind: CASErrorKind::MismatchedParentheses,
+                });
+            }
+        },
+        None => {
+            return Some(CASError {
+                line_pos,
+                kind: CASErrorKind::MismatchedParentheses,
+            });
+            //{assert there is a left parenthesis at the top of the operator stack}
+        }
     }
+
     operator_stack.pop_back();
     //  pop the left parenthesis from the operator stack and discard it
-    if let Some(&Symbol::Function { .. }) = operator_stack.back() {
+    if let Some(Symbol {
+        symbol_type: SymbolType::Function { .. },
+        ..
+    }) = operator_stack.back()
+    {
         output_queue.push_back(operator_stack.pop_back().unwrap());
     }
     // if there is a function token at the top of the operator stack, then:
@@ -396,8 +436,8 @@ fn parse_numeric_operator<'a>(
     line_pos: usize,
 ) -> Option<CASError> {
     while let Some(sym) = operator_stack.back() {
-        match sym {
-            Symbol::Operator(o2) => {
+        match &sym.symbol_type {
+            SymbolType::Operator(o2) => {
                 if *o2 == Operator::LeftParen {
                     break;
                 }
@@ -406,18 +446,15 @@ fn parse_numeric_operator<'a>(
                 //
 
                 let o1_prec = precedence(o1);
-                let o2_prec = precedence(o2);
+                let o2_prec = precedence(&o2);
                 if o2_prec <= o1_prec && (o2_prec != o1_prec || !left_associative(o1)) {
                     break;
                 }
-                output_queue.push_back(Symbol::Operator(*o2));
+                output_queue.push_back(sym.clone());
                 operator_stack.pop_back();
             }
-            Symbol::Function(Func::Function { num_args, name }) => {
-                output_queue.push_back(Symbol::Function(Func::Function {
-                    num_args: *num_args,
-                    name: name.to_string(),
-                }));
+            SymbolType::Function(Func::Function { .. }) => {
+                output_queue.push_back(sym.clone());
                 operator_stack.pop_back();
             }
             _ => {
@@ -430,7 +467,10 @@ fn parse_numeric_operator<'a>(
 
         //pop o2 from the operator stack into the output queue
     }
-    operator_stack.push_back(Symbol::Operator(*o1));
+    operator_stack.push_back(Symbol {
+        symbol_type: SymbolType::Operator(*o1),
+        line_pos,
+    });
     //push o1 onto the operator stack
     None
 }
@@ -444,18 +484,25 @@ fn parse_name<'a>(
     line_pos: usize,
 ) -> Option<CASError> {
     //unknown variable name
+    let name_symbol = Symbol {
+        symbol_type: SymbolType::Variable { name },
+        line_pos,
+    };
     if args.contains(&name.as_str()) {
-        output_queue.push_back(Symbol::Variable { name });
+        output_queue.push_back(name_symbol);
         //if the token is a number put it into the output queue
     } else if let Some(ref var) = var_table.get(name as &str) {
         match var.args.len() {
-            0 => output_queue.push_back(Symbol::Variable { name }),
+            0 => output_queue.push_back(name_symbol),
 
             //if the token is a number put it into the output queue
-            x => operator_stack.push_back(Symbol::Function(Func::Function {
-                num_args: x,
-                name: name.to_string(),
-            })),
+            x => operator_stack.push_back(Symbol {
+                symbol_type: SymbolType::Function(Func::Function {
+                    num_args: x,
+                    name: name.to_string(),
+                }),
+                line_pos,
+            }),
             //if the token is a function push it onto the operator stack
         }
     } else {

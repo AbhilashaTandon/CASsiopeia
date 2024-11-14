@@ -1,6 +1,10 @@
 use std::{collections::HashMap, iter::zip};
 
-use crate::types::{cas_error::CASErrorKind, cas_num::CASNum, symbol::Symbol};
+use crate::types::{
+    cas_error::CASErrorKind,
+    cas_num::CASNum,
+    symbol::{Symbol, SymbolType},
+};
 
 use super::trees::{Tree, TreeNodeRef};
 
@@ -8,7 +12,7 @@ type Expression<'a> = Tree<Symbol<'a>>;
 
 #[derive(PartialEq, Debug)]
 pub struct Var<'a> {
-    pub(crate) expr: Expression<'a>,
+    pub(crate) expr: Tree<SymbolType<'a>>,
     pub args: Box<[&'a str]>, //if args is empty it is a numeric or symbolic variable, 2, 3, pi, x, etc.
 }
 
@@ -20,7 +24,7 @@ impl<'a> Var<'a> {
         self,
         func_name: String,
         arg_vals: Box<[CASNum]>,
-    ) -> Result<Expression<'b>, CASErrorKind>
+    ) -> Result<Tree<SymbolType<'b>>, CASErrorKind>
     where
         'a: 'b,
     {
@@ -47,11 +51,11 @@ impl<'a> Var<'a> {
     }
 }
 
-fn apply<'a>(expr: &mut TreeNodeRef<Symbol>, args: HashMap<&'a str, CASNum>) {
+fn apply<'a>(expr: &mut TreeNodeRef<SymbolType<'a>>, args: HashMap<&'a str, CASNum>) {
     if expr.children.len() == 0 {
-        if let Symbol::Variable { name } = expr.data {
+        if let SymbolType::Variable { name } = expr.data {
             if let Some(value) = args.get(name) {
-                expr.data = Symbol::Num {
+                expr.data = SymbolType::Num {
                     value: value.clone(),
                     //TODO: get rid of this clone
                 };
