@@ -37,7 +37,7 @@ impl<'a> Var<'a> {
         }
 
         if self.expr.root.is_none() {
-            return Err(CASErrorKind::UndefinedFunction { func_name });
+            return Err(CASErrorKind::UnknownSymbol { symbol: func_name });
         }
         let mut args_map: HashMap<&'_ str, CASNum> = HashMap::new();
         for (name, value) in zip(self.args, arg_vals) {

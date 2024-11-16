@@ -16,7 +16,7 @@ pub enum SymbolType<'a> {
     //type of tokens of output of parsing
     Variable { name: &'a str },
     Operator(Operator),
-    Function(Func),
+    Function(Func<'a>),
     Num { value: CASNum },
     Const(Const<'a>),
 }

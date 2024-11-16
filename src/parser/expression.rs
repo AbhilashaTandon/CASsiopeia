@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::ops::Neg;
 
 use num_traits::Float;
 
@@ -59,7 +60,7 @@ pub fn to_postfix<'a>(
             }
             Int(i) => {
                 if let Some(Symbol {
-                    symbol_type: SymbolType::Operator(Sub),
+                    symbol_type: SymbolType::Operator(Neg),
                     ..
                 }) = operator_stack.back()
                 {
@@ -73,7 +74,7 @@ pub fn to_postfix<'a>(
                 } else {
                     output_queue.push_back(Symbol {
                         symbol_type: SymbolType::Num {
-                            value: CASNum::from(-*i),
+                            value: CASNum::from(*i),
                         },
                         line_pos: *line_pos,
                     });
@@ -83,7 +84,7 @@ pub fn to_postfix<'a>(
             }
             Float(f) => {
                 if let Some(Symbol {
-                    symbol_type: SymbolType::Operator(Sub),
+                    symbol_type: SymbolType::Operator(Neg),
                     ..
                 }) = operator_stack.back()
                 {
@@ -97,7 +98,7 @@ pub fn to_postfix<'a>(
                 } else {
                     output_queue.push_back(Symbol {
                         symbol_type: SymbolType::Num {
-                            value: CASNum::from(-*f),
+                            value: CASNum::from(*f),
                         },
                         line_pos: *line_pos,
                     });
@@ -112,7 +113,7 @@ pub fn to_postfix<'a>(
                     line_pos: *line_pos,
                 });
                 if let Some(Symbol {
-                    symbol_type: SymbolType::Operator(Sub),
+                    symbol_type: SymbolType::Operator(Neg),
                     ..
                 }) = operator_stack.back()
                 {
@@ -513,7 +514,7 @@ fn parse_name<'a>(
             0 => {
                 output_queue.push_back(name_symbol);
                 if let Some(Symbol {
-                    symbol_type: SymbolType::Operator(Sub),
+                    symbol_type: SymbolType::Operator(Neg),
                     ..
                 }) = operator_stack.back()
                 {
@@ -525,7 +526,7 @@ fn parse_name<'a>(
             x => operator_stack.push_back(Symbol {
                 symbol_type: SymbolType::Function(Func::Function {
                     num_args: x,
-                    name: name.to_string(),
+                    name: name,
                 }),
                 line_pos,
             }),

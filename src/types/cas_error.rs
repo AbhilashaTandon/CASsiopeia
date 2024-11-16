@@ -24,9 +24,6 @@ use super::token::Token;
         args_needed: usize,
         func_name:String
     },
-    UndefinedFunction{
-        func_name: String
-    },
     InvalidCharacter{
         chr: char
     },
@@ -43,7 +40,7 @@ impl ToString for CASErrorKind {
             CASErrorKind::SyntaxError
             | CASErrorKind::MalformedNumericLiteral{..}
             | CASErrorKind::MalformedVariableName{..} | CASErrorKind::AssignmentInExpression | CASErrorKind::UnknownSymbol{..} | CASErrorKind::MismatchedParentheses | CASErrorKind::NoExpressionGiven | CASErrorKind::InvalidCharacter{..} | CASErrorKind::CommandInExpression { .. } => "Syntax Error",
-            CASErrorKind::WrongNumberOfArgs{..} | CASErrorKind::UndefinedFunction{..} => "Runtime Error",
+            CASErrorKind::WrongNumberOfArgs{..} => "Runtime Error",
         });
     }
 }
@@ -69,7 +66,6 @@ impl CASErrorKind{
             CASErrorKind::MismatchedParentheses => String::from("expression contains mismatched parentheses."),
             CASErrorKind::NoExpressionGiven => String::from("a variable or command was given an empty expression."),
             CASErrorKind::WrongNumberOfArgs{args_given, args_needed, func_name} => format!("function {} requires {} arguments, but was given {}.", func_name, args_needed, args_given),
-            CASErrorKind::UndefinedFunction{func_name} => format!("arguments were passed to an undefined function {}.", func_name),
             CASErrorKind::InvalidCharacter{chr} => format!("an invalid character {} was entered.", chr),
             CASErrorKind::CommandInExpression { command } => format!("the {} command is not allowed within an expression.", command),
             

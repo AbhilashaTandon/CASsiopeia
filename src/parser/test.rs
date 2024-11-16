@@ -11,9 +11,10 @@ mod test {
         },
         types::{
             cas_error::{print_error, CASError, CASErrorKind},
-            symbol::Symbol,
             symbol::{
+                function::Func,
                 operator::Operator::*,
+                Symbol,
                 SymbolType::{self, *},
             },
         },
@@ -294,38 +295,31 @@ mod test {
 
     #[test]
     fn minus_sign() {
-        let symbols = VecDeque::from([
-            (
-                Num {
-                    value: CASNum::from(2),
-                },
-                1,
-            ),
-            (Operator(Neg), 0),
-        ]);
+        let symbols = VecDeque::from([(
+            Num {
+                value: CASNum::from(-2),
+            },
+            1,
+        )]);
 
         test_parser("-2", Ok(symbols_to_postfix(symbols)), &None);
 
-        let symbols = VecDeque::from([
-            (
-                Num {
-                    value: CASNum::from(2),
-                },
-                2,
-            ),
-            (Operator(Neg), 0),
-        ]);
+        let symbols = VecDeque::from([(
+            Num {
+                value: CASNum::from(-2),
+            },
+            2,
+        )]);
 
         test_parser("- 2", Ok(symbols_to_postfix(symbols)), &None);
 
         let symbols = VecDeque::from([
             (
                 Num {
-                    value: CASNum::from(2),
+                    value: CASNum::from(-2),
                 },
                 2,
             ),
-            (Operator(Neg), 0),
             (
                 Num {
                     value: CASNum::from(3),
@@ -372,18 +366,16 @@ mod test {
         let symbols = VecDeque::from([
             (
                 Num {
-                    value: CASNum::from(2),
+                    value: CASNum::from(-2),
                 },
                 2,
             ),
-            (Operator(Neg), 0),
             (
                 Num {
-                    value: CASNum::from(3),
+                    value: CASNum::from(-3),
                 },
                 7,
             ),
-            (Operator(Neg), 6),
             (Operator(Add), 4),
         ]);
 
@@ -392,11 +384,10 @@ mod test {
         let symbols = VecDeque::from([
             (
                 Num {
-                    value: CASNum::from(2),
+                    value: CASNum::from(-2),
                 },
                 2,
             ),
-            (Operator(Neg), 0),
             (
                 Num {
                     value: CASNum::from(3),
@@ -407,5 +398,299 @@ mod test {
         ]);
 
         test_parser("- 2 - 3", Ok(symbols_to_postfix(symbols)), &None);
+    }
+
+    #[test]
+    fn functions() {
+        let err = Err(CASError {
+            kind: CASErrorKind::UnknownSymbol {
+                symbol: "f".to_owned(),
+            },
+            line_pos: 0,
+        });
+
+        test_parser("f(2, 3, 4)", err, &None);
+
+        let var_table = Some(HashMap::from([(
+            "f",
+            Var {
+                expr: Tree::from(SymbolType::Num {
+                    value: CASNum::from(2),
+                }),
+
+                args: Box::new(["x", "y", "z"]),
+            },
+        )]));
+
+        let symbols = VecDeque::from([
+            (
+                Num {
+                    value: CASNum::from(2),
+                },
+                2,
+            ),
+            (
+                Num {
+                    value: CASNum::from(3),
+                },
+                5,
+            ),
+            (
+                Num {
+                    value: CASNum::from(4),
+                },
+                8,
+            ),
+            (
+                Function(Func::Function {
+                    num_args: 3,
+                    name: "f",
+                }),
+                0,
+            ),
+        ]);
+
+        test_parser("f(2, 3, 4)", Ok(symbols_to_postfix(symbols)), &var_table);
+
+        let symbols = VecDeque::from([
+            (
+                Num {
+                    value: CASNum::from(2),
+                },
+                4,
+            ),
+            (
+                Num {
+                    value: CASNum::from(3),
+                },
+                7,
+            ),
+            (
+                Num {
+                    value: CASNum::from(4),
+                },
+                10,
+            ),
+            (
+                Function(Func::Function {
+                    num_args: 3,
+                    name: "foo",
+                }),
+                2,
+            ),
+        ]);
+
+        let var_table = Some(HashMap::from([(
+            "foo",
+            Var {
+                expr: Tree::from(SymbolType::Num {
+                    value: CASNum::from(2),
+                }),
+
+                args: Box::new(["a", "b", "c"]),
+            },
+        )]));
+
+        test_parser("foo(2, 3, 4)", Ok(symbols_to_postfix(symbols)), &var_table);
+
+        let symbols = VecDeque::from([
+            (Variable { name: "x" }, 12),
+            (
+                Function(Func::Function {
+                    num_args: 1,
+                    name: "baz",
+                }),
+                10,
+            ),
+            (
+                Function(Func::Function {
+                    num_args: 1,
+                    name: "bar",
+                }),
+                6,
+            ),
+            (Variable { name: "y" }, 17),
+            (
+                Function(Func::Function {
+                    num_args: 2,
+                    name: "foo",
+                }),
+                2,
+            ),
+        ]);
+
+        let var_table = Some(HashMap::from([
+            (
+                "foo",
+                Var {
+                    expr: Tree::from(SymbolType::Num {
+                        value: CASNum::from(2),
+                    }),
+
+                    args: Box::new(["a", "b"]),
+                },
+            ),
+            (
+                "bar",
+                Var {
+                    expr: Tree::from(SymbolType::Num {
+                        value: CASNum::from(1),
+                    }),
+
+                    args: Box::new(["a"]),
+                },
+            ),
+            (
+                "baz",
+                Var {
+                    expr: Tree::from(SymbolType::Num {
+                        value: CASNum::from(1),
+                    }),
+
+                    args: Box::new(["a"]),
+                },
+            ),
+            (
+                "x",
+                Var {
+                    expr: Tree::from(SymbolType::Num {
+                        value: CASNum::from(2),
+                    }),
+
+                    args: Box::new([]),
+                },
+            ),
+            (
+                "y",
+                Var {
+                    expr: Tree::from(SymbolType::Num {
+                        value: CASNum::from(2),
+                    }),
+
+                    args: Box::new([]),
+                },
+            ),
+        ]));
+
+        test_parser(
+            "foo(bar(baz(x)), y)",
+            Ok(symbols_to_postfix(symbols)),
+            &var_table,
+        );
+
+        let var_table = Some(HashMap::from([
+            (
+                "foo",
+                Var {
+                    expr: Tree::from(SymbolType::Num {
+                        value: CASNum::from(2),
+                    }),
+
+                    args: Box::new(["a", "b"]),
+                },
+            ),
+            (
+                "bar",
+                Var {
+                    expr: Tree::from(SymbolType::Num {
+                        value: CASNum::from(1),
+                    }),
+
+                    args: Box::new(["a"]),
+                },
+            ),
+            (
+                "baz",
+                Var {
+                    expr: Tree::from(SymbolType::Num {
+                        value: CASNum::from(1),
+                    }),
+
+                    args: Box::new(["a"]),
+                },
+            ),
+            (
+                "x",
+                Var {
+                    expr: Tree::from(SymbolType::Num {
+                        value: CASNum::from(2),
+                    }),
+
+                    args: Box::new([]),
+                },
+            ),
+        ]));
+
+        let err = Err(CASError {
+            kind: CASErrorKind::UnknownSymbol {
+                symbol: "y".to_string(),
+            },
+            line_pos: 17,
+        });
+
+        test_parser("foo(bar(baz(x)), y)", err, &var_table);
+    }
+
+    #[test]
+    fn stress_test() {
+        let symbols = VecDeque::from([
+            (
+                Num {
+                    value: CASNum::from(2),
+                },
+                0,
+            ),
+            (
+                Num {
+                    value: CASNum::from(1),
+                },
+                4,
+            ),
+            (
+                Num {
+                    value: CASNum::from(2),
+                },
+                6,
+            ),
+            (Operator(Add), 5),
+            (Operator(Neg), 2),
+            (
+                Num {
+                    value: CASNum::from(2),
+                },
+                11,
+            ),
+            (
+                Num {
+                    value: CASNum::from(5),
+                },
+                13,
+            ),
+            (
+                Num {
+                    value: CASNum::from(2),
+                },
+                17,
+            ),
+            (
+                Num {
+                    value: CASNum::from(400),
+                },
+                21,
+            ),
+            (Operator(Add), 18),
+            (Operator(Neg), 15),
+            (Operator(Mult), 14),
+            (Operator(Add), 12),
+            (Operator(Neg), 9),
+            (Operator(Exp), 8),
+            (Operator(Mult), 1),
+        ]);
+
+        test_parser(
+            "2*-(1+2)^-(2+5*-(2+400))",
+            Ok(symbols_to_postfix(symbols)),
+            &None,
+        );
     }
 }
