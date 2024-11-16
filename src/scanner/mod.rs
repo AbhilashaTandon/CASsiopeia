@@ -239,15 +239,7 @@ fn parse_names(
     if next_char.is_alphabetic() || next_char == '_' {
         let mut token_type: TokenType = Eof;
         let word: String = next_char.to_string() + &get_next_word(iter, line_pos);
-        if types::KEYWORDS.contains(&word.as_str()) {
-            token_type = match word.as_str() {
-                "calc" => Calc,
-                "sim" => Sim,
-                "der" => Der,
-                "int" => Integral,
-                _ => Eof,
-            }
-        } else if let Some(func) = RESERVED_FUNCTIONS.get(&word) {
+        if let Some(func) = RESERVED_FUNCTIONS.get(&word) {
             token_type = ResFun(*func);
         } else if let Some(res_const) = RESERVED_CONSTANTS.get(&word) {
             token_type = Const(*res_const);

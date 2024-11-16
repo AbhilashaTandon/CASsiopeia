@@ -15,11 +15,7 @@ pub enum TokenType {
     Operator(Operator), //operators
     Const(ResConst),    //constants like pi, e, etc.
     ResFun(ResFun),     //reserved function
-    Calc,
-    Sim,
-    Der,
-    Integral,
-    Eof, //end of file
+    Eof,                //end of file
 }
 #[derive(Debug, Clone, PartialEq)]
 pub struct Token {
@@ -31,8 +27,8 @@ impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let display: &str = match &self.token_type {
             TokenType::Name(name) => &name,
-            TokenType::Const(_) => "CONST",
-            TokenType::ResFun(_) => "RES_FUN",
+            TokenType::Const(constant) => &format!("{}", constant),
+            TokenType::ResFun(fun) => &format!("{}", fun),
             TokenType::Int(value) => &format!("{}", value),
             TokenType::Float(value) => &format!("{}", value),
             TokenType::Eof => "EOF",
@@ -57,10 +53,6 @@ impl fmt::Display for Token {
                 Comma => "COMMA",
                 Neg => "NEG",
             },
-            TokenType::Calc => "CALC",
-            TokenType::Sim => "SIM",
-            TokenType::Der => "DER",
-            TokenType::Integral => "INTEGRAL",
         };
         write!(f, "{}", display)
     }

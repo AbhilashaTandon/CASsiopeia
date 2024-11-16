@@ -1,4 +1,7 @@
 use std::collections::VecDeque;
+use std::ops::Neg;
+
+use num_traits::Float;
 
 use super::trees::{Tree, TreeNode, TreeNodeRef};
 use super::vars::{Var, VarTable};
@@ -122,18 +125,6 @@ pub fn to_postfix<'a>(
                 line_pos: *line_pos,
             }),
 
-            Calc | Sim => {
-                return Err(CASError {
-                    kind: CASErrorKind::CommandInExpression {
-                        command: Token {
-                            token_type: token_type.clone(),
-                            line_pos: *line_pos,
-                        },
-                    },
-                    line_pos: *line_pos,
-                });
-            }
-
             Operator(o1) => match o1 {
                 Add | Mult | Div | Exp | Less | Greater | Equal | NotEqual | LessEqual
                 | GreaterEqual => {
@@ -189,17 +180,6 @@ pub fn to_postfix<'a>(
                             line_pos: *line_pos,
                         });
                     }
-                    Some(Calc) | Some(Sim) => {
-                        return Err(CASError {
-                            kind: CASErrorKind::CommandInExpression {
-                                command: Token {
-                                    token_type: token_type.clone(),
-                                    line_pos: *line_pos,
-                                },
-                            },
-                            line_pos: *line_pos,
-                        });
-                    }
                     Some(Eof) => {
                         return Err(CASError {
                             kind: CASErrorKind::SyntaxError,
@@ -216,7 +196,7 @@ pub fn to_postfix<'a>(
                             line_pos: *line_pos,
                         })
                     }
-                    Some(Der) | Some(Integral) | Some(Operator(_)) | None => {
+                    Some(Operator(_)) | None => {
                         operator_stack.push_back(Symbol {
                             symbol_type: SymbolType::Operator(Neg),
                             line_pos: *line_pos,
@@ -228,8 +208,6 @@ pub fn to_postfix<'a>(
             Eof => {
                 break;
             }
-            Der => todo!(),
-            Integral => todo!(),
         }
 
         last_token = Some(token_type.clone());

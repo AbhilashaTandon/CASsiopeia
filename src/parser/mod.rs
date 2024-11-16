@@ -9,7 +9,10 @@ mod test;
 pub mod trees;
 pub(crate) mod vars;
 
-pub fn parse<'a>(
+//here we're mixing semantic parsing with syntactic parsing
+//this makes it easier for functions since we can ensure they're given the right number of arguments
+
+pub fn parse_expr<'a>(
     tokens: &'a Vec<Token>,
     var_table: &'a VarTable<'a>,
     args: Vec<&str>,

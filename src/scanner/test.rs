@@ -6,8 +6,8 @@ mod test {
 
     use crate::types::cas_error::{CASError, CASErrorKind};
 
+    use crate::types::symbol::function::ResFun;
     use crate::types::symbol::operator::Operator::*;
-
     use crate::types::token::Token;
     use crate::types::token::TokenType::{self, *};
 
@@ -75,7 +75,7 @@ mod test {
         run_test(
             "calc 3 * x - 5",
             Ok(vec![
-                (Calc, 3),
+                (ResFun(ResFun::Calc), 3),
                 (Int(3), 5),
                 (Operator(Mult), 7),
                 (Name("x".to_string()), 9),
@@ -85,21 +85,9 @@ mod test {
         );
 
         run_test(
-            "sim 3 * x - 5",
-            Ok(vec![
-                (Sim, 2),
-                (Int(3), 4),
-                (Operator(Mult), 6),
-                (Name("x".to_string()), 8),
-                (Operator(Sub), 10),
-                (Int(5), 12),
-            ]),
-        );
-
-        run_test(
             "der 3 * x - 5, x",
             Ok(vec![
-                (Der, 2),
+                (ResFun(ResFun::Der), 2),
                 (Int(3), 4),
                 (Operator(Mult), 6),
                 (Name("x".to_string()), 8),

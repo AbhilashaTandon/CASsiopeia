@@ -74,7 +74,7 @@ fn main() {
                 None => HashMap::new(),
             };
 
-            let parse = parse(&tokens, &hash_table, vec![]);
+            let parse = parse_expr(&tokens, &hash_table, vec![]);
 
             if let Ok(tree) = parse {
                 println!("{}", tree);

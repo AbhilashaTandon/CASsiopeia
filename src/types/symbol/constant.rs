@@ -24,6 +24,7 @@ pub enum ResConst {
     E,
     Tau,
     I,
+    C, //for indefinite integration
 }
 
 pub const RESERVED_CONSTANTS: phf::Map<&'static str, ResConst> = phf_map! {
@@ -35,6 +36,7 @@ pub const RESERVED_CONSTANTS: phf::Map<&'static str, ResConst> = phf_map! {
     "π" => ResConst::Pi,
     "ϕ" => ResConst::Phi,
     "τ" => ResConst::Tau,
+    "C" => ResConst::C,
 };
 
 impl Display for ResConst {
@@ -48,6 +50,7 @@ impl Display for ResConst {
                 ResConst::E => "e",
                 ResConst::Tau => "τ",
                 ResConst::I => "i",
+                ResConst::C => "C",
             },
         )
     }
