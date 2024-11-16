@@ -52,3 +52,15 @@ impl Display for SymbolType<'_> {
         }
     }
 }
+
+impl Symbol<'_> {
+    pub fn num_args(&self) -> usize {
+        return self.symbol_type.num_args();
+    }
+}
+
+impl Display for Symbol<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.symbol_type)
+    }
+}

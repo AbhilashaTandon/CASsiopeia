@@ -931,27 +931,8 @@ mod test {
             if reconstructed != float {
                 num_wrong += 1;
             }
-            if reconstructed != float {
-
-                // match cas_num.value {
-                //     Finite { exp, .. } => println!("{}", exp),
-                //     _ => {}
-                // }
-                // let reconstructed_bits = reconstructed.to_bits();
-                //
-                // // print!(
-                // //     "{:x}\t{:x}\t{}\t{}\t{}\t{}\t{:x}",
-                // //     bits,
-                // //     reconstructed_bits,
-                // //     bits >> 52 & 0b11111111111,
-                // //     reconstructed_bits >> 52 & 0b11111111111,
-                // //     bits & ((1 << 53) - 1),
-                // //     reconstructed_bits & ((1 << 53) - 1),
-                // //     bits ^ reconstructed_bits,
-                // // );
-
-                // println!();
-            }
         }
+        println!("{} / {}", limit - num_wrong, limit);
+        assert_eq!(num_wrong, 0);
     }
 }

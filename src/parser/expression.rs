@@ -1,5 +1,7 @@
 use std::collections::VecDeque;
 
+use num_traits::Float;
+
 use super::trees::{Parsing, Tree, TreeNode, TreeNodeRef};
 use super::vars::{Var, VarTable};
 use super::CASNum;
@@ -20,20 +22,12 @@ use std::collections::HashMap;
 
 pub fn to_postfix<'a>(
     tokens: &'a Vec<Token>,
-    var_table: VarTable<'a>,
+    var_table: &'a VarTable<'a>,
     args: Vec<&str>,
 ) -> PostFix<'a> {
     let mut token_iter: std::iter::Peekable<std::slice::Iter<'_, Token>> = tokens.iter().peekable();
 
-    let mut prev_neg = false; //if previous token was a Negative sign
-
-    if let Some(token) = token_iter.peek() {
-        if token.token_type == Operator(Sub) {
-            //if first token is negative sign
-            prev_neg = true;
-            token_iter.next(); //skip over
-        }
-    } else {
+    if token_iter.peek().is_none() {
         //if tokens has length 0
         return Err(CASError {
             kind: CASErrorKind::NoExpressionGiven,
@@ -43,44 +37,13 @@ pub fn to_postfix<'a>(
 
     let mut output_queue: VecDeque<Symbol> = VecDeque::new();
     let mut operator_stack: VecDeque<Symbol> = VecDeque::new();
+    let mut last_token: Option<TokenType> = None;
 
     while let Some(Token {
         token_type,
         line_pos,
     }) = token_iter.next()
     {
-        if let Some(&&Token {
-            token_type: Operator(Sub),
-            ..
-        }) = token_iter.peek()
-        {
-            match token_type {
-                Name(..) | Int(..) | Float(..) | Const(..) | ResFun(..) => {}
-                //minus sign means subtraction when after these
-                Operator(..) | Der | Integral => {
-                    //minus sign means negative when after these
-                    prev_neg = true;
-                    token_iter.next(); //skip over
-                }
-                Calc | Sim => {
-                    return Err(CASError {
-                        kind: CASErrorKind::CommandInExpression {
-                            command: Token {
-                                token_type: token_type.clone(),
-                                line_pos: *line_pos,
-                            },
-                        },
-                        line_pos: *line_pos,
-                    })
-                }
-                Eof => {
-                    return Err(CASError {
-                        kind: CASErrorKind::SyntaxError,
-                        line_pos: *line_pos,
-                    })
-                }
-            }
-        }
         match token_type {
             Name(name) => {
                 if let Some(value) = parse_name(
@@ -95,8 +58,12 @@ pub fn to_postfix<'a>(
                 }
             }
             Int(i) => {
-                if prev_neg {
-                    prev_neg = false;
+                if let Some(Symbol {
+                    symbol_type: SymbolType::Operator(Sub),
+                    ..
+                }) = operator_stack.back()
+                {
+                    operator_stack.pop_back();
                     output_queue.push_back(Symbol {
                         symbol_type: SymbolType::Num {
                             value: CASNum::from(-*i),
@@ -106,17 +73,21 @@ pub fn to_postfix<'a>(
                 } else {
                     output_queue.push_back(Symbol {
                         symbol_type: SymbolType::Num {
-                            value: CASNum::from(*i),
+                            value: CASNum::from(-*i),
                         },
                         line_pos: *line_pos,
-                    })
+                    });
                 }
 
                 //if the token is a number put it into the output queue
             }
             Float(f) => {
-                if prev_neg {
-                    prev_neg = false;
+                if let Some(Symbol {
+                    symbol_type: SymbolType::Operator(Sub),
+                    ..
+                }) = operator_stack.back()
+                {
+                    operator_stack.pop_back();
                     output_queue.push_back(Symbol {
                         symbol_type: SymbolType::Num {
                             value: CASNum::from(-*f),
@@ -126,19 +97,47 @@ pub fn to_postfix<'a>(
                 } else {
                     output_queue.push_back(Symbol {
                         symbol_type: SymbolType::Num {
-                            value: CASNum::from(*f),
+                            value: CASNum::from(-*f),
                         },
                         line_pos: *line_pos,
-                    })
+                    });
                 }
+
                 //if the token is a number put it into the output queue
             }
-            Eof => {
-                break;
+
+            Const(name) => {
+                output_queue.push_back(Symbol {
+                    symbol_type: SymbolType::Const(Const::ResConst(*name)),
+                    line_pos: *line_pos,
+                });
+                if let Some(Symbol {
+                    symbol_type: SymbolType::Operator(Sub),
+                    ..
+                }) = operator_stack.back()
+                {
+                    output_queue.push_back(operator_stack.pop_back().unwrap());
+                }
+            }
+            ResFun(name) => operator_stack.push_back(Symbol {
+                symbol_type: SymbolType::Function(Func::ResFun(*name)),
+                line_pos: *line_pos,
+            }),
+
+            Calc | Sim => {
+                return Err(CASError {
+                    kind: CASErrorKind::CommandInExpression {
+                        command: Token {
+                            token_type: token_type.clone(),
+                            line_pos: *line_pos,
+                        },
+                    },
+                    line_pos: *line_pos,
+                });
             }
 
             Operator(o1) => match o1 {
-                Add | Sub | Mult | Div | Exp | Less | Greater | Equal | NotEqual | LessEqual
+                Add | Mult | Div | Exp | Less | Greater | Equal | NotEqual | LessEqual
                 | GreaterEqual => {
                     if let Some(value) = parse_numeric_operator(
                         &mut operator_stack,
@@ -180,56 +179,74 @@ pub fn to_postfix<'a>(
                         line_pos: *line_pos,
                     });
                 }
-                Neg => assert!(false),
+                Sub | Neg => match last_token {
+                    Some(Name(_))
+                    | Some(Int(_))
+                    | Some(Float(_))
+                    | Some(Const(_))
+                    | Some(Operator(RightBracket))
+                    | Some(Operator(RightParen)) => {
+                        operator_stack.push_back(Symbol {
+                            symbol_type: SymbolType::Operator(Sub),
+                            line_pos: *line_pos,
+                        });
+                    }
+                    Some(Calc) | Some(Sim) => {
+                        return Err(CASError {
+                            kind: CASErrorKind::CommandInExpression {
+                                command: Token {
+                                    token_type: token_type.clone(),
+                                    line_pos: *line_pos,
+                                },
+                            },
+                            line_pos: *line_pos,
+                        });
+                    }
+                    Some(Eof) => {
+                        return Err(CASError {
+                            kind: CASErrorKind::SyntaxError,
+                            line_pos: *line_pos,
+                        });
+                    }
+                    Some(ResFun(f)) => {
+                        return Err(CASError {
+                            kind: CASErrorKind::WrongNumberOfArgs {
+                                args_given: 0,
+                                args_needed: f.num_args(),
+                                func_name: f.to_string(),
+                            },
+                            line_pos: *line_pos,
+                        })
+                    }
+                    Some(Der) | Some(Integral) | Some(Operator(_)) | None => {
+                        operator_stack.push_back(Symbol {
+                            symbol_type: SymbolType::Operator(Neg),
+                            line_pos: *line_pos,
+                        });
+                    }
+                },
             },
 
-            Calc | Sim => {
-                return Err(CASError {
-                    kind: CASErrorKind::CommandInExpression {
-                        command: Token {
-                            token_type: token_type.clone(),
-                            line_pos: *line_pos,
-                        },
-                    },
-                    line_pos: *line_pos,
-                });
+            Eof => {
+                break;
             }
             Der => todo!(),
             Integral => todo!(),
+        }
 
-            Const(name) => output_queue.push_back(Symbol {
-                symbol_type: SymbolType::Const(Const::ResConst(*name)),
-                line_pos: *line_pos,
-            }),
-            ResFun(name) => operator_stack.push_back(Symbol {
-                symbol_type: SymbolType::Function(Func::ResFun(*name)),
-                line_pos: *line_pos,
-            }),
-        }
-        if prev_neg {
-            let neg_op = Symbol {
-                symbol_type: SymbolType::Operator(Neg),
-                line_pos: *line_pos,
-            };
-            match token_type {
-                Float(..) | Int(..) | Der | Integral => {}
-                Name(_) | Const(_) | ResFun(_) | Operator(RightBracket) | Operator(RightParen) => {
-                    output_queue.push_back(neg_op);
-                    //make previous element negative
-                }
-                Operator(LeftParen) | Operator(LeftBracket) => {
-                    operator_stack.push_back(neg_op);
-                    //make parenthetical negative, once we get to the matching right paren/bracket
-                }
-                Operator(..) | Calc | Sim | Eof => {
-                    return Err(CASError {
-                        kind: CASErrorKind::SyntaxError,
-                        line_pos: *line_pos,
-                    });
-                }
-            }
-            prev_neg = false;
-        }
+        last_token = Some(token_type.clone());
+
+        // print!("output queue: [");
+        // for token in &output_queue {
+        //     print!("{} ", token.to_string());
+        // }
+        // println!("]");
+        // print!("operator stack: [");
+        // for token in &operator_stack {
+        //     print!("{} ", token.to_string());
+        // }
+        // println!("]");
+        // println!();
     }
 
     /* After the while loop, pop the remaining items from the operator stack into the output queue. */
@@ -493,7 +510,16 @@ fn parse_name<'a>(
         //if the token is a number put it into the output queue
     } else if let Some(ref var) = var_table.get(name as &str) {
         match var.args.len() {
-            0 => output_queue.push_back(name_symbol),
+            0 => {
+                output_queue.push_back(name_symbol);
+                if let Some(Symbol {
+                    symbol_type: SymbolType::Operator(Sub),
+                    ..
+                }) = operator_stack.back()
+                {
+                    output_queue.push_back(operator_stack.pop_back().unwrap());
+                }
+            }
 
             //if the token is a number put it into the output queue
             x => operator_stack.push_back(Symbol {
