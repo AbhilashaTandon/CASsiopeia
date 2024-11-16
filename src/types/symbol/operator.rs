@@ -30,8 +30,8 @@ pub enum Operator {
 
 pub fn left_associative(operator: &Operator) -> bool {
     match operator {
-        Operator::Exp | Operator::Assign | Operator::Neg => true,
-        _ => false,
+        Operator::Exp | Operator::Assign | Operator::Neg => false,
+        _ => true,
     }
 }
 

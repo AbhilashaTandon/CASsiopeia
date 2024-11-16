@@ -634,6 +634,76 @@ mod test {
     }
 
     #[test]
+    fn argument_order() {
+        let symbols = VecDeque::from([
+            (Variable { name: "x" }, 4),
+            (Variable { name: "y" }, 7),
+            (
+                Function(Func::Function {
+                    num_args: 2,
+                    name: "foo",
+                }),
+                2,
+            ),
+        ]);
+
+        let var_table = Some(HashMap::from([
+            (
+                "foo",
+                Var {
+                    expr: Tree::from(SymbolType::Num {
+                        value: CASNum::from(2),
+                    }),
+
+                    args: Box::new(["a", "b"]),
+                },
+            ),
+            (
+                "bar",
+                Var {
+                    expr: Tree::from(SymbolType::Num {
+                        value: CASNum::from(1),
+                    }),
+
+                    args: Box::new(["a"]),
+                },
+            ),
+            (
+                "baz",
+                Var {
+                    expr: Tree::from(SymbolType::Num {
+                        value: CASNum::from(1),
+                    }),
+
+                    args: Box::new(["a"]),
+                },
+            ),
+            (
+                "x",
+                Var {
+                    expr: Tree::from(SymbolType::Num {
+                        value: CASNum::from(2),
+                    }),
+
+                    args: Box::new([]),
+                },
+            ),
+            (
+                "y",
+                Var {
+                    expr: Tree::from(SymbolType::Num {
+                        value: CASNum::from(2),
+                    }),
+
+                    args: Box::new([]),
+                },
+            ),
+        ]));
+
+        test_parser("foo(x, y)", Ok(symbols_to_postfix(symbols)), &var_table);
+    }
+
+    #[test]
     fn stress_test() {
         let symbols = VecDeque::from([
             (

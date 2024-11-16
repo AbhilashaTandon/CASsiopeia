@@ -86,8 +86,7 @@ impl<Symbol: std::fmt::Display> Display for Tree<Symbol> {
     }
 }
 
-//adapted from
-//https://stackoverflow.com/questions/36311991/c-sharp-display-a-binary-search-tree-in-console/36313190#36313190
+//adapted from https://stackoverflow.com/questions/36311991/c-sharp-display-a-binary-search-tree-in-console/36313190#36313190
 fn print_tree_node<Symbol: std::fmt::Display>(
     f: &mut std::fmt::Formatter<'_>,
     node: &TreeNode<Symbol>,
@@ -109,30 +108,3 @@ fn print_tree_node<Symbol: std::fmt::Display>(
     }
     Ok(())
 }
-
-// public void PrintPretty(string indent, bool last)
-//         {
-
-//             Console.Write(indent);
-//             if (last)
-//             {
-//                 Console.Write("└─");
-//                 indent += "  ";
-//             }
-//             else
-//             {
-//                 Console.Write("├─");
-//                 indent += "| ";
-//             }
-//             Console.WriteLine(item);
-
-//             var children = new List<BNode>();
-//             if (this.left != null)
-//                 children.Add(this.left);
-//             if (this.right != null)
-//                 children.Add(this.right);
-
-//             for (int i = 0; i < children.Count; i++)
-//                 children[i].PrintPretty(indent, i == children.Count - 1);
-
-//         }

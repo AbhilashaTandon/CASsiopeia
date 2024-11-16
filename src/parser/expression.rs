@@ -1,9 +1,6 @@
 use std::collections::VecDeque;
-use std::ops::Neg;
 
-use num_traits::Float;
-
-use super::trees::{Parsing, Tree, TreeNode, TreeNodeRef};
+use super::trees::{Tree, TreeNode, TreeNodeRef};
 use super::vars::{Var, VarTable};
 use super::CASNum;
 
@@ -236,18 +233,6 @@ pub fn to_postfix<'a>(
         }
 
         last_token = Some(token_type.clone());
-
-        // print!("output queue: [");
-        // for token in &output_queue {
-        //     print!("{} ", token.to_string());
-        // }
-        // println!("]");
-        // print!("operator stack: [");
-        // for token in &operator_stack {
-        //     print!("{} ", token.to_string());
-        // }
-        // println!("]");
-        // println!();
     }
 
     /* After the while loop, pop the remaining items from the operator stack into the output queue. */
@@ -277,7 +262,7 @@ pub fn shunting_yard<'a>(
         let mut args = VecDeque::new();
         for _ in 0..symbol.symbol_type.num_args() {
             if let Some(arg) = tree_stack.pop() {
-                args.push_back(arg);
+                args.push_front(arg);
             } else {
                 return Err(CASError {
                     line_pos: symbol.line_pos,

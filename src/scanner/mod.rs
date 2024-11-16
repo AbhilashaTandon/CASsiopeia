@@ -206,18 +206,16 @@ fn parse_ops(
     //parses operators that are one character
     let one_char = next_char.to_string();
 
-    if iter.peek().is_some() {
-        if iter.peek().unwrap().1 == '=' {
-            match OPERATORS.get(&(next_char.to_string() + "=")) {
-                Some(op) => {
-                    iter.next(); //advance iterator if success
-                    return Some(Token {
-                        token_type: Operator(*op),
-                        line_pos: *line_pos + 1,
-                    });
-                }
-                None => {}
+    if let Some((_, '=')) = iter.peek() {
+        match OPERATORS.get(&(next_char.to_string() + "=")) {
+            Some(op) => {
+                iter.next(); //advance iterator if success
+                return Some(Token {
+                    token_type: Operator(*op),
+                    line_pos: *line_pos + 1,
+                });
             }
+            None => {}
         }
     }
     match OPERATORS.get(&one_char) {
