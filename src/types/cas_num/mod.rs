@@ -3,6 +3,8 @@ use std::{cmp::max, collections::VecDeque};
 use std::cmp::Ordering::{Equal, Greater, Less};
 use std::cmp::{min, Ordering};
 
+use std::fmt::Debug;
+
 type DigitType = u64;
 const NUM_BITS: i128 = 64;
 
@@ -18,7 +20,7 @@ enum Sign {
     Neg,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub(crate) struct CASNum {
     pub value: CASValue,
     sign: Sign,
@@ -376,7 +378,7 @@ impl CASValue {
 
 use std::fmt::{format, Display};
 
-impl Display for CASNum {
+impl Debug for CASNum {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let float: f64 = <CASNum as Clone>::clone(&(*self)).into();
         //TODO: get rid of this clone
@@ -397,6 +399,41 @@ impl Display for CASNum {
                     exp,
                     float,
                 )
+            }
+            CASNum {
+                value: CASValue::Infinite,
+                sign: Sign::Pos,
+            } => write!(f, "∞"),
+            CASNum {
+                value: CASValue::Infinite,
+                sign: Sign::Neg,
+            } => write!(f, "-∞"),
+            CASNum {
+                value: CASValue::Indeterminate,
+                ..
+            } => write!(f, "NaN"),
+        }
+    }
+}
+
+impl Display for CASNum {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let float: f64 = <CASNum as Clone>::clone(&(*self)).into();
+
+        if float == f64::INFINITY || float == f64::NEG_INFINITY || float.is_nan() {
+            write!(f, "{:?}", self)?
+        }
+        //TODO: get rid of this clone
+        match self {
+            CASNum {
+                value: CASValue::Finite { exp, .. },
+                ..
+            } => {
+                if float < 1e6 && float > 1e-6 {
+                    write!(f, "{}", float,)
+                } else {
+                    write!(f, "{:e}", float,)
+                }
             }
             CASNum {
                 value: CASValue::Infinite,

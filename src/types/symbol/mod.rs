@@ -31,10 +31,9 @@ pub struct Symbol<'a> {
 impl SymbolType<'_> {
     pub fn num_args(&self) -> usize {
         match self {
-            SymbolType::Variable { .. } => 0,
-            SymbolType::Operator(..) => 2, //this is technically untrue for - because it can also be used for negation, but we will handle that separately
-            SymbolType::Num { .. } => 0,
-            SymbolType::Const { .. } => 0,
+            SymbolType::Variable { .. } | SymbolType::Num { .. } | SymbolType::Const { .. } => 0,
+            SymbolType::Operator(Operator::Neg) => 1,
+            SymbolType::Operator(..) => 2,
             SymbolType::Function(Func::Function { num_args, .. }) => *num_args,
             Self::Function(Func::ResFun(res_fun)) => res_fun.num_args(),
         }

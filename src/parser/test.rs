@@ -2,6 +2,8 @@
 mod test {
     use std::collections::{HashMap, VecDeque};
 
+    //Symbol { symbol_type: (Num { value: CASNum { value: Finite { digits: \[(\d+)\], exp: 0 }, sign: (Neg|Pos) } }|Operator\((\w+)\)), line_pos: (\d+) }
+
     use crate::{
         parser::{
             expression::{to_postfix, PostFix},

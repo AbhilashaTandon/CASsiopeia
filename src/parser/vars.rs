@@ -11,7 +11,7 @@ use super::trees::{Tree, TreeNodeRef};
 type Expression<'a> = Tree<Symbol<'a>>;
 
 #[derive(PartialEq, Debug)]
-pub struct Var<'a> {
+pub(crate) struct Var<'a> {
     pub(crate) expr: Tree<SymbolType<'a>>,
     pub args: Box<[&'a str]>, //if args is empty it is a numeric or symbolic variable, 2, 3, pi, x, etc.
 }

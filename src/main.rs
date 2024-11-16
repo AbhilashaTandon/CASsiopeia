@@ -5,13 +5,19 @@
 // use std::path::Path;
 
 use std::{
+    collections::HashMap,
     env,
     fs::File,
     io::{self, Read, Write},
+    iter::zip,
     path::Path,
 };
 
-use types::cas_num::CASNum;
+use parser::vars::Var;
+use parser::*;
+use scanner::tokenize;
+use trees::Tree;
+use types::{cas_error::print_error, cas_num::CASNum, symbol::SymbolType};
 
 mod parser;
 mod scanner;
@@ -26,27 +32,56 @@ fn main() {
         return;
     }
 
-    let floats = vec![
-        2.5325,
-        0.0000019073486328125,
-        -2.34844396355274555919e-22,
-        1.04091361631528862002e-27,
-        -1.83996007268899958108e+31,
-        0.,
-        902341.2532,
-        0239402.2340923,
-        55.592082977294921875,
-        13.384548187255859375,
-        36029084781772800.0,
-        4.5741310728335148525e-26,
-        5.35045224510513345425e-23,
-        2582772973568.0,
-        1.95604696469614937424e-16,
-        3.942e192,
+    let expressions = vec![
+        "3 * x ^ 2 + 5 * x + 7",
+        "1 / 238 * sin(x^x^x)",
+        "2 - 2 - 2 - 2",
+        "3.12351 * 9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999 - sin(54943248923042 * pi)",
+
+        //TODO: write custom int and float literal parsers, because the rust native ones wont work for arbitrary precision
+    ];
+    let var_tables: Vec<Option<HashMap<&str, Var<'_>>>> = vec![
+        Some(HashMap::from([(
+            "x",
+            Var {
+                expr: Tree::from(SymbolType::Num {
+                    value: CASNum::from(2),
+                }),
+
+                args: Box::new([]),
+            },
+        )])),
+        Some(HashMap::from([(
+            "x",
+            Var {
+                expr: Tree::from(SymbolType::Num {
+                    value: CASNum::from(2),
+                }),
+
+                args: Box::new([]),
+            },
+        )])),
+        None,
+        None,
     ];
 
-    for float in floats {
-        println!("{} {:?}", float, CASNum::from(float));
+    for (expr, var_table) in zip(&expressions, var_tables) {
+        let scan = tokenize(&expr);
+
+        if let Ok(tokens) = scan {
+            let hash_table = match var_table {
+                Some(x) => x,
+                None => HashMap::new(),
+            };
+
+            let parse = parse(&tokens, &hash_table, vec![]);
+
+            if let Ok(tree) = parse {
+                println!("{}", tree);
+            } else {
+                print_error(parse.unwrap_err(), &expr, 1);
+            }
+        }
     }
 }
 

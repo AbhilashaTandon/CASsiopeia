@@ -267,110 +267,50 @@ pub fn to_postfix<'a>(
     return Ok(output_queue);
 }
 
-// pub fn shunting_yard() {
-//     let mut tree_stack: VecDeque<TreeNodeRef<Symbol<'a>>> = VecDeque::new();
-//     //temporary stack for constructing the tree
+pub fn shunting_yard<'a>(
+    mut output_queue: VecDeque<Symbol<'a>>,
+) -> Result<Tree<Symbol<'a>>, CASError> {
+    let mut tree_stack: Vec<TreeNodeRef<Symbol<'a>>> = vec![];
+    //temporary stack for constructing the tree
 
-//     let mut prev_sub: bool = false;
-//     //if last token was Operator::Sub
+    while let Some(symbol) = output_queue.pop_front() {
+        let mut args = VecDeque::new();
+        for _ in 0..symbol.symbol_type.num_args() {
+            if let Some(arg) = tree_stack.pop() {
+                args.push_back(arg);
+            } else {
+                return Err(CASError {
+                    line_pos: symbol.line_pos,
+                    kind: CASErrorKind::SyntaxError,
+                });
+            }
+        }
+        tree_stack.push(Box::new(TreeNode {
+            data: symbol,
+            children: args,
+        }));
+    }
 
-//     for token in &output_queue {
-//         print!("{}, ", token);
-//     }
-//     println!();
+    return match tree_stack.len() {
+        0 => Err(CASError {
+            line_pos: 0,
+            kind: CASErrorKind::NoExpressionGiven,
+        }),
 
-//     for token in output_queue {
-//         for token_2 in &tree_stack {
-//             print!("{}, ", token_2.data);
-//         }
-//         println!();
-//         let mut args = VecDeque::new();
-//         if SymbolType::Operator(Sub) == token {
-//             //'-' is a special case since it can be both a unary negative operator and a binary subtraction operator
-//             tree_stack.push_back(Box::new(TreeNode {
-//                 data: token,
-//                 children: VecDeque::new(),
-//             }));
-//             prev_sub = true;
-//             continue;
-//         } else if prev_sub {
-//             let neg = tree_stack.pop_back();
-//             match neg {
-//                 //check if 0 args so we can unwrap it
-//                 Some(mut operator) => {
-//                     match tree_stack.len() {
-//                         1 => {
-//                             //unary negative
-//                             operator.children.push_back(Box::new(TreeNode {
-//                                 data: token,
-//                                 children: VecDeque::new(),
-//                             }));
-//                             //add next token as child to make -token
-//                         }
-//                         2 => {
-//                             //binary minus
-
-//                             let minuend = tree_stack.pop_back().unwrap();
-//                             //minuend is a fancy word for the value being subtracted from
-//                             operator.children.push_back(minuend);
-//                             operator.children.push_back(Box::new(TreeNode {
-//                                 data: token,
-//                                 children: VecDeque::new(),
-//                             }));
-//                         }
-//                         _ => {
-//                             assert!(false);
-//                             return Err(CASErrorKind::SyntaxError);
-//                         } //more than 2 args
-//                     }
-
-//                     tree_stack.push_back(operator);
-//                 }
-
-//                 None => {
-//                     assert!(false);
-//                     return Err(CASErrorKind::SyntaxError);
-//                 } //0 args
-//             }
-//         } else {
-//             assert_ne!(token, SymbolType::Operator(Operator::Sub));
-//             match token.num_args() {
-//                 0 => {}
-//                 x => {
-//                     for _ in 0..x {
-//                         match tree_stack.pop_back() {
-//                             Some(symbol) => args.push_front(symbol),
-//                             //since we're getting them backwards we need to add them backwards
-//                             None => {
-//                                 println!("{}", token);
-//                                 assert!(false);
-//                                 return Err(CASErrorKind::SyntaxError);
-//                             }
-//                         }
-//                     }
-//                 }
-//             }
-//             tree_stack.push_back(Box::new(TreeNode {
-//                 data: token,
-//                 children: args,
-//             }));
-//         }
-//     }
-//     //construct tree
-//     return match tree_stack.len() {
-//         0 => Err(CASErrorKind::NoExpressionGiven),
-
-//         //if there are no tokens in tree stack no expression was given
-//         1 => {
-//             return Ok(Tree {
-//                 root: Some(tree_stack.front().unwrap().clone()),
-//                 //TODO: get rid of this clone
-//             });
-//         }
-//         _ => Err(CASErrorKind::SyntaxError),
-//         //if there are multiple
-//     };
-// }
+        //if there are no tokens in tree stack no expression was given
+        1 => {
+            return Ok(Tree {
+                root: Some(tree_stack.first().unwrap().clone()),
+                //TODO: get rid of this clone
+            });
+        }
+        _ => Err(CASError {
+            line_pos: tree_stack[1].data.line_pos,
+            kind: CASErrorKind::NoExpressionGiven,
+        }),
+        //if there are multiple
+    };
+}
 
 fn parse_right_paren<'a>(
     operator_stack: &mut VecDeque<Symbol<'a>>,
@@ -524,10 +464,7 @@ fn parse_name<'a>(
 
             //if the token is a number put it into the output queue
             x => operator_stack.push_back(Symbol {
-                symbol_type: SymbolType::Function(Func::Function {
-                    num_args: x,
-                    name: name,
-                }),
+                symbol_type: SymbolType::Function(Func::Function { num_args: x, name }),
                 line_pos,
             }),
             //if the token is a function push it onto the operator stack
