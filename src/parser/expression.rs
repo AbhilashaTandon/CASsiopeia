@@ -1,7 +1,4 @@
 use std::collections::VecDeque;
-use std::ops::Neg;
-
-use num_traits::Float;
 
 use super::trees::{Tree, TreeNode, TreeNodeRef};
 use super::vars::{Var, VarTable};
@@ -58,7 +55,7 @@ pub fn to_postfix<'a>(
                     return Err(value);
                 }
             }
-            Int(i) => {
+            Num(number) => {
                 if let Some(Symbol {
                     symbol_type: SymbolType::Operator(Neg),
                     ..
@@ -67,38 +64,14 @@ pub fn to_postfix<'a>(
                     operator_stack.pop_back();
                     output_queue.push_back(Symbol {
                         symbol_type: SymbolType::Num {
-                            value: CASNum::from(-*i),
+                            value: -number.clone(),
                         },
                         line_pos: *line_pos,
                     });
                 } else {
                     output_queue.push_back(Symbol {
                         symbol_type: SymbolType::Num {
-                            value: CASNum::from(*i),
-                        },
-                        line_pos: *line_pos,
-                    });
-                }
-
-                //if the token is a number put it into the output queue
-            }
-            Float(f) => {
-                if let Some(Symbol {
-                    symbol_type: SymbolType::Operator(Neg),
-                    ..
-                }) = operator_stack.back()
-                {
-                    operator_stack.pop_back();
-                    output_queue.push_back(Symbol {
-                        symbol_type: SymbolType::Num {
-                            value: CASNum::from(-*f),
-                        },
-                        line_pos: *line_pos,
-                    });
-                } else {
-                    output_queue.push_back(Symbol {
-                        symbol_type: SymbolType::Num {
-                            value: CASNum::from(*f),
+                            value: number.clone(),
                         },
                         line_pos: *line_pos,
                     });
@@ -170,8 +143,7 @@ pub fn to_postfix<'a>(
                 }
                 Sub | Neg => match last_token {
                     Some(Name(_))
-                    | Some(Int(_))
-                    | Some(Float(_))
+                    | Some(Num(_))
                     | Some(Const(_))
                     | Some(Operator(RightBracket))
                     | Some(Operator(RightParen)) => {

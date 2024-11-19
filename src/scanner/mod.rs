@@ -1,7 +1,6 @@
 use std::iter::{Enumerate, Peekable};
 use std::{str, usize};
 
-use crate::types;
 use crate::types::cas_error::{CASError, CASErrorKind};
 use crate::types::symbol::constant::RESERVED_CONSTANTS;
 use crate::types::symbol::function::RESERVED_FUNCTIONS;
@@ -10,6 +9,7 @@ use crate::types::symbol::operator::*;
 use crate::types::token::TokenType::*;
 use crate::types::token::{Token, TokenType};
 
+mod num_lit;
 mod test;
 
 pub type Tokenization = Result<Vec<Token>, Vec<CASError>>;
@@ -50,8 +50,8 @@ pub fn tokenize(line_of_code: &str) -> Tokenization {
 }
 
 fn get_token(iter: &mut Peekable<Enumerate<str::Chars>>) -> Result<Token, CASError> {
-    let mut next_char = '\0';
-    let mut line_pos = 0;
+    let mut next_char;
+    let mut line_pos;
 
     match iter.next() {
         None => {
@@ -112,13 +112,9 @@ fn parse_number(
         let token_type = match get_next_number(next_char, iter, line_pos) {
             //check if its a float, int, or something that cant be either
             Ok(Token {
-                token_type: Float(float),
+                token_type: Num(number),
                 ..
-            }) => Float(float),
-            Ok(Token {
-                token_type: Int(int),
-                ..
-            }) => Int(int),
+            }) => Num(number),
 
             Err(lit) => {
                 return Some(Err(CASError {
@@ -159,7 +155,7 @@ fn get_next_number(
     let int_parse = num.parse::<i64>();
     if let Ok(int) = int_parse {
         return Ok(Token {
-            token_type: Int(int.into()),
+            token_type: Num(int.into()),
             line_pos: *line_pos,
         });
     }
@@ -167,12 +163,23 @@ fn get_next_number(
     match float_parse {
         Ok(float) => {
             return Ok(Token {
-                token_type: Float(float),
+                token_type: Num(float.into()),
                 line_pos: *line_pos,
             })
         }
         Err(_) => return Err(num),
     }
+    /*
+    let parse : Result<CASNum, Error> = num_lit::parse_lit(num);
+    match parse {
+        Ok(x) => {
+            return Ok(Token {
+                token_type: Num(x),
+                line_pos: *line_pos,
+            })
+        }
+        Err(_) => return Err(num),
+    } */
 }
 
 fn skip_over_whitespace(
@@ -195,7 +202,7 @@ fn skip_over_whitespace(
             });
         }
     }
-    None //we return none once we reach a non whitespace char
+    return None; //we return none once we reach a non whitespace char
 }
 
 fn parse_ops(

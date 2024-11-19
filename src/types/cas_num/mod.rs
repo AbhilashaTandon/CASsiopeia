@@ -327,13 +327,10 @@ impl CASValue {
                 //exponent of max digit of self_digits
                 let self_min_exp = self_max_exp - (self_digits.len() - 1) as isize;
                 //exponent of min digit of self_digits
-                let self_num_digits = self_digits.len() as isize;
 
                 let other_max_exp = other_exp;
                 //exponent of max digit of other_digits
                 let other_min_exp = other_max_exp - (other_digits.len() - 1) as isize;
-
-                let other_num_digits = other_digits.len() as isize;
 
                 let mut out: VecDeque<VecDeque<(DigitType, DigitType, isize)>> = VecDeque::new();
                 for i in self_min_exp..=self_max_exp {
@@ -376,7 +373,7 @@ impl CASValue {
     }
 }
 
-use std::fmt::{format, Display};
+use std::fmt::Display;
 
 impl Debug for CASNum {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -426,7 +423,7 @@ impl Display for CASNum {
         //TODO: get rid of this clone
         match self {
             CASNum {
-                value: CASValue::Finite { exp, .. },
+                value: CASValue::Finite { .. },
                 ..
             } => {
                 if float < 1e6 && float > 1e-6 {

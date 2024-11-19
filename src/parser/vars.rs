@@ -8,8 +8,6 @@ use crate::types::{
 
 use super::trees::{Tree, TreeNodeRef};
 
-type Expression<'a> = Tree<Symbol<'a>>;
-
 #[derive(PartialEq, Debug)]
 pub(crate) struct Var<'a> {
     pub(crate) expr: Tree<SymbolType<'a>>,

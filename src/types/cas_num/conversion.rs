@@ -1,6 +1,6 @@
 //for converting primitives to CASNum and vice versa
 
-use core::{f32, num};
+use core::f32;
 use std::collections::VecDeque;
 
 use crate::types::cas_num::{DigitType, NUM_BITS};
@@ -153,7 +153,7 @@ impl From<i64> for CASNum {
 }
 
 impl From<i128> for CASNum {
-    fn from(mut value: i128) -> Self {
+    fn from(value: i128) -> Self {
         let mut digits: VecDeque<DigitType> = VecDeque::new();
 
         let mut abs = value.abs();

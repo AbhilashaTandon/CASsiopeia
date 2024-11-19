@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    fmt::{write, Display},
-};
+use std::fmt::Display;
 
 use phf_macros::phf_map;
 

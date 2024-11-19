@@ -6,6 +6,7 @@ mod test {
 
     use crate::types::cas_error::{CASError, CASErrorKind};
 
+    use crate::types::cas_num::CASNum;
     use crate::types::symbol::function::ResFun;
     use crate::types::symbol::operator::Operator::*;
     use crate::types::token::Token;
@@ -42,7 +43,7 @@ mod test {
             Ok(vec![
                 (Name("x".to_string()), 0),
                 (Operator(Assign), 2),
-                (Int(2), 4),
+                (Num(CASNum::from(2)), 4),
             ]),
         );
     }
@@ -59,11 +60,11 @@ mod test {
                 (Name("y".to_string()), 4),
                 (Operator(RightParen), 5),
                 (Operator(Assign), 7),
-                (Int(2), 9),
+                (Num(CASNum::from(2)), 9),
                 (Operator(Mult), 11),
                 (Name("x".to_string()), 13),
                 (Operator(Add), 15),
-                (Int(3), 17),
+                (Num(CASNum::from(3)), 17),
                 (Operator(Mult), 19),
                 (Name("y".to_string()), 21),
             ]),
@@ -76,11 +77,11 @@ mod test {
             "calc 3 * x - 5",
             Ok(vec![
                 (ResFun(ResFun::Calc), 3),
-                (Int(3), 5),
+                (Num(CASNum::from(3)), 5),
                 (Operator(Mult), 7),
                 (Name("x".to_string()), 9),
                 (Operator(Sub), 11),
-                (Int(5), 13),
+                (Num(CASNum::from(5)), 13),
             ]),
         );
 
@@ -88,11 +89,11 @@ mod test {
             "der 3 * x - 5, x",
             Ok(vec![
                 (ResFun(ResFun::Der), 2),
-                (Int(3), 4),
+                (Num(CASNum::from(3)), 4),
                 (Operator(Mult), 6),
                 (Name("x".to_string()), 8),
                 (Operator(Sub), 10),
-                (Int(5), 12),
+                (Num(CASNum::from(5)), 12),
                 (Operator(Comma), 13),
                 (Name("x".to_string()), 15),
             ]),
@@ -107,14 +108,14 @@ mod test {
                 (Name("x-y_z".to_string()), 4),
                 (Operator(Assign), 6),
                 (Operator(Sub), 8),
-                (Int(5), 9),
+                (Num(CASNum::from(5)), 9),
                 (Operator(Add), 11),
-                (Int(3), 13),
+                (Num(CASNum::from(3)), 13),
                 (Operator(Sub), 15),
-                (Int(2), 17),
+                (Num(CASNum::from(2)), 17),
                 (Operator(Sub), 19),
                 (Operator(Sub), 21),
-                (Int(4), 22),
+                (Num(CASNum::from(4)), 22),
             ]),
         );
     }
@@ -127,7 +128,7 @@ mod test {
                 (Operator(Sub), 0),
                 (Name("x".to_string()), 1),
                 (Operator(Assign), 3),
-                (Int(2), 5),
+                (Num(CASNum::from(2)), 5),
             ]),
         );
     }
@@ -140,7 +141,7 @@ mod test {
                 (Name("y".to_string()), 0),
                 (Operator(Assign), 2),
                 (Operator(Sub), 4),
-                (Float(102342.0), 11),
+                (Num(CASNum::from(102342.0)), 11),
             ]),
         );
 
@@ -149,7 +150,7 @@ mod test {
             Ok(vec![
                 (Name("x".to_string()), 0),
                 (Operator(Assign), 2),
-                (Float(3.3343), 9),
+                (Num(CASNum::from(3.3343)), 9),
             ]),
         );
 
@@ -158,7 +159,7 @@ mod test {
             Ok(vec![
                 (Name("y".to_string()), 0),
                 (Operator(Assign), 2),
-                (Float(0.102342), 10),
+                (Num(CASNum::from(0.102342)), 10),
             ]),
         );
 

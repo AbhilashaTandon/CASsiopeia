@@ -1,17 +1,19 @@
 use std::fmt;
 
-use super::symbol::{
-    constant::ResConst,
-    function::ResFun,
-    operator::Operator::{self, *},
+use super::{
+    symbol::{
+        constant::ResConst,
+        function::ResFun,
+        operator::Operator::{self, *},
+    },
+    CASNum,
 };
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     //type of tokens outputted by scanner
-    Name(String),       //variable name
-    Int(i128),          //integer literal
-    Float(f64),         //floating point literal
+    Name(String), //variable name
+    Num(CASNum),
     Operator(Operator), //operators
     Const(ResConst),    //constants like pi, e, etc.
     ResFun(ResFun),     //reserved function
@@ -29,8 +31,7 @@ impl fmt::Display for Token {
             TokenType::Name(name) => &name,
             TokenType::Const(constant) => &format!("{}", constant),
             TokenType::ResFun(fun) => &format!("{}", fun),
-            TokenType::Int(value) => &format!("{}", value),
-            TokenType::Float(value) => &format!("{}", value),
+            TokenType::Num(value) => &format!("{}", value),
             TokenType::Eof => "EOF",
 
             TokenType::Operator(op) => match op {
