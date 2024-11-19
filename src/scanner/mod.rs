@@ -9,7 +9,6 @@ use crate::types::symbol::operator::*;
 use crate::types::token::TokenType::*;
 use crate::types::token::{Token, TokenType};
 
-mod num_lit;
 mod test;
 
 pub type Tokenization = Result<Vec<Token>, Vec<CASError>>;

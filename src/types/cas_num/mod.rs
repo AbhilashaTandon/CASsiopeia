@@ -11,6 +11,7 @@ const NUM_BITS: i128 = 64;
 mod comp;
 mod conversion;
 mod iter;
+mod literal;
 mod operators;
 mod test;
 
