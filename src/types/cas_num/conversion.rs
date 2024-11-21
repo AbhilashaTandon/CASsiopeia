@@ -218,7 +218,7 @@ impl From<f32> for CASNum {
         } else {
             Sign::Neg
         };
-        let mut exp: i128 = i128::from((bits >> MANTISSA_BITS) & 0xFF) - 127 - MANTISSA_BITS;
+        let mut exp: i128 = i128::from((bits >> MANTISSA_BITS) & 0xFF) - 127 - 23;
         let mantissa: DigitType = DigitType::from(bits & MANTISSA_MASK) + 0x800000;
         //fp values are 1.(mantissa) * 2^exp * (-1)^sign
         //so we add the 1 back in
@@ -226,7 +226,7 @@ impl From<f32> for CASNum {
         let mantissa_lower;
         let mantissa_higher;
 
-        if exp > 0 {
+        if exp >= 0 {
             //we have to split mantissa in half if it straddles the boundary
             let exp_rem = exp % NUM_BITS as i128;
             mantissa_lower = mantissa << exp_rem;
@@ -239,7 +239,6 @@ impl From<f32> for CASNum {
                 digits.push_back(mantissa_lower);
             } else if mantissa_lower == 0 {
                 digits.push_back(mantissa_higher);
-                exp += NUM_BITS;
             } else {
                 digits.push_front(mantissa_higher);
                 digits.push_front(mantissa_lower);
@@ -258,16 +257,16 @@ impl From<f32> for CASNum {
             } else {
                 digits.push_front(mantissa_higher);
                 digits.push_front(mantissa_lower);
-                exp -= 2 * NUM_BITS;
+                // exp -= NUM_BITS;
             }
         }
 
-        let num_digits = digits.len();
+        // let num_digits = digits.len();
 
         return CASNum {
             value: CASValue::Finite {
                 digits,
-                exp: ((exp / NUM_BITS) + (num_digits as i128) - 1) as isize,
+                exp: (exp / NUM_BITS) as isize,
             }
             .normalize(),
             sign,
@@ -352,6 +351,7 @@ impl From<f64> for CASNum {
             } else {
                 digits.push_front(mantissa_higher);
                 digits.push_front(mantissa_lower);
+                exp += NUM_BITS;
             }
         } else {
             let exp_rem = (-exp) % NUM_BITS as i128;
@@ -371,99 +371,19 @@ impl From<f64> for CASNum {
             } else {
                 digits.push_front(mantissa_higher);
                 digits.push_front(mantissa_lower);
-                exp -= 2 * NUM_BITS;
             }
         }
-
-        let num_digits = digits.len();
 
         return CASNum {
             value: CASValue::Finite {
                 digits,
-                exp: ((exp / NUM_BITS) + (num_digits as i128) - 1) as isize,
+                exp: (exp / NUM_BITS) as isize,
             }
             .normalize(),
             sign,
         };
     }
 }
-
-//exp * num bits - num_digits + 1
-
-// impl Into<u8> for CASNum {
-//     fn into(self) -> u8 {
-//         let min_digit = self.exp;
-//         if min_digit > 0 {
-//             //no ones place
-//             return 0;
-//         } else {
-//             return match self.digits.get((-min_digit).try_into().unwrap()) {
-//                 Some(x) => *x,
-//                 None => 0,
-//             };
-//         }
-//     }
-// }
-
-// impl Into<u16> for CASNum {
-//     fn into(self) -> u16 {
-//         todo!()
-//     }
-// }
-
-// impl Into<u32> for CASNum {
-//     fn into(self) -> u32 {
-//         todo!()
-//     }
-// }
-
-// impl Into<u64> for CASNum {
-//     fn into(self) -> u64 {
-//         todo!()
-//     }
-// }
-
-// impl Into<u128> for CASNum {
-//     fn into(self) -> u128 {
-//         todo!()
-//     }
-// }
-
-// impl Into<i8> for CASNum {
-//     fn into(self) -> i8 {
-//         todo!()
-//     }
-// }
-
-// impl Into<i16> for CASNum {
-//     fn into(self) -> i16 {
-//         todo!()
-//     }
-// }
-
-// impl Into<i32> for CASNum {
-//     fn into(self) -> i32 {
-//         todo!()
-//     }
-// }
-
-// impl Into<i64> for CASNum {
-//     fn into(self) -> i64 {
-//         todo!()
-//     }
-// }
-
-// impl Into<i128> for CASNum {
-//     fn into(self) -> i128 {
-//         todo!()
-//     }
-// }
-
-// impl Into<f32> for CASNum {
-//     fn into(self) -> f32 {
-//         todo!()
-//     }
-// }
 
 impl Into<f64> for CASNum {
     fn into(self) -> f64 {
@@ -494,7 +414,7 @@ impl Into<f64> for CASNum {
                     0
                 };
 
-                let mut exponent: i64 = ((exp - ((digits.len() - 1) as isize)) * 64 + 52) as i64;
+                let mut exponent: i64 = (exp * 64 + 52) as i64;
 
                 let mut higher_digit: u64 = digits.pop_back().unwrap();
                 //we can safely unwrap since digits is only empty if self == 0
@@ -520,9 +440,7 @@ impl Into<f64> for CASNum {
                     if let Some(mut bits) = lower_digit {
                         bits >>= 64 - (53 - first_1);
                         higher_digit |= bits;
-                        if exponent < 0 {
-                            exponent += 64; //i have no idea why this works
-                        }
+                        exponent -= 64; //i have no idea why this works
                     } else {
                         exponent -= 64; //i have no idea why this works
                     }

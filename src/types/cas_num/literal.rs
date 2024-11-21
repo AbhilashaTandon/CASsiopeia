@@ -3,11 +3,7 @@
 //parses numerical literals
 //0.02, -1,304,774, 1.264e-13
 
-use core::num;
-use std::{
-    char,
-    iter::{Enumerate, Peekable},
-};
+use std::iter::{Enumerate, Peekable};
 
 use crate::types::{
     cas_error::{CASError, CASErrorKind},
@@ -16,7 +12,7 @@ use crate::types::{
 
 use super::CASNum;
 
-fn parse_lit(
+pub(super) fn parse_lit(
     first_char: char,
     iter: &mut Peekable<Enumerate<std::str::Chars>>,
     line_pos: &mut usize,
@@ -25,7 +21,13 @@ fn parse_lit(
 {
     //we don't match unary minus or plus
 
-    let mut int: String = first_char.to_string(); //digits before decimal pt
+    let mut num: CASNum = CASNum::from(0);
+
+    let mut int: String = if first_char.is_ascii_digit() {
+        first_char.to_string()
+    } else {
+        "".to_string()
+    }; //digits before decimal pt
     let mut frac: String = String::from(""); //digits after decimal pt
     let mut exp: String = String::from(""); //digits after e
     let mut lit: String = first_char.to_string(); //literal of full number to return on error
@@ -113,6 +115,35 @@ fn parse_lit(
         }));
         //we just randomly have an e at the end of our number
     }
+
+    let mut chunks = vec![];
+    let mut current = int.as_str();
+    while current.len() >= 19 {
+        let (rest, chunk) = current.split_at(current.len() - 19);
+        chunks.push(chunk);
+        current = rest;
+    }
+    chunks.push(current);
+
+    //splits int into chunks of 19 digits or less, with remainder at front
+
+    let mut power = CASNum::from(1);
+    let factor = CASNum::from(10000000000000000000 as u64);
+
+    for chunk in chunks.iter() {
+        let chunk_val = chunk.parse::<u64>();
+        if chunk_val.is_err() {
+            return Some(Err(CASError {
+                line_pos: *line_pos,
+                kind: CASErrorKind::MalformedNumericLiteral { lit },
+            }));
+        }
+
+        num += &(CASNum::from(chunk_val.unwrap()) * &power);
+        power *= &factor;
+    }
+    //if it has 19 base 10 digits or less we can ensure it is less than the max u64 size
+    //we parse each chunk as a u64, convert it to a CASNum, multiply it by a power of 10, and add it to an accumulator
 
     todo!();
 }

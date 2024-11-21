@@ -1,14 +1,14 @@
 //numerical operators, +, -, *, / etc
 use std::{
     collections::VecDeque,
-    ops::{self},
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
 use crate::types::cas_num::{DigitType, NUM_BITS};
 
 use super::{CASNum, CASValue, Sign, INDETERMINATE, INFINITY, NEG_INFINITY, ZERO};
 
-impl ops::Neg for CASNum {
+impl Neg for CASNum {
     type Output = CASNum;
     fn neg(self) -> Self::Output {
         return CASNum {
@@ -22,45 +22,25 @@ impl ops::Neg for CASNum {
     }
 }
 
-impl ops::Add<CASNum> for CASNum {
-    type Output = CASNum;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        match (self.clone(), rhs.clone()) {
+impl AddAssign<&CASNum> for CASNum {
+    fn add_assign(&mut self, rhs: &Self) {
+        *self = match (&self, &rhs) {
             (
                 CASNum {
-                    value:
-                        CASValue::Finite {
-                            digits: self_digits,
-                            exp: self_exp,
-                        },
-                    sign: self_sign,
+                    value: CASValue::Finite { .. },
+                    ..
                 },
                 CASNum {
-                    value:
-                        CASValue::Finite {
-                            digits: other_digits,
-                            exp: other_exp,
-                        },
-                    sign: rhs_sign,
+                    value: CASValue::Finite { .. },
+                    ..
                 },
             ) => {
-                let self_copy = CASNum {
-                    value: CASValue::Finite {
-                        digits: self_digits,
-                        exp: self_exp,
-                    },
-                    sign: self_sign,
-                };
-                let rhs_copy = CASNum {
-                    value: CASValue::Finite {
-                        digits: other_digits,
-                        exp: other_exp,
-                    },
-                    sign: rhs_sign,
-                };
-
-                return addition_finite(self_copy, rhs_copy);
+                match (self.value.is_zero(), rhs.value.is_zero()) {
+                    (true, true) => CASNum::from(0), //0 + 0 == 0
+                    (true, false) => rhs.clone(),    //0 + x == x
+                    (false, true) => return,         //x + 0 == x
+                    (false, false) => addition_finite(&self, &rhs),
+                }
             }
             (
                 CASNum {
@@ -104,32 +84,24 @@ impl ops::Add<CASNum> for CASNum {
                 (Sign::Neg, Sign::Neg) => NEG_INFINITY,  //-inf + -inf == -inf
             },
             _ => INDETERMINATE, //indeterminate (NaN) + anyting is nan
-        }
+        };
     }
 }
 
-fn addition_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
-    match (lhs.value.is_zero(), rhs.value.is_zero()) {
-        (true, true) => return lhs,  //0 + 0 == 0
-        (true, false) => return rhs, //0 + x == x
-        (false, true) => return lhs, //x + 0 == x
-        (false, false) => {}
-    }
+fn addition_finite(lhs: &CASNum, rhs: &CASNum) -> CASNum {
     match (lhs.sign, rhs.sign) {
         (Sign::Pos, Sign::Pos) => {
             let mut digits: VecDeque<DigitType> = VecDeque::new();
             let mut carry = 0;
 
-            let self_value = lhs.value;
-            let rhs_value = rhs.value;
+            let alignment = &lhs.value.align(&rhs.value).unwrap(); //we can unwrap safely since both self and rhs are finite
 
-            let alignment = self_value.align(&rhs_value).unwrap(); //we can unwrap safely since both self and rhs are finite
-
-            let exp = alignment.front().unwrap().2;
+            let exp = alignment.back().unwrap().2;
 
             for (a_digit, b_digit, _) in alignment {
-                let mut sum: u128 = a_digit as u128 + b_digit as u128 + carry;
+                let mut sum: u128 = *a_digit as u128 + *b_digit as u128 + carry;
                 if sum > 0xFFFFFFFFFFFFFFFF {
+                    //if carry
                     carry = 1;
                     sum -= 0x10000000000000000;
                 } else {
@@ -149,53 +121,31 @@ fn addition_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
             };
         }
 
-        (Sign::Pos, Sign::Neg) => lhs - rhs.abs(),
-        (Sign::Neg, Sign::Pos) => rhs - lhs.abs(),
-        (Sign::Neg, Sign::Neg) => -(lhs.abs() + rhs.abs()),
+        (Sign::Pos, Sign::Neg) => subtraction_finite(&lhs, &rhs.abs()),
+        (Sign::Neg, Sign::Pos) => subtraction_finite(&rhs, &lhs.abs()),
+        (Sign::Neg, Sign::Neg) => -addition_finite(&lhs.abs(), &rhs.abs()),
     }
 }
 
-impl ops::Sub<CASNum> for CASNum {
-    type Output = Self;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
+impl SubAssign<&CASNum> for CASNum {
+    fn sub_assign(&mut self, rhs: &Self) {
+        *self = match (&self, &rhs) {
             (
                 CASNum {
-                    value:
-                        CASValue::Finite {
-                            digits: self_digits,
-                            exp: self_exp,
-                        },
-                    sign: self_sign,
+                    value: CASValue::Finite { .. },
+                    ..
                 },
                 CASNum {
-                    value:
-                        CASValue::Finite {
-                            digits: other_digits,
-                            exp: other_exp,
-                        },
-                    sign: rhs_sign,
+                    value: CASValue::Finite { .. },
+                    ..
                 },
             ) => {
-                let self_copy = CASNum {
-                    value: CASValue::Finite {
-                        digits: self_digits,
-                        exp: self_exp,
-                    },
-                    sign: self_sign,
-                };
-                let rhs_copy = CASNum {
-                    value: CASValue::Finite {
-                        digits: other_digits,
-                        exp: other_exp,
-                    },
-                    sign: rhs_sign,
-                };
-
-                //TODO: find a better way than reconstructing CASdigits
-
-                subtraction_finite(self_copy, rhs_copy)
+                match (self.value.is_zero(), rhs.value.is_zero()) {
+                    (true, true) => CASNum::from(0), //0 - 0 == 0
+                    (true, false) => -rhs.clone(),   //0 - x == -x
+                    (false, true) => return,         //x - 0 == x
+                    (false, false) => subtraction_finite(self, &rhs),
+                }
             }
             (
                 CASNum {
@@ -243,31 +193,24 @@ impl ops::Sub<CASNum> for CASNum {
     }
 }
 
-fn subtraction_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
-    match (lhs.value.is_zero(), rhs.value.is_zero()) {
-        (true, true) => return lhs,   //0 - 0 == 0
-        (true, false) => return -rhs, //0 - x == x
-        (false, true) => return lhs,  //x - 0 == x
-        (false, false) => {}
-    }
+fn subtraction_finite(lhs: &CASNum, rhs: &CASNum) -> CASNum {
     match (lhs.sign, rhs.sign) {
         (Sign::Pos, Sign::Pos) => {
             if lhs < rhs {
                 //a - b = -(b - a)
-                return -(rhs - lhs);
+                return -subtraction_finite(rhs, lhs);
             }
             let mut digits: VecDeque<DigitType> = VecDeque::new();
             let mut carry = 0;
 
-            let self_value = lhs.value;
-            let rhs_value = rhs.value;
+            let alignment = &lhs.value.align(&rhs.value).unwrap(); //we can unwrap safely since both lhs and rhs are finite
 
-            let alignment = self_value.align(&rhs_value).unwrap(); //we can unwrap safely since both self and rhs are finite
+            println!("{:?}", alignment);
 
-            let exp = alignment.front().unwrap().2;
+            let exp = alignment.back().unwrap().2;
 
             for (self_digit, other_digit, _) in alignment {
-                let mut diff: i128 = (self_digit as i128) - (other_digit as i128) + carry;
+                let mut diff: i128 = (*self_digit as i128) - (*other_digit as i128) + carry;
 
                 if diff < 0 {
                     diff = 0x10000000000000000 + diff;
@@ -284,54 +227,67 @@ fn subtraction_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
             };
         }
 
-        (Sign::Pos, Sign::Neg) => lhs + rhs.abs(), //a - -b = a + b
-        (Sign::Neg, Sign::Pos) => -(rhs + lhs.abs()), ////-a - b = a - b
-        (Sign::Neg, Sign::Neg) => rhs.abs() - lhs.abs(), //-a - -b = -a + b = b - a
+        (Sign::Pos, Sign::Neg) => addition_finite(lhs, &rhs.abs()), //a - -b = a + b
+        (Sign::Neg, Sign::Pos) => -addition_finite(rhs, &lhs.abs()), ////-a - b = a + b
+        (Sign::Neg, Sign::Neg) => subtraction_finite(&rhs.abs(), &lhs.abs()), //-a - -b = -a + b = b - a
     }
 }
 
-impl ops::Mul<CASNum> for CASNum {
-    type Output = Self;
-
-    fn mul(self, rhs: Self) -> Self::Output {
+impl MulAssign<&CASNum> for CASNum {
+    fn mul_assign(&mut self, rhs: &Self) {
         if self.value.is_indeterminate() || rhs.value.is_indeterminate() {
-            return INDETERMINATE;
+            *self = INDETERMINATE;
+            return;
             //NAN * x == NAN
             //x * NAN == NAN
         }
 
         if self.value.is_zero() && rhs.value.is_infinite() {
-            return INDETERMINATE;
+            *self = INDETERMINATE;
+            return;
 
             //0 * +/- inf == NAN
         }
 
         if self.value.is_infinite() && rhs.value.is_zero() {
-            return INDETERMINATE;
+            *self = INDETERMINATE;
+            return;
 
             // +/- inf  * 0 == NAN
         }
 
-        match (self.sign, rhs.sign) {
-            (Sign::Pos, Sign::Pos) => {}
-            (Sign::Pos, Sign::Neg) => return -(self * (-rhs)),
-            (Sign::Neg, Sign::Pos) => return -((-self) * rhs),
-            (Sign::Neg, Sign::Neg) => return (-self) * (-rhs),
-        };
-
         if self.value.is_infinite() || rhs.value.is_infinite() {
-            return INFINITY; //we already checked sign so we can assume all beyond this point is positive
+            *self = match (self.sign, rhs.sign) {
+                (Sign::Pos, Sign::Pos) => INFINITY,
+                (Sign::Pos, Sign::Neg) => NEG_INFINITY,
+                (Sign::Neg, Sign::Pos) => NEG_INFINITY,
+                (Sign::Neg, Sign::Neg) => INFINITY,
+            };
+            return;
         }
 
         if self.value.is_zero() || rhs.value.is_zero() {
-            return ZERO;
+            *self = ZERO;
+            return;
         }
 
-        return multiplication_finite(self, rhs);
+        *self = multiplication_finite(self, &rhs);
     }
 }
 
-fn multiplication_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
+fn multiplication_finite(lhs: &CASNum, rhs: &CASNum) -> CASNum {
+    match (&lhs.sign, &rhs.sign) {
+        (Sign::Pos, Sign::Pos) => {}
+        (Sign::Pos, Sign::Neg) => return -multiplication_finite(lhs, &rhs.abs()),
+        //a * -b = - (a * b)
+        (Sign::Neg, Sign::Pos) => return -multiplication_finite(&lhs.abs(), rhs),
+        //-a * b = -(a * b)
+        (Sign::Neg, Sign::Neg) => return multiplication_finite(&lhs.abs(), &rhs.abs()),
+        //-a * -b = a * b
+    };
+
+    let bit_mask: u128 = u64::MAX.into(); //all ones for extracting lower 64 bits
+
     let cartesian = lhs.value.cartesian(&rhs.value).unwrap();
 
     let max_digit = cartesian.back().unwrap().back().unwrap().2;
@@ -354,63 +310,114 @@ fn multiplication_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
     let mut digits: VecDeque<DigitType> = VecDeque::new();
 
     for &value in temp_arr.iter() {
-        let adjusted = value + carry;
-        digits.push_back((adjusted & 0xFFFFFFFFFFFFFFFF) as DigitType);
-        carry = adjusted >> NUM_BITS;
+        let adjusted = value & bit_mask + carry & bit_mask;
+        carry = (carry >> NUM_BITS) + (value >> NUM_BITS);
+        digits.push_back((adjusted & bit_mask) as DigitType);
     }
+
     while carry > 0 {
-        digits.push_back((carry & 0xFFFFFFFFFFFFFFFF).try_into().unwrap());
+        digits.push_back((carry & bit_mask).try_into().unwrap());
         carry >>= NUM_BITS;
     }
 
+    let val = CASValue::Finite {
+        digits,
+        exp: min_digit,
+    };
+
+    val.clone().normalize();
+
     return CASNum {
-        value: CASValue::Finite {
-            digits,
-            exp: min_digit,
-        }
-        .normalize(),
+        value: val,
         sign: Sign::Pos,
     };
 }
 
-impl ops::Div<CASNum> for CASNum {
-    type Output = CASNum;
-
-    fn div(self, rhs: CASNum) -> Self::Output {
+impl DivAssign<&CASNum> for CASNum {
+    fn div_assign(&mut self, rhs: &CASNum) {
         if self.value.is_indeterminate() || rhs.value.is_indeterminate() {
-            return INDETERMINATE;
+            *self = INDETERMINATE;
+            return;
             //NAN / x == NAN
             //x / NAN == NAN
         }
 
         if self.value.is_zero() && rhs.value.is_zero() {
-            return INDETERMINATE;
+            *self = INDETERMINATE;
+            return;
             //0/0 == NAN
         }
 
         if self.value.is_infinite() && rhs.value.is_infinite() {
-            return INDETERMINATE;
+            *self = INDETERMINATE;
+            //inf / inf == nan
+            return;
         }
 
-        match (self.sign, rhs.sign) {
-            (Sign::Pos, Sign::Pos) => {}
-            (Sign::Pos, Sign::Neg) => return -(self * (-rhs)),
-            (Sign::Neg, Sign::Pos) => return -((-self) * rhs),
-            (Sign::Neg, Sign::Neg) => return (-self) * (-rhs),
-        };
-
-        if rhs.value.is_infinite() {
-            return INFINITY; //we already checked sign so we can assume all beyond this point is positive
+        if self.value.is_infinite() {
+            *self = match (self.sign, rhs.sign) {
+                (Sign::Pos, Sign::Pos) => INFINITY,
+                (Sign::Pos, Sign::Neg) => NEG_INFINITY,
+                (Sign::Neg, Sign::Pos) => NEG_INFINITY,
+                (Sign::Neg, Sign::Neg) => INFINITY,
+            };
+            return;
         }
 
         if self.value.is_zero() || rhs.value.is_infinite() {
-            return ZERO;
+            *self = ZERO;
+            return;
         }
 
-        return division_finite(self, rhs);
+        *self = division_finite(self, &rhs);
     }
 }
 
-fn division_finite(lhs: CASNum, rhs: CASNum) -> CASNum {
+fn division_finite(lhs: &CASNum, rhs: &CASNum) -> CASNum {
+    match (&lhs.sign, &rhs.sign) {
+        (Sign::Pos, Sign::Pos) => {}
+        (Sign::Pos, Sign::Neg) => return -division_finite(lhs, &rhs.abs()),
+        //a / -b = - (a / b)
+        (Sign::Neg, Sign::Pos) => return -division_finite(&lhs.abs(), rhs),
+        //-a / b = -(a / b)
+        (Sign::Neg, Sign::Neg) => return division_finite(&lhs.abs(), &rhs.abs()),
+        //-a / -b = a / b
+    };
     todo!();
+}
+
+impl Add<&CASNum> for CASNum {
+    type Output = CASNum;
+
+    fn add(mut self, rhs: &CASNum) -> CASNum {
+        self += rhs;
+        return self;
+    }
+}
+
+impl Sub<&CASNum> for CASNum {
+    type Output = CASNum;
+
+    fn sub(mut self, rhs: &CASNum) -> CASNum {
+        self -= rhs;
+        return self;
+    }
+}
+
+impl Mul<&CASNum> for CASNum {
+    type Output = CASNum;
+
+    fn mul(mut self, rhs: &CASNum) -> CASNum {
+        self *= rhs;
+        return self;
+    }
+}
+
+impl Div<&CASNum> for CASNum {
+    type Output = CASNum;
+
+    fn div(mut self, rhs: &CASNum) -> CASNum {
+        self /= rhs;
+        return self;
+    }
 }

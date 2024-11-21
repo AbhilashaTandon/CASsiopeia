@@ -2,7 +2,6 @@ use std::collections::VecDeque;
 
 use super::trees::{Tree, TreeNode, TreeNodeRef};
 use super::vars::{Var, VarTable};
-use super::CASNum;
 
 pub type PostFix<'a> = Result<VecDeque<Symbol<'a>>, CASError>;
 
@@ -56,26 +55,7 @@ pub fn to_postfix<'a>(
                 }
             }
             Num(number) => {
-                if let Some(Symbol {
-                    symbol_type: SymbolType::Operator(Neg),
-                    ..
-                }) = operator_stack.back()
-                {
-                    operator_stack.pop_back();
-                    output_queue.push_back(Symbol {
-                        symbol_type: SymbolType::Num {
-                            value: -number.clone(),
-                        },
-                        line_pos: *line_pos,
-                    });
-                } else {
-                    output_queue.push_back(Symbol {
-                        symbol_type: SymbolType::Num {
-                            value: number.clone(),
-                        },
-                        line_pos: *line_pos,
-                    });
-                }
+                parse_num(&mut operator_stack, &mut output_queue, number, line_pos);
 
                 //if the token is a number put it into the output queue
             }
@@ -200,6 +180,34 @@ pub fn to_postfix<'a>(
     }
 
     return Ok(output_queue);
+}
+
+fn parse_num(
+    operator_stack: &mut VecDeque<Symbol<'_>>,
+    output_queue: &mut VecDeque<Symbol<'_>>,
+    number: &super::CASNum,
+    line_pos: &usize,
+) {
+    if let Some(Symbol {
+        symbol_type: SymbolType::Operator(Neg),
+        ..
+    }) = operator_stack.back()
+    {
+        operator_stack.pop_back();
+        output_queue.push_back(Symbol {
+            symbol_type: SymbolType::Num {
+                value: -number.clone(),
+            },
+            line_pos: *line_pos,
+        });
+    } else {
+        output_queue.push_back(Symbol {
+            symbol_type: SymbolType::Num {
+                value: number.clone(),
+            },
+            line_pos: *line_pos,
+        });
+    }
 }
 
 pub fn shunting_yard<'a>(

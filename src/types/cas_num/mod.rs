@@ -62,10 +62,10 @@ const ZERO: CASNum = CASNum {
 
 impl CASNum {
     //only put functions in here instead of CASValue if they interact with sign
-    fn abs(self) -> Self {
+    fn abs(&self) -> Self {
         return CASNum {
             sign: Sign::Pos,
-            value: self.value,
+            value: self.value.clone(),
         };
     }
 
@@ -271,14 +271,14 @@ impl CASValue {
             _ => return None,
         }
 
-        let self_max_exp: isize = self_exp + (self_digits.len() - 1) as isize;
+        let self_max_exp: isize = self_exp;
         //exponent of max digit of self_digits
-        let self_min_exp = self_exp;
+        let self_min_exp = self_exp - (self_digits.len() - 1) as isize;
         //exponent of min digit of self_digits
 
-        let other_max_exp = other_exp + (other_digits.len() - 1) as isize;
+        let other_max_exp = other_exp;
         //exponent of max digit of other_digits
-        let other_min_exp = other_exp;
+        let other_min_exp = other_exp - (other_digits.len() - 1) as isize;
 
         //exponent of min digit of other_digits
 
@@ -329,7 +329,7 @@ impl CASValue {
                 let self_min_exp = self_max_exp - (self_digits.len() - 1) as isize;
                 //exponent of min digit of self_digits
 
-                let other_max_exp = other_exp;
+                let other_max_exp = *other_exp;
                 //exponent of max digit of other_digits
                 let other_min_exp = other_max_exp - (other_digits.len() - 1) as isize;
 
@@ -344,7 +344,7 @@ impl CASValue {
 
                     let mut row: VecDeque<(DigitType, DigitType, isize)> = VecDeque::new();
 
-                    for j in other_min_exp..=*other_max_exp {
+                    for j in other_min_exp..=other_max_exp {
                         let other_num = other_digits[(j - other_min_exp).try_into().unwrap()];
 
                         if other_num == 0 {
@@ -387,11 +387,12 @@ impl Debug for CASNum {
             } => {
                 let hex_str: String = digits
                     .into_iter()
-                    .map(|num| format!("0x{:0>2x}", num))
+                    .rev()
+                    .map(|num| format!("{:0>2x}", num))
                     .collect();
                 write!(
                     f,
-                    "{}{} x (2^64) ^ {} ({:e})",
+                    "0x{}{} x (2^64) ^ {} ({:e})",
                     if *sign == Sign::Pos { "" } else { "-" },
                     hex_str,
                     exp,
