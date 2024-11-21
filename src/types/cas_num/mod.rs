@@ -163,9 +163,9 @@ impl CASValue {
         return i.into();
     }
 
-    fn max_digit(&self) -> Option<isize> {
+    fn exp(&self) -> Option<isize> {
         match self {
-            CASValue::Finite { exp, .. } => Some(exp - 1),
+            CASValue::Finite { exp, .. } => Some(*exp),
             CASValue::Infinite => None,
             CASValue::Indeterminate => None,
         }
@@ -180,7 +180,6 @@ impl CASValue {
                 while let Some(least_order_num) = digits.front() {
                     if *least_order_num == 0 {
                         //if has trailing 0 remove it
-                        *exp += 1;
                         digits.pop_front();
                     } else {
                         break;
@@ -190,6 +189,7 @@ impl CASValue {
                     if *least_order_num == 0 {
                         //if has leading 0 remove it
                         digits.pop_back();
+                        *exp -= 1;
                     } else {
                         break;
                     }
@@ -376,7 +376,7 @@ impl CASValue {
 
 use std::fmt::Display;
 
-impl Debug for CASNum {
+impl Display for CASNum {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let float: f64 = <CASNum as Clone>::clone(&(*self)).into();
         //TODO: get rid of this clone
@@ -415,37 +415,35 @@ impl Debug for CASNum {
     }
 }
 
-impl Display for CASNum {
+impl Debug for CASNum {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let float: f64 = <CASNum as Clone>::clone(&(*self)).into();
-
-        if float == f64::INFINITY || float == f64::NEG_INFINITY || float.is_nan() {
-            write!(f, "{:?}", self)?
-        }
-        //TODO: get rid of this clone
         match self {
             CASNum {
-                value: CASValue::Finite { .. },
-                ..
+                value: CASValue::Infinite { .. },
+                sign,
             } => {
-                if float < 1e6 && float > 1e-6 {
-                    write!(f, "{}", float,)
+                if *sign == Sign::Pos {
+                    write!(f, "∞")
                 } else {
-                    write!(f, "{:e}", float,)
+                    write!(f, "-∞")
                 }
             }
-            CASNum {
-                value: CASValue::Infinite,
-                sign: Sign::Pos,
-            } => write!(f, "∞"),
-            CASNum {
-                value: CASValue::Infinite,
-                sign: Sign::Neg,
-            } => write!(f, "-∞"),
+
             CASNum {
                 value: CASValue::Indeterminate,
                 ..
             } => write!(f, "NaN"),
+
+            CASNum {
+                value: CASValue::Finite { digits, exp },
+                sign,
+            } => write!(
+                f,
+                "{}{:?}e{}",
+                if *sign == Sign::Pos { "" } else { "-" },
+                digits,
+                exp
+            ),
         }
     }
 }

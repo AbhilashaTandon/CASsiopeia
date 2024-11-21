@@ -37,10 +37,11 @@ mod test {
         assert_eq!(sum_1, sum_2);
     }
 
-    fn multiplication(a: i128, b: i128) {
+    fn multiplication(a: i128, b: i128) -> bool {
         let prod_1 = CASNum::from(a * b);
         let prod_2 = CASNum::from(a) * &CASNum::from(b);
-        assert_eq!(prod_1, prod_2);
+        print!("{:?}\t{:?}\t", prod_1, prod_2,);
+        return prod_1 == prod_2;
     }
 
     fn comparison_float(a: f32, b: f32) {
@@ -809,12 +810,17 @@ mod test {
             5799375739574939,
             -58399398578248,
         ];
+        let mut num_wrong = 0;
 
         for value_1 in &values_to_test {
             for value_2 in &values_to_test {
-                multiplication(*value_1, *value_2);
+                if !multiplication(*value_1, *value_2) {
+                    num_wrong += 1;
+                }
+                println!();
             }
         }
+        assert_eq!(num_wrong, 0);
     }
 
     use rand::prelude::*;
@@ -920,29 +926,56 @@ mod test {
     fn multiplication_float_tests() {
         let mut rng = ChaCha8Rng::seed_from_u64(123);
         let mut num_wrong = 0;
-        let limit = 10;
+        let limit = 10000;
         for _ in 0..limit {
-            let float_1 = f64::from_bits(rng.next_u64());
-            let float_2 = f64::from_bits(rng.next_u64());
+            let float_1 = f32::from_bits(rng.next_u32()) as f64;
+            let float_2 = f32::from_bits(rng.next_u32()) as f64;
+
+            let casnum_1 = CASNum::from(float_1);
+            let casnum_2 = CASNum::from(float_2);
 
             let rust_product = CASNum::from(float_1 * float_2);
-            let my_product = CASNum::from(float_1) * &CASNum::from(float_2);
+            let my_product = casnum_1.clone() * &casnum_2;
 
             if float_1.is_nan() || float_2.is_nan() {
                 if !my_product.value.is_indeterminate() {
-                    assert!(false);
                     num_wrong += 1;
+                } else {
+                    continue;
                 }
             }
 
+            // println!("-----------------------------------------------------------");
             if rust_product != my_product {
-                println!("{:e} {:e}", float_1, float_2);
+                print!(
+                    "{:e}\t{:e}\t{:?}\t{:?}\t{:?}\t{:?}",
+                    float_1,
+                    float_2,
+                    casnum_1.value,
+                    casnum_2.value,
+                    rust_product.value.exp().unwrap(),
+                    my_product.value.exp().unwrap()
+                );
+                // println!("{:e} {:e}", float_1, float_2);
 
+                // println!(
+                //     "cartesian: \n{:?}\n",
+                //     &casnum_1.value.cartesian(&casnum_2.value)
+                // );
+                // println!(
+                //     "input 1: {:?}\ninput 2: {:?}\n\n",
+                //     CASNum::from(float_1),
+                //     CASNum::from(float_2)
+                // );
+                // let my_product = CASNum::from(float_1) * &CASNum::from(float_2);
                 // assert_eq!(rust_product, my_product);
+                // println!("desired: {:?}\nreceived: {:?}", rust_product, my_product);
                 num_wrong += 1;
+                // assert!(false);
             }
+            println!();
         }
-        println!("{} / {}", limit - num_wrong, limit);
+        println!("\n\n{} / {}", limit - num_wrong, limit);
         assert_eq!(num_wrong, 0);
     }
 }

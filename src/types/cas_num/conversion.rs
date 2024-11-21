@@ -158,13 +158,15 @@ impl From<i128> for CASNum {
 
         let mut abs = value.abs();
 
+        let mut exp: isize = -1;
         while abs > 0 {
             digits.push_back((abs & 0xFFFFFFFFFFFFFFFF).try_into().unwrap());
             abs >>= 64;
+            exp += 1;
         }
 
         return CASNum {
-            value: CASValue::Finite { digits, exp: 0 },
+            value: CASValue::Finite { digits, exp },
             sign: if value > 0 { Sign::Pos } else { Sign::Neg },
         };
     }

@@ -205,8 +205,6 @@ fn subtraction_finite(lhs: &CASNum, rhs: &CASNum) -> CASNum {
 
             let alignment = &lhs.value.align(&rhs.value).unwrap(); //we can unwrap safely since both lhs and rhs are finite
 
-            println!("{:?}", alignment);
-
             let exp = alignment.back().unwrap().2;
 
             for (self_digit, other_digit, _) in alignment {
@@ -310,9 +308,12 @@ fn multiplication_finite(lhs: &CASNum, rhs: &CASNum) -> CASNum {
     let mut digits: VecDeque<DigitType> = VecDeque::new();
 
     for &value in temp_arr.iter() {
-        let adjusted = value & bit_mask + carry & bit_mask;
-        carry = (carry >> NUM_BITS) + (value >> NUM_BITS);
-        digits.push_back((adjusted & bit_mask) as DigitType);
+        let sum = value.checked_add(carry);
+        assert!(sum.is_some());
+
+        let adjusted = sum.unwrap() & bit_mask;
+        carry = sum.unwrap() >> NUM_BITS;
+        digits.push_back(adjusted as DigitType);
     }
 
     while carry > 0 {
@@ -320,15 +321,21 @@ fn multiplication_finite(lhs: &CASNum, rhs: &CASNum) -> CASNum {
         carry >>= NUM_BITS;
     }
 
-    let val = CASValue::Finite {
-        digits,
-        exp: min_digit,
-    };
-
-    val.clone().normalize();
+    let exp = (digits.len() - temp_arr.len()) as isize
+        + lhs.value.exp().unwrap()
+        + rhs.value.exp().unwrap();
+    print!(
+        "{}\t{}\t{}\t{}\t{}\t",
+        digits.len(),
+        temp_arr.len(),
+        lhs.value.exp().unwrap(),
+        rhs.value.exp().unwrap(),
+        exp,
+    );
+    let val = CASValue::Finite { digits, exp };
 
     return CASNum {
-        value: val,
+        value: val.normalize(),
         sign: Sign::Pos,
     };
 }
