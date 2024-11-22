@@ -1,8 +1,10 @@
 //numerical operators, +, -, *, / etc
 use std::{
     collections::VecDeque,
-    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign},
 };
+
+use num_traits::Zero;
 
 use crate::types::cas_num::{DigitType, NUM_BITS};
 
@@ -324,14 +326,6 @@ fn multiplication_finite(lhs: &CASNum, rhs: &CASNum) -> CASNum {
     let exp = (digits.len() - temp_arr.len()) as isize
         + lhs.value.exp().unwrap()
         + rhs.value.exp().unwrap();
-    print!(
-        "{}\t{}\t{}\t{}\t{}\t",
-        digits.len(),
-        temp_arr.len(),
-        lhs.value.exp().unwrap(),
-        rhs.value.exp().unwrap(),
-        exp,
-    );
     let val = CASValue::Finite { digits, exp };
 
     return CASNum {
@@ -342,17 +336,22 @@ fn multiplication_finite(lhs: &CASNum, rhs: &CASNum) -> CASNum {
 
 impl DivAssign<&CASNum> for CASNum {
     fn div_assign(&mut self, rhs: &CASNum) {
+        if self.value.is_zero() && rhs.value.is_zero() {
+            *self = INDETERMINATE;
+            return;
+            //0/0 == NAN
+        }
+
+        if self.value.is_zero() || rhs.value.is_infinite() {
+            *self = ZERO;
+            return;
+        }
+
         if self.value.is_indeterminate() || rhs.value.is_indeterminate() {
             *self = INDETERMINATE;
             return;
             //NAN / x == NAN
             //x / NAN == NAN
-        }
-
-        if self.value.is_zero() && rhs.value.is_zero() {
-            *self = INDETERMINATE;
-            return;
-            //0/0 == NAN
         }
 
         if self.value.is_infinite() && rhs.value.is_infinite() {
@@ -371,25 +370,119 @@ impl DivAssign<&CASNum> for CASNum {
             return;
         }
 
-        if self.value.is_zero() || rhs.value.is_infinite() {
-            *self = ZERO;
-            return;
+        if let (
+            CASNum {
+                value:
+                    CASValue::Finite {
+                        digits: self_digits,
+                        exp: self_exp,
+                    },
+                sign: self_sign,
+            },
+            CASNum {
+                value:
+                    CASValue::Finite {
+                        digits: rhs_digits,
+                        exp: rhs_exp,
+                    },
+                sign: rhs_sign,
+            },
+        ) = (&self, &rhs)
+        {
+            let (quot, ..) = division_finite(self_digits, self_exp, rhs_digits, rhs_exp);
+            match (self_sign, rhs_sign) {
+                (Sign::Pos, Sign::Pos) | (Sign::Neg, Sign::Neg) => {
+                    *self = quot;
+                }
+                (Sign::Pos, Sign::Neg) | (Sign::Neg, Sign::Pos) => {
+                    *self = -quot;
+                } //a / -b = - (a / b)
+                  //-a / b = -(a / b)
+            };
         }
-
-        *self = division_finite(self, &rhs);
     }
 }
 
-fn division_finite(lhs: &CASNum, rhs: &CASNum) -> CASNum {
-    match (&lhs.sign, &rhs.sign) {
-        (Sign::Pos, Sign::Pos) => {}
-        (Sign::Pos, Sign::Neg) => return -division_finite(lhs, &rhs.abs()),
-        //a / -b = - (a / b)
-        (Sign::Neg, Sign::Pos) => return -division_finite(&lhs.abs(), rhs),
-        //-a / b = -(a / b)
-        (Sign::Neg, Sign::Neg) => return division_finite(&lhs.abs(), &rhs.abs()),
-        //-a / -b = a / b
-    };
+fn quot_rem(lhs: &CASNum, rhs: u64) -> (CASNum, CASNum) {
+    if lhs.value.is_zero() && rhs == 0 {
+        //0/0 -> Nan
+        return (INDETERMINATE, INDETERMINATE);
+    } else if lhs.value.is_zero() {
+        //0/nonzero -> 0
+        return (ZERO, ZERO);
+    } else if lhs.value.is_indeterminate() {
+        //nan/x -> nan
+        return (INDETERMINATE, INDETERMINATE);
+    } else if lhs.value.is_infinite() {
+        //inf/x = inf
+        return (INDETERMINATE, INDETERMINATE);
+    } else if let CASNum {
+        value: CASValue::Finite { digits, exp },
+        sign,
+    } = lhs
+    {
+        let mut rem: u128 = 0;
+        let divisor = rhs as u128;
+        let mut quot: VecDeque<u64> = VecDeque::from([]);
+        for digit in digits.into_iter().rev() {
+            let dividend = (*digit as u128) + (rem << 64);
+            quot.push_front((dividend / divisor) as u64);
+            rem = dividend % divisor;
+        }
+
+        return (
+            CASNum {
+                value: CASValue::Finite {
+                    digits: quot,
+                    exp: *exp,
+                }
+                .normalize(),
+                sign: *sign,
+            },
+            CASNum::from(rem),
+        );
+    } else {
+        assert!(false);
+        return (ZERO, ZERO);
+    }
+}
+
+impl DivAssign<u64> for CASNum {
+    fn div_assign(&mut self, rhs: u64) {
+        *self = quot_rem(self, rhs).0;
+    }
+}
+
+impl RemAssign<u64> for CASNum {
+    fn rem_assign(&mut self, rhs: u64) {
+        *self = quot_rem(self, rhs).1;
+    }
+}
+
+impl Div<u64> for CASNum {
+    type Output = CASNum;
+
+    fn div(mut self, rhs: u64) -> CASNum {
+        self /= rhs;
+        return self;
+    }
+}
+
+impl Rem<u64> for CASNum {
+    type Output = CASNum;
+
+    fn rem(mut self, rhs: u64) -> Self::Output {
+        self %= rhs;
+        return self;
+    }
+}
+
+fn division_finite(
+    lhs_digits: &VecDeque<u64>,
+    lhs_exp: &isize,
+    rhs_digits: &VecDeque<u64>,
+    rhs_exp: &isize,
+) -> (CASNum, CASNum) {
     todo!();
 }
 

@@ -56,9 +56,6 @@ mod test {
         let mut sum = CASNum::from(a) + &CASNum::from(b);
         sum.value = sum.value.normalize();
         if sum != result {
-            println!("64 bit");
-            println!("{:e} {:e}", a, b);
-            println!("{:?} {:?}", sum, result);
             assert!(false);
         }
         assert_eq!(sum, result);
@@ -67,9 +64,6 @@ mod test {
         sum.value = sum.value.normalize();
 
         if sum != result {
-            println!("32 bit");
-            println!("{:e} {:e}", a, b);
-            println!("{:?} {:?}", sum, result);
             assert!(false);
         }
         assert_eq!(sum, result);
@@ -81,17 +75,12 @@ mod test {
         sum.value = sum.value.normalize();
 
         if sum != result {
-            println!("{:?} {:?}", sum, result);
-            println!("64 bit");
-            println!("{:e} {:e}", a, b);
             assert!(false);
         }
 
         sum = CASNum::from(a as f32) - &CASNum::from(b as f32);
         sum.value = sum.value.normalize();
         if sum != result {
-            println!("32 bit");
-            println!("{:e} {:e}", a, b);
             assert!(false);
         }
     }
@@ -100,23 +89,9 @@ mod test {
         let thirty_two_bit = value as f32;
         let sixty_four_bit = value as f64;
         if CASNum::from(thirty_two_bit) != desired_output_32 {
-            println!("32 bit");
-            println!("value: {:e}", thirty_two_bit);
-            println!(
-                "actual value: {:?}\ngiven value: {:?}",
-                desired_output_32,
-                CASNum::from(thirty_two_bit)
-            );
             assert!(false);
         }
         if CASNum::from(sixty_four_bit) != desired_output_64 {
-            println!("64 bit");
-            println!("value: {:e}", sixty_four_bit);
-            println!(
-                "actual value: {:?}\ngiven value: {:?}",
-                desired_output_64,
-                CASNum::from(sixty_four_bit)
-            );
             assert!(false);
         }
     }
@@ -817,7 +792,6 @@ mod test {
                 if !multiplication(*value_1, *value_2) {
                     num_wrong += 1;
                 }
-                println!();
             }
         }
         assert_eq!(num_wrong, 0);
@@ -976,6 +950,57 @@ mod test {
             println!();
         }
         println!("\n\n{} / {}", limit - num_wrong, limit);
+        assert_eq!(num_wrong, 0);
+    }
+
+    #[test]
+    fn div_single_tests() {
+        let mut num_wrong = 0;
+        let nums: Vec<u64> = vec![
+            1,
+            93,
+            09794,
+            88,
+            56497,
+            6648564,
+            97367464849,
+            9794758579457499499,
+        ];
+        for num_1 in &nums {
+            for num_2 in &nums {
+                let divisor = *num_1;
+
+                let dividend = CASNum::from(*num_2);
+                let quotient = dividend.clone() / divisor;
+                let remainder = dividend.clone() % divisor;
+
+                let reconstructed = quotient.clone() * &CASNum::from(divisor) + &remainder;
+                if dividend != reconstructed {
+                    num_wrong += 1;
+                }
+            }
+        }
+        assert_eq!(num_wrong, 0);
+    }
+    #[test]
+    fn div_by_u64() {
+        let mut rng = ChaCha8Rng::seed_from_u64(42);
+        let limit = 10000;
+        let mut num_wrong = 0;
+        for _ in 0..limit {
+            let num_1 = CASNum::from(rng.next_u64());
+            let num_2 = CASNum::from(rng.next_u64());
+            let num_3 = CASNum::from(rng.next_u64());
+            let divisor = rng.next_u64();
+
+            let dividend = num_1 * &num_2 * &num_3;
+            let quotient = dividend.clone() / divisor;
+            let remainder = dividend.clone() % divisor;
+
+            if dividend != (quotient.clone() * &CASNum::from(divisor) + &remainder) {
+                num_wrong += 1;
+            }
+        }
         assert_eq!(num_wrong, 0);
     }
 }

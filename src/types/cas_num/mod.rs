@@ -24,7 +24,7 @@ enum Sign {
 #[derive(Clone)]
 pub(crate) struct CASNum {
     pub value: CASValue,
-    sign: Sign,
+    pub sign: Sign,
 }
 
 #[derive(Debug, PartialEq, Clone)]
