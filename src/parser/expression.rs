@@ -323,7 +323,7 @@ fn parse_right_paren<'a>(
         ..
     }) = operator_stack.back()
     {
-        output_queue.push_back(operator_stack.pop_back().unwrap());
+        output_queue.push_back(operator_stack.pop_back()?);
     }
     // if there is a function token at the top of the operator stack, then:
     //pop the function from the operator stack into the output queue
@@ -401,7 +401,7 @@ fn parse_name<'a>(
                     ..
                 }) = operator_stack.back()
                 {
-                    output_queue.push_back(operator_stack.pop_back().unwrap());
+                    output_queue.push_back(operator_stack.pop_back()?);
                 }
             }
 
