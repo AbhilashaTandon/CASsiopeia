@@ -1,9 +1,5 @@
 //simplifies expressions
 
-use crate::{
-    trees::{Tree, TreeNode},
-    types::symbol::Symbol,
-};
 
 // fn simplify<'a>(expr: &mut Tree<Symbol<'a>>) -> Tree<Symbol<'a>> {
 //     simplify_add(*expr);

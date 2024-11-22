@@ -17,10 +17,10 @@ impl From<u8> for CASNum {
             digits.push_back(value as DigitType);
         }
 
-        return CASNum {
+        CASNum {
             value: CASValue::Finite { digits, exp: 0 },
             sign: Sign::Pos,
-        };
+        }
     }
 }
 
@@ -34,10 +34,10 @@ impl From<u16> for CASNum {
             digits.push_back(value as DigitType);
         }
 
-        return CASNum {
+        CASNum {
             value: CASValue::Finite { digits, exp: 0 },
             sign: Sign::Pos,
-        };
+        }
     }
 }
 
@@ -51,10 +51,10 @@ impl From<u32> for CASNum {
             digits.push_back(value as DigitType);
         }
 
-        return CASNum {
+        CASNum {
             value: CASValue::Finite { digits, exp: 0 },
             sign: Sign::Pos,
-        };
+        }
     }
 }
 
@@ -68,10 +68,10 @@ impl From<u64> for CASNum {
             digits.push_back(value as DigitType);
         }
 
-        return CASNum {
+        CASNum {
             value: CASValue::Finite { digits, exp: 0 },
             sign: Sign::Pos,
-        };
+        }
     }
 }
 
@@ -85,10 +85,10 @@ impl From<u128> for CASNum {
             digits.push_back(value as DigitType);
         }
 
-        return CASNum {
+        CASNum {
             value: CASValue::Finite { digits, exp: 0 },
             sign: Sign::Pos,
-        };
+        }
     }
 }
 
@@ -97,13 +97,13 @@ impl From<i8> for CASNum {
         let mut digits: VecDeque<DigitType> = VecDeque::new();
 
         if value != 0 {
-            digits.push_back(value.abs() as DigitType);
+            digits.push_back(value.unsigned_abs() as DigitType);
         }
 
-        return CASNum {
+        CASNum {
             value: CASValue::Finite { digits, exp: 0 },
             sign: if value > 0 { Sign::Pos } else { Sign::Neg },
-        };
+        }
     }
 }
 
@@ -112,13 +112,13 @@ impl From<i16> for CASNum {
         let mut digits: VecDeque<DigitType> = VecDeque::new();
 
         if value != 0 {
-            digits.push_back(value.abs() as DigitType);
+            digits.push_back(value.unsigned_abs() as DigitType);
         }
 
-        return CASNum {
+        CASNum {
             value: CASValue::Finite { digits, exp: 0 },
             sign: if value > 0 { Sign::Pos } else { Sign::Neg },
-        };
+        }
     }
 }
 
@@ -127,13 +127,13 @@ impl From<i32> for CASNum {
         let mut digits: VecDeque<DigitType> = VecDeque::new();
 
         if value != 0 {
-            digits.push_back(value.abs() as DigitType);
+            digits.push_back(value.unsigned_abs() as DigitType);
         }
 
-        return CASNum {
+        CASNum {
             value: CASValue::Finite { digits, exp: 0 },
             sign: if value > 0 { Sign::Pos } else { Sign::Neg },
-        };
+        }
     }
 }
 
@@ -142,13 +142,13 @@ impl From<i64> for CASNum {
         let mut digits: VecDeque<DigitType> = VecDeque::new();
 
         if value != 0 {
-            digits.push_back(value.abs() as DigitType);
+            digits.push_back(value.unsigned_abs());
         }
 
-        return CASNum {
+        CASNum {
             value: CASValue::Finite { digits, exp: 0 },
             sign: if value > 0 { Sign::Pos } else { Sign::Neg },
-        };
+        }
     }
 }
 
@@ -165,10 +165,10 @@ impl From<i128> for CASNum {
             exp += 1;
         }
 
-        return CASNum {
+        CASNum {
             value: CASValue::Finite { digits, exp },
             sign: if value > 0 { Sign::Pos } else { Sign::Neg },
-        };
+        }
     }
 }
 
@@ -230,10 +230,10 @@ impl From<f32> for CASNum {
 
         if exp >= 0 {
             //we have to split mantissa in half if it straddles the boundary
-            let exp_rem = exp % NUM_BITS as i128;
+            let exp_rem = exp % NUM_BITS;
             mantissa_lower = mantissa << exp_rem;
             let mantissa_higher_mask: DigitType =
-                ((1 << exp_rem) - 1) << (NUM_BITS as i128 - exp_rem);
+                ((1 << exp_rem) - 1) << (NUM_BITS - exp_rem);
             //bit mask of exp_rem 1s to extract highest exp_rem bits from mantissa
             mantissa_higher = (mantissa & mantissa_higher_mask) >> (NUM_BITS - exp_rem);
 
@@ -246,7 +246,7 @@ impl From<f32> for CASNum {
                 digits.push_front(mantissa_lower);
             }
         } else {
-            let exp_rem = (-exp) % NUM_BITS as i128;
+            let exp_rem = (-exp) % NUM_BITS;
             mantissa_higher = mantissa >> exp_rem;
             let mantissa_lower_mask: DigitType = (1 << exp_rem) - 1;
             mantissa_lower = (mantissa & mantissa_lower_mask) << (NUM_BITS - exp_rem);
@@ -265,14 +265,14 @@ impl From<f32> for CASNum {
 
         // let num_digits = digits.len();
 
-        return CASNum {
+        CASNum {
             value: CASValue::Finite {
                 digits,
                 exp: (exp / NUM_BITS) as isize,
             }
             .normalize(),
             sign,
-        };
+        }
     }
 }
 
@@ -334,11 +334,11 @@ impl From<f64> for CASNum {
 
         if exp > 0 {
             //we have to split mantissa in half if it straddles the boundary
-            let exp_rem = exp % NUM_BITS as i128;
+            let exp_rem = exp % NUM_BITS;
             mantissa_lower = mantissa << exp_rem;
             if exp_rem != 0 {
                 let mantissa_higher_mask: DigitType =
-                    ((1 << exp_rem) - 1) << (NUM_BITS as i128 - exp_rem);
+                    ((1 << exp_rem) - 1) << (NUM_BITS - exp_rem);
                 //bit mask of exp_rem 1s to extract highest exp_rem bits from mantissa
                 mantissa_higher = (mantissa & mantissa_higher_mask) >> (NUM_BITS - exp_rem);
             } else {
@@ -356,7 +356,7 @@ impl From<f64> for CASNum {
                 exp += NUM_BITS;
             }
         } else {
-            let exp_rem = (-exp) % NUM_BITS as i128;
+            let exp_rem = (-exp) % NUM_BITS;
             mantissa_higher = mantissa >> exp_rem;
             let mantissa_lower_mask: DigitType = (1 << exp_rem) - 1;
             if exp_rem == 0 {
@@ -376,42 +376,42 @@ impl From<f64> for CASNum {
             }
         }
 
-        return CASNum {
+        CASNum {
             value: CASValue::Finite {
                 digits,
                 exp: (exp / NUM_BITS) as isize,
             }
             .normalize(),
             sign,
-        };
+        }
     }
 }
 
-impl Into<f64> for CASNum {
-    fn into(self) -> f64 {
+impl From<CASNum> for f64 {
+    fn from(val: CASNum) -> Self {
         //
-        if self.value.is_zero() {
+        if val.value.is_zero() {
             return 0.;
         }
-        match self {
-            Self {
+        match val {
+            CASNum {
                 value: CASValue::Indeterminate,
                 ..
-            } => return f64::NAN,
-            Self {
+            } => f64::NAN,
+            CASNum {
                 value: CASValue::Infinite,
                 sign: Sign::Pos,
-            } => return f64::INFINITY,
-            Self {
+            } => f64::INFINITY,
+            CASNum {
                 value: CASValue::Infinite,
                 sign: Sign::Neg,
-            } => return f64::NEG_INFINITY,
-            Self {
+            } => f64::NEG_INFINITY,
+            CASNum {
                 value: CASValue::Finite { mut digits, exp },
                 sign,
             } => {
                 let sign: u64 = if sign == Sign::Neg {
-                    (1 as u64) << 63
+                    1_u64 << 63
                 } else {
                     0
                 };
@@ -437,7 +437,7 @@ impl Into<f64> for CASNum {
                     let lower_digit: Option<u64> = digits.pop_back();
                     //if has less than 53 bits we need to extend with next digit
 
-                    higher_digit <<= 53 as i64 - first_1; //should make first 1 have position 53
+                    higher_digit <<= 53_i64 - first_1; //should make first 1 have position 53
                                                           //has first_1 digits
                     if let Some(mut bits) = lower_digit {
                         bits >>= 64 - (53 - first_1);
@@ -457,7 +457,7 @@ impl Into<f64> for CASNum {
 
                 let mantissa = higher_digit & 0xFFFFFFFFFFFFF; //get rid of leading 1
 
-                return f64::from_bits(sign | (((exponent + 1023) as u64) << 52) | mantissa);
+                f64::from_bits(sign | (((exponent + 1023) as u64) << 52) | mantissa)
             }
         }
     }

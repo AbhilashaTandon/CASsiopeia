@@ -23,12 +23,12 @@ enum Sign {
 
 #[derive(Clone)]
 pub(crate) struct CASNum {
-    pub value: CASValue,
-    pub sign: Sign,
+    pub(crate) value: CASValue,
+    pub(self) sign: Sign,
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum CASValue {
+pub(crate) enum CASValue {
     Finite {
         digits: VecDeque<DigitType>, //little endian
         exp: isize,                  //base 256
@@ -61,12 +61,18 @@ const ZERO: CASNum = CASNum {
 };
 
 impl CASNum {
+    fn new<T>(i: T) -> CASNum
+    where
+        CASNum: From<T>,
+    {
+        i.into()
+    }
     //only put functions in here instead of CASValue if they interact with sign
     fn abs(&self) -> Self {
-        return CASNum {
+        CASNum {
             sign: Sign::Pos,
             value: self.value.clone(),
-        };
+        }
     }
 
     fn compare_finite(&self, other: &CASNum) -> Ordering {
@@ -104,20 +110,20 @@ impl CASNum {
                     let other_max_digit = other_exp;
                     //we can safely unwrap since these are finite
 
-                    if self_max_digit > other_max_digit {
-                        return Greater;
-                    } else if self_max_digit < other_max_digit {
-                        return Less;
-                    } else {
-                        let alignment = self.value.align(&other.value).unwrap();
-                        for (a_num, b_num, _) in alignment.iter().rev() {
-                            match a_num.cmp(b_num) {
-                                Less => return Less,
-                                Equal => continue,
-                                Greater => return Greater,
+                    match self_max_digit.cmp(other_max_digit) {
+                        Greater => Greater,
+                        Less => Less,
+                        Equal => {
+                            let alignment = self.value.align(&other.value).unwrap();
+                            for (a_num, b_num, _) in alignment.iter().rev() {
+                                match a_num.cmp(b_num) {
+                                    Less => return Less,
+                                    Equal => continue,
+                                    Greater => return Greater,
+                                }
                             }
+                            Equal
                         }
-                        return Equal;
                     }
                 }
                 (Sign::Pos, Sign::Neg) => Greater,
@@ -129,40 +135,32 @@ impl CASNum {
 
                         //we can safely unwrap since these are finite
 
-                        if self_max_digit > other_max_digit {
-                            return Less;
-                        } else if self_max_digit < other_max_digit {
-                            return Greater;
-                        } else {
-                            let alignment = self.value.align(&other.value).unwrap();
-                            for (a_num, b_num, _) in alignment.iter().rev() {
-                                match a_num.cmp(b_num) {
-                                    Less => return Greater,
-                                    Equal => continue,
-                                    Greater => return Less,
+                        match self_max_digit.cmp(other_max_digit) {
+                            Less => Greater,
+                            Greater => Less,
+                            Equal => {
+                                let alignment = self.value.align(&other.value).unwrap();
+                                for (a_num, b_num, _) in alignment.iter().rev() {
+                                    match a_num.cmp(b_num) {
+                                        Less => return Greater,
+                                        Equal => continue,
+                                        Greater => return Less,
+                                    }
                                 }
+                                Equal
                             }
-                            return Equal;
                         }
                     }
                 }
             },
             _ => {
-                assert!(false);
-                return Equal;
+                unreachable!();
             }
         }
     }
 }
 
 impl CASValue {
-    fn new<T>(i: T) -> CASNum
-    where
-        CASNum: From<T>,
-    {
-        return i.into();
-    }
-
     fn exp(&self) -> Option<isize> {
         match self {
             CASValue::Finite { exp, .. } => Some(*exp),
@@ -171,7 +169,7 @@ impl CASValue {
         }
     }
 
-    fn normalize(mut self: Self) -> Self {
+    fn normalize(mut self) -> Self {
         match self {
             CASValue::Finite {
                 ref mut digits,
@@ -194,10 +192,10 @@ impl CASValue {
                         break;
                     }
                 }
-                return self;
+                self
             }
-            CASValue::Infinite => return self,
-            CASValue::Indeterminate => return self,
+            CASValue::Infinite => self,
+            CASValue::Indeterminate => self,
         }
     }
 
@@ -210,7 +208,7 @@ impl CASValue {
                         return false;
                     }
                 }
-                return true;
+                true
             }
             CASValue::Infinite => false,
             CASValue::Indeterminate => false,
@@ -241,7 +239,7 @@ impl CASValue {
         }
     }
 
-    fn align(self: &Self, other: &Self) -> Option<VecDeque<(DigitType, DigitType, isize)>> {
+    fn align(&self, other: &Self) -> Option<VecDeque<(DigitType, DigitType, isize)>> {
         //digits aligned by exponent and zipped together
         //base 10 example
 
@@ -301,7 +299,7 @@ impl CASValue {
                 i,
             ));
         }
-        return Some(out);
+        Some(out)
     }
 
     fn cartesian(&self, other: &Self) -> Option<VecDeque<VecDeque<(DigitType, DigitType, isize)>>> {
@@ -358,19 +356,16 @@ impl CASValue {
             }
         }
 
-        return None;
+        None
     }
 
     fn set_precision(&mut self, num_digits: usize) {
-        return match self {
-            CASValue::Finite { digits, exp } => {
-                while digits.len() > num_digits {
-                    digits.pop_front();
-                    *exp += 1;
-                }
+        if let CASValue::Finite { digits, exp } = self {
+            while digits.len() > num_digits {
+                digits.pop_front();
+                *exp += 1;
             }
-            _ => {}
-        };
+        }
     }
 }
 
@@ -378,18 +373,17 @@ use std::fmt::Display;
 
 impl Display for CASNum {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let float: f64 = <CASNum as Clone>::clone(&(*self)).into();
+        let float: f64 = <CASNum as Clone>::clone(self).into();
         //TODO: get rid of this clone
         match self {
             CASNum {
                 value: CASValue::Finite { digits, exp },
                 sign,
             } => {
-                let hex_str: String = digits
-                    .into_iter()
-                    .rev()
-                    .map(|num| format!("{:0>2x}", num))
-                    .collect();
+                let mut hex_str: String = String::new();
+                for digit in digits.iter().rev() {
+                    hex_str += &format!("{:0>2x}", digit);
+                }
                 write!(
                     f,
                     "0x{}{} x (2^64) ^ {} ({:e})",

@@ -1,4 +1,4 @@
-use std::string::ToString;
+use std::fmt::Display;
 
 use super::token::Token;
 
@@ -32,28 +32,29 @@ use super::token::Token;
     },
 }
 
-impl ToString for CASErrorKind {
-    fn to_string(&self) -> String {
-        return String::from(match self {
+impl Display for CASErrorKind {
+    
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
             CASErrorKind::NoError => "No Error",
             CASErrorKind::TypeError => "Type Error",
             CASErrorKind::SyntaxError
             | CASErrorKind::MalformedNumericLiteral{..}
             | CASErrorKind::MalformedVariableName{..} | CASErrorKind::AssignmentInExpression | CASErrorKind::UnknownSymbol{..} | CASErrorKind::MismatchedParentheses | CASErrorKind::NoExpressionGiven | CASErrorKind::InvalidCharacter{..} | CASErrorKind::CommandInExpression { .. } => "Syntax Error",
             CASErrorKind::WrongNumberOfArgs{..} => "Runtime Error",
-        });
+        })
     }
 }
 
 #[derive(PartialEq, Debug)]
- pub struct CASError {
-     pub line_pos: usize,
-     pub kind: CASErrorKind,
+ pub(crate) struct CASError {
+     pub(crate) line_pos: usize,
+     pub(crate) kind: CASErrorKind,
 }
 
 impl CASErrorKind{
-    fn get_message(self: &Self) -> String {
-    return match self {
+    fn get_message(&self) -> String {
+    match self {
             CASErrorKind::NoError => String::from("nothing to see here!"),
             CASErrorKind::SyntaxError => String::from("unspecified syntax error."),
             CASErrorKind::TypeError => String::from("unspecified type error."),
@@ -69,13 +70,13 @@ impl CASErrorKind{
             CASErrorKind::InvalidCharacter{chr} => format!("an invalid character {} was entered.", chr),
             CASErrorKind::CommandInExpression { command } => format!("the {} command is not allowed within an expression.", command),
             
-        };
+        }
     }
 }
 
 
-pub fn print_error(err: CASError, line: &str, line_num: usize) {
-    eprintln!("{} on line {}.", err.kind.to_string(), line_num + 1);
+pub(crate) fn print_error(err: CASError, line: &str, line_num: usize) {
+    eprintln!("{} on line {}.", err.kind, line_num + 1);
     //we number lines starting w 1 instead of 0
     eprintln!("{}", line);
     eprintln!("{:>width$}", "^", width = err.line_pos + 1);

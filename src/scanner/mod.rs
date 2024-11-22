@@ -1,5 +1,5 @@
 use std::iter::{Enumerate, Peekable};
-use std::{str, usize};
+use std::str;
 
 use crate::types::cas_error::{CASError, CASErrorKind};
 use crate::types::symbol::constant::RESERVED_CONSTANTS;
@@ -11,9 +11,9 @@ use crate::types::token::{Token, TokenType};
 
 mod test;
 
-pub type Tokenization = Result<Vec<Token>, Vec<CASError>>;
+pub(crate) type Tokenization = Result<Vec<Token>, Vec<CASError>>;
 
-pub fn tokenize(line_of_code: &str) -> Tokenization {
+pub(crate) fn tokenize(line_of_code: &str) -> Tokenization {
     //splits file into tokens
     let mut char_iter: Peekable<Enumerate<str::Chars>> =
         line_of_code.chars().enumerate().peekable(); //peekable to look forward for multichar tokens
@@ -30,7 +30,7 @@ pub fn tokenize(line_of_code: &str) -> Tokenization {
             }) => {}
             Ok(token) => tokens.push(token),
             Err(err) => {
-                if let Some(_) = char_iter.peek() {
+                if char_iter.peek().is_some() {
                     errors.push(err);
                 } else {
                     errors.push(CASError {
@@ -43,8 +43,8 @@ pub fn tokenize(line_of_code: &str) -> Tokenization {
     }
     //add token for end of file if not already present
     match errors.len() {
-        0 => return Ok(tokens),
-        _ => return Err(errors),
+        0 => Ok(tokens),
+        _ => Err(errors),
     }
 }
 
@@ -92,10 +92,10 @@ fn get_token(iter: &mut Peekable<Enumerate<str::Chars>>) -> Result<Token, CASErr
         return Ok(value);
     }
 
-    return Err(CASError {
+    Err(CASError {
         line_pos,
         kind: CASErrorKind::InvalidCharacter { chr: next_char },
-    });
+    })
 }
 
 fn parse_number(
@@ -160,13 +160,11 @@ fn get_next_number(
     }
     let float_parse = num.parse::<f64>();
     match float_parse {
-        Ok(float) => {
-            return Ok(Token {
-                token_type: Num(float.into()),
-                line_pos: *line_pos,
-            })
-        }
-        Err(_) => return Err(num),
+        Ok(float) => Ok(Token {
+            token_type: Num(float.into()),
+            line_pos: *line_pos,
+        }),
+        Err(_) => Err(num),
     }
     /*
     let parse : Result<CASNum, Error> = num_lit::parse_lit(num);
@@ -201,7 +199,7 @@ fn skip_over_whitespace(
             });
         }
     }
-    return None; //we return none once we reach a non whitespace char
+    None //we return none once we reach a non whitespace char
 }
 
 fn parse_ops(
@@ -213,26 +211,18 @@ fn parse_ops(
     let one_char = next_char.to_string();
 
     if let Some((_, '=')) = iter.peek() {
-        match OPERATORS.get(&(next_char.to_string() + "=")) {
-            Some(op) => {
-                iter.next(); //advance iterator if success
-                return Some(Token {
-                    token_type: Operator(*op),
-                    line_pos: *line_pos + 1,
-                });
-            }
-            None => {}
-        }
-    }
-    match OPERATORS.get(&one_char) {
-        Some(op) => {
+        if let Some(op) = OPERATORS.get(&(next_char.to_string() + "=")) {
+            iter.next(); //advance iterator if success
             return Some(Token {
                 token_type: Operator(*op),
-                line_pos: *line_pos,
+                line_pos: *line_pos + 1,
             });
         }
-        None => return None,
-    };
+    }
+    OPERATORS.get(&one_char).map(|op| Token {
+        token_type: Operator(*op),
+        line_pos: *line_pos,
+    })
 }
 
 fn parse_names(
@@ -257,7 +247,7 @@ fn parse_names(
             line_pos: *line_pos,
         });
     }
-    return None;
+    None
 }
 
 fn get_next_word(iter: &mut Peekable<Enumerate<str::Chars>>, line_pos: &mut usize) -> String {
@@ -270,5 +260,5 @@ fn get_next_word(iter: &mut Peekable<Enumerate<str::Chars>>, line_pos: &mut usiz
         iter.next();
         *line_pos += 1;
     }
-    return word;
+    word
 }

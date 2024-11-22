@@ -4,7 +4,7 @@ use phf_macros::phf_map;
 
 #[derive(Clone, PartialEq, Debug, Copy)]
 
-pub enum Operator {
+pub(crate) enum Operator {
     Add,
     Sub,
     Mult,
@@ -25,14 +25,11 @@ pub enum Operator {
     Assign,
 }
 
-pub fn left_associative(operator: &Operator) -> bool {
-    match operator {
-        Operator::Exp | Operator::Assign | Operator::Neg => false,
-        _ => true,
-    }
+pub(crate) fn left_associative(operator: &Operator) -> bool {
+    !matches!(operator, Operator::Exp | Operator::Assign | Operator::Neg)
 }
 
-pub fn precedence(op: &Operator) -> u8 {
+pub(crate) fn precedence(op: &Operator) -> u8 {
     match op {
         Operator::Comma => 0,
         Operator::Assign => 1,

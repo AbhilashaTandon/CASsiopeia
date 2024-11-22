@@ -1,24 +1,20 @@
 use std::{collections::HashMap, iter::zip};
 
-use crate::types::{
-    cas_error::CASErrorKind,
-    cas_num::CASNum,
-    symbol::{Symbol, SymbolType},
-};
+use crate::types::{cas_error::CASErrorKind, cas_num::CASNum, symbol::SymbolType};
 
 use super::trees::{Tree, TreeNodeRef};
 
 #[derive(PartialEq, Debug)]
 pub(crate) struct Var<'a> {
     pub(crate) expr: Tree<SymbolType<'a>>,
-    pub args: Box<[&'a str]>, //if args is empty it is a numeric or symbolic variable, 2, 3, pi, x, etc.
+    pub(crate) args: Box<[&'a str]>, //if args is empty it is a numeric or symbolic variable, 2, 3, pi, x, etc.
 }
 
 //table storing predefined variables (numericals and functions)
-pub type VarTable<'a> = HashMap<&'a str, Var<'a>>;
+pub(crate) type VarTable<'a> = HashMap<&'a str, Var<'a>>;
 
 impl<'a> Var<'a> {
-    pub fn apply<'b>(
+    pub(crate) fn apply<'b>(
         self,
         func_name: String,
         arg_vals: Box<[CASNum]>,
@@ -43,14 +39,14 @@ impl<'a> Var<'a> {
         }
         let mut expression = self.expr.root.unwrap();
         apply(&mut expression, args_map);
-        return Ok(Tree {
+        Ok(Tree {
             root: Some(expression),
-        });
+        })
     }
 }
 
 fn apply<'a>(expr: &mut TreeNodeRef<SymbolType<'a>>, args: HashMap<&'a str, CASNum>) {
-    if expr.children.len() == 0 {
+    if expr.children.is_empty() {
         if let SymbolType::Variable { name } = expr.data {
             if let Some(value) = args.get(name) {
                 expr.data = SymbolType::Num {

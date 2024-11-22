@@ -108,7 +108,7 @@ pub(super) fn parse_lit(
         }
     }
 
-    if in_exp && exp == "" {
+    if in_exp && exp.is_empty() {
         return Some(Err(CASError {
             line_pos: *line_pos,
             kind: CASErrorKind::MalformedNumericLiteral { lit },
@@ -128,7 +128,7 @@ pub(super) fn parse_lit(
     //splits int into chunks of 19 digits or less, with remainder at front
 
     let mut power = CASNum::from(1);
-    let factor = CASNum::from(10000000000000000000 as u64);
+    let factor = CASNum::from(10000000000000000000_u64);
 
     for chunk in chunks.iter() {
         let chunk_val = chunk.parse::<u64>();

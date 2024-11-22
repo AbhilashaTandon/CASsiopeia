@@ -16,7 +16,7 @@ mod test {
         line_of_code: &str,
         desired_output: Result<Vec<(TokenType, usize)>, Vec<CASError>>,
     ) {
-        let computed_tokens: Tokenization = tokenize(&line_of_code);
+        let computed_tokens: Tokenization = tokenize(line_of_code);
         match desired_output {
             Err(err) => assert_eq!(computed_tokens, Err(err)),
             Ok(tokens) => {
@@ -30,10 +30,10 @@ mod test {
     }
 
     fn make_token(token_type: TokenType, line_pos: usize) -> Token {
-        return Token {
+        Token {
             token_type,
             line_pos,
-        };
+        }
     }
 
     #[test]

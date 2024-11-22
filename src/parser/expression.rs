@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use super::trees::{Tree, TreeNode, TreeNodeRef};
 use super::vars::{Var, VarTable};
 
-pub type PostFix<'a> = Result<VecDeque<Symbol<'a>>, CASError>;
+pub(crate) type PostFix<'a> = Result<VecDeque<Symbol<'a>>, CASError>;
 
 use crate::types::cas_error::{CASError, CASErrorKind};
 use crate::types::symbol::constant::Const;
@@ -17,8 +17,8 @@ use crate::types::token::Token;
 use crate::types::token::TokenType::{self, *};
 use std::collections::HashMap;
 
-pub fn to_postfix<'a>(
-    tokens: &'a Vec<Token>,
+pub(crate) fn to_postfix<'a>(
+    tokens: &'a [Token],
     var_table: &'a VarTable<'a>,
     args: Vec<&str>,
 ) -> PostFix<'a> {
@@ -36,18 +36,18 @@ pub fn to_postfix<'a>(
     let mut operator_stack: VecDeque<Symbol> = VecDeque::new();
     let mut last_token: Option<TokenType> = None;
 
-    while let Some(Token {
+    for Token {
         token_type,
         line_pos,
-    }) = token_iter.next()
+    } in token_iter
     {
         match token_type {
             Name(name) => {
                 if let Some(value) = parse_name(
                     &args,
-                    &name,
+                    name,
                     &mut output_queue,
-                    &var_table,
+                    var_table,
                     &mut operator_stack,
                     *line_pos,
                 ) {
@@ -83,7 +83,7 @@ pub fn to_postfix<'a>(
                 | GreaterEqual => {
                     if let Some(value) = parse_numeric_operator(
                         &mut operator_stack,
-                        &o1,
+                        o1,
                         &mut output_queue,
                         *line_pos,
                     ) {
@@ -179,7 +179,7 @@ pub fn to_postfix<'a>(
         output_queue.push_back(token);
     }
 
-    return Ok(output_queue);
+    Ok(output_queue)
 }
 
 fn parse_num(
@@ -210,7 +210,7 @@ fn parse_num(
     }
 }
 
-pub fn shunting_yard<'a>(
+pub(crate) fn shunting_yard<'a>(
     mut output_queue: VecDeque<Symbol<'a>>,
 ) -> Result<Tree<Symbol<'a>>, CASError> {
     let mut tree_stack: Vec<TreeNodeRef<Symbol<'a>>> = vec![];
@@ -347,7 +347,7 @@ fn parse_numeric_operator<'a>(
                 //
 
                 let o1_prec = precedence(o1);
-                let o2_prec = precedence(&o2);
+                let o2_prec = precedence(o2);
                 if o2_prec <= o1_prec && (o2_prec != o1_prec || !left_associative(o1)) {
                     break;
                 }
@@ -377,7 +377,7 @@ fn parse_numeric_operator<'a>(
 }
 
 fn parse_name<'a>(
-    args: &Vec<&str>,
+    args: &[&str],
     name: &'a String,
     output_queue: &mut VecDeque<Symbol<'a>>,
     var_table: &HashMap<&str, Var<'a>>,
@@ -392,7 +392,7 @@ fn parse_name<'a>(
     if args.contains(&name.as_str()) {
         output_queue.push_back(name_symbol);
         //if the token is a number put it into the output queue
-    } else if let Some(ref var) = var_table.get(name as &str) {
+    } else if let Some(var) = var_table.get(name as &str) {
         match var.args.len() {
             0 => {
                 output_queue.push_back(name_symbol);

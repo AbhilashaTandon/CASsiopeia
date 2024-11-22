@@ -2,7 +2,7 @@
 
 use super::{CASNum, Sign};
 
-pub struct CASNumIter {
+pub(crate) struct CASNumIter {
     cas_num: CASNum,
     index: usize,
 }

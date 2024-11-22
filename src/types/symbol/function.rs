@@ -3,7 +3,7 @@ use std::fmt::Display;
 use phf_macros::phf_map;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Func<'a> {
+pub(crate) enum Func<'a> {
     ResFun(ResFun),
     Function { num_args: usize, name: &'a str },
 }
@@ -18,7 +18,7 @@ impl<'a> Display for Func<'a> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ResFun {
+pub(crate) enum ResFun {
     Sqrt,
     Cbrt,
     Log2,
@@ -52,14 +52,14 @@ pub enum ResFun {
 }
 
 impl ResFun {
-    pub fn num_args(self) -> usize {
-        return match self {
+    pub(crate) fn num_args(self) -> usize {
+        match self {
             ResFun::Der => 2,    //der(x^2, x) -> 2*x
             ResFun::SymInt => 2, //sym_int(x^2, x) -> x^3/3 + C
             ResFun::DefInt => 4,
             ResFun::Log => 2,
             _ => 1,
-        };
+        }
     }
 }
 
@@ -93,7 +93,7 @@ impl Display for ResFun {
             ResFun::DefInt => "∫ ",
             ResFun::Log => "log()",
         };
-        return write!(f, "{}", name);
+        write!(f, "{}", name)
     }
     //TODO: find some way of making a double sided hashmap to lookup this stuff
 }

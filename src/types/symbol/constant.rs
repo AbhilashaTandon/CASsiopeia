@@ -3,7 +3,7 @@ use std::fmt::Display;
 use phf_macros::phf_map;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Const<'a> {
+pub(crate) enum Const<'a> {
     ResConst(ResConst),
     Const { name: &'a str },
 }
@@ -18,7 +18,7 @@ impl<'a> Display for Const<'a> {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum ResConst {
+pub(crate) enum ResConst {
     Pi,
     Phi,
     E,
@@ -27,7 +27,7 @@ pub enum ResConst {
     C, //for indefinite integration
 }
 
-pub const RESERVED_CONSTANTS: phf::Map<&'static str, ResConst> = phf_map! {
+pub(crate) const RESERVED_CONSTANTS: phf::Map<&'static str, ResConst> = phf_map! {
     "pi" => ResConst::Pi,
     "e" => ResConst::E,
     "phi" => ResConst::Phi,

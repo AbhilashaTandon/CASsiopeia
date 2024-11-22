@@ -10,7 +10,7 @@ use super::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum TokenType {
+pub(crate) enum TokenType {
     //type of tokens outputted by scanner
     Name(String), //variable name
     Num(CASNum),
@@ -20,15 +20,15 @@ pub enum TokenType {
     Eof,                //end of file
 }
 #[derive(Debug, Clone, PartialEq)]
-pub struct Token {
-    pub token_type: TokenType,
-    pub line_pos: usize,
+pub(crate) struct Token {
+    pub(crate) token_type: TokenType,
+    pub(crate) line_pos: usize,
 }
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let display: &str = match &self.token_type {
-            TokenType::Name(name) => &name,
+            TokenType::Name(name) => name,
             TokenType::Const(constant) => &format!("{}", constant),
             TokenType::ResFun(fun) => &format!("{}", fun),
             TokenType::Num(value) => &format!("{}", value),

@@ -4,25 +4,10 @@
 // use std::io::prelude::*;
 // use std::path::Path;
 
-use std::{
-    collections::HashMap,
-    env,
-    fs::File,
-    io::{self, Read, Write},
-    iter::zip,
-    path::Path,
-};
-
-use parser::vars::Var;
-use parser::*;
-use scanner::tokenize;
-use trees::Tree;
-use types::{cas_error::print_error, cas_num::CASNum, symbol::SymbolType};
-
 mod algebra;
 mod parser;
 mod scanner;
-pub mod types;
+pub(crate) mod types;
 
 fn main() {
     //cli stuff

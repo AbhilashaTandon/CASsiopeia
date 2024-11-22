@@ -13,14 +13,14 @@ use super::{CASNum, CASValue, Sign, INDETERMINATE, INFINITY, NEG_INFINITY, ZERO}
 impl Neg for CASNum {
     type Output = CASNum;
     fn neg(self) -> Self::Output {
-        return CASNum {
+        CASNum {
             value: self.value,
             sign: if self.sign == Sign::Pos {
                 Sign::Neg
             } else {
                 Sign::Pos
             },
-        };
+        }
     }
 }
 
@@ -41,7 +41,7 @@ impl AddAssign<&CASNum> for CASNum {
                     (true, true) => CASNum::from(0), //0 + 0 == 0
                     (true, false) => rhs.clone(),    //0 + x == x
                     (false, true) => return,         //x + 0 == x
-                    (false, false) => addition_finite(&self, &rhs),
+                    (false, false) => addition_finite(self, rhs),
                 }
             }
             (
@@ -117,14 +117,14 @@ fn addition_finite(lhs: &CASNum, rhs: &CASNum) -> CASNum {
                 digits.push_back(carry as DigitType);
             }
 
-            return CASNum {
+            CASNum {
                 value: CASValue::Finite { digits, exp },
                 sign: Sign::Pos,
-            };
+            }
         }
 
-        (Sign::Pos, Sign::Neg) => subtraction_finite(&lhs, &rhs.abs()),
-        (Sign::Neg, Sign::Pos) => subtraction_finite(&rhs, &lhs.abs()),
+        (Sign::Pos, Sign::Neg) => subtraction_finite(lhs, &rhs.abs()),
+        (Sign::Neg, Sign::Pos) => subtraction_finite(rhs, &lhs.abs()),
         (Sign::Neg, Sign::Neg) => -addition_finite(&lhs.abs(), &rhs.abs()),
     }
 }
@@ -146,7 +146,7 @@ impl SubAssign<&CASNum> for CASNum {
                     (true, true) => CASNum::from(0), //0 - 0 == 0
                     (true, false) => -rhs.clone(),   //0 - x == -x
                     (false, true) => return,         //x - 0 == x
-                    (false, false) => subtraction_finite(self, &rhs),
+                    (false, false) => subtraction_finite(self, rhs),
                 }
             }
             (
@@ -213,7 +213,7 @@ fn subtraction_finite(lhs: &CASNum, rhs: &CASNum) -> CASNum {
                 let mut diff: i128 = (*self_digit as i128) - (*other_digit as i128) + carry;
 
                 if diff < 0 {
-                    diff = 0x10000000000000000 + diff;
+                    diff += 0x10000000000000000;
                     carry = -1;
                 } else {
                     carry = 0;
@@ -221,10 +221,10 @@ fn subtraction_finite(lhs: &CASNum, rhs: &CASNum) -> CASNum {
                 digits.push_back(diff.try_into().unwrap());
             }
 
-            return CASNum {
+            CASNum {
                 value: CASValue::Finite { digits, exp },
                 sign: Sign::Pos,
-            };
+            }
         }
 
         (Sign::Pos, Sign::Neg) => addition_finite(lhs, &rhs.abs()), //a - -b = a + b
@@ -271,7 +271,7 @@ impl MulAssign<&CASNum> for CASNum {
             return;
         }
 
-        *self = multiplication_finite(self, &rhs);
+        *self = multiplication_finite(self, rhs);
     }
 }
 
@@ -295,10 +295,7 @@ fn multiplication_finite(lhs: &CASNum, rhs: &CASNum) -> CASNum {
 
     assert!(max_digit >= min_digit);
 
-    let mut temp_arr: Vec<u128> = vec![];
-    for _ in min_digit..=max_digit {
-        temp_arr.push(0);
-    }
+    let mut temp_arr: Vec<u128> = vec![0; (max_digit - min_digit + 1) as usize];
 
     for row in cartesian {
         for (self_digit, rhs_digit, exp) in row {
@@ -328,10 +325,10 @@ fn multiplication_finite(lhs: &CASNum, rhs: &CASNum) -> CASNum {
         + rhs.value.exp().unwrap();
     let val = CASValue::Finite { digits, exp };
 
-    return CASNum {
+    CASNum {
         value: val.normalize(),
         sign: Sign::Pos,
-    };
+    }
 }
 
 impl DivAssign<&CASNum> for CASNum {
@@ -406,7 +403,7 @@ impl DivAssign<&CASNum> for CASNum {
 fn quot_rem(lhs: &CASNum, rhs: u64) -> (CASNum, CASNum) {
     if lhs.value.is_zero() && rhs == 0 {
         //0/0 -> Nan
-        return (INDETERMINATE, INDETERMINATE);
+        (INDETERMINATE, INDETERMINATE)
     } else if lhs.value.is_zero() {
         //0/nonzero -> 0
         return (ZERO, ZERO);
@@ -424,7 +421,7 @@ fn quot_rem(lhs: &CASNum, rhs: u64) -> (CASNum, CASNum) {
         let mut rem: u128 = 0;
         let divisor = rhs as u128;
         let mut quot: VecDeque<u64> = VecDeque::from([]);
-        for digit in digits.into_iter().rev() {
+        for digit in digits.iter().rev() {
             let dividend = (*digit as u128) + (rem << 64);
             quot.push_front((dividend / divisor) as u64);
             rem = dividend % divisor;
@@ -442,8 +439,7 @@ fn quot_rem(lhs: &CASNum, rhs: u64) -> (CASNum, CASNum) {
             CASNum::from(rem),
         );
     } else {
-        assert!(false);
-        return (ZERO, ZERO);
+        unreachable!();
     }
 }
 
@@ -464,7 +460,7 @@ impl Div<u64> for CASNum {
 
     fn div(mut self, rhs: u64) -> CASNum {
         self /= rhs;
-        return self;
+        self
     }
 }
 
@@ -473,7 +469,7 @@ impl Rem<u64> for CASNum {
 
     fn rem(mut self, rhs: u64) -> Self::Output {
         self %= rhs;
-        return self;
+        self
     }
 }
 
@@ -491,7 +487,7 @@ impl Add<&CASNum> for CASNum {
 
     fn add(mut self, rhs: &CASNum) -> CASNum {
         self += rhs;
-        return self;
+        self
     }
 }
 
@@ -500,7 +496,7 @@ impl Sub<&CASNum> for CASNum {
 
     fn sub(mut self, rhs: &CASNum) -> CASNum {
         self -= rhs;
-        return self;
+        self
     }
 }
 
@@ -509,7 +505,7 @@ impl Mul<&CASNum> for CASNum {
 
     fn mul(mut self, rhs: &CASNum) -> CASNum {
         self *= rhs;
-        return self;
+        self
     }
 }
 
@@ -518,6 +514,6 @@ impl Div<&CASNum> for CASNum {
 
     fn div(mut self, rhs: &CASNum) -> CASNum {
         self /= rhs;
-        return self;
+        self
     }
 }

@@ -54,11 +54,11 @@ mod test {
         }
     }
 
-    fn make_symbol<'a>(symbol_type: SymbolType<'a>, line_pos: usize) -> Symbol<'a> {
-        return Symbol {
+    fn make_symbol(symbol_type: SymbolType<'_>, line_pos: usize) -> Symbol<'_> {
+        Symbol {
             symbol_type,
             line_pos,
-        };
+        }
     }
 
     #[test]

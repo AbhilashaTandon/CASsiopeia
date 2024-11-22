@@ -6,13 +6,13 @@ use operator::Operator;
 
 use constant::Const;
 
-pub mod constant;
-pub mod function;
-pub mod operator;
+pub(crate) mod constant;
+pub(crate) mod function;
+pub(crate) mod operator;
 
 #[derive(Debug, PartialEq, Clone)]
 
-pub enum SymbolType<'a> {
+pub(crate) enum SymbolType<'a> {
     //type of tokens of output of parsing
     Variable { name: &'a str },
     Operator(Operator),
@@ -22,14 +22,14 @@ pub enum SymbolType<'a> {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct Symbol<'a> {
-    pub symbol_type: SymbolType<'a>,
+pub(crate) struct Symbol<'a> {
+    pub(crate) symbol_type: SymbolType<'a>,
     pub(crate) line_pos: usize,
 }
 //since the variable table is a hash map we can store variables and functions with their names and still have constant lookups
 
 impl SymbolType<'_> {
-    pub fn num_args(&self) -> usize {
+    pub(crate) fn num_args(&self) -> usize {
         match self {
             SymbolType::Variable { .. } | SymbolType::Num { .. } | SymbolType::Const { .. } => 0,
             SymbolType::Operator(Operator::Neg) => 1,
@@ -53,8 +53,8 @@ impl Display for SymbolType<'_> {
 }
 
 impl Symbol<'_> {
-    pub fn num_args(&self) -> usize {
-        return self.symbol_type.num_args();
+    pub(crate) fn num_args(&self) -> usize {
+        self.symbol_type.num_args()
     }
 }
 
