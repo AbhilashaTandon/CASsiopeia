@@ -41,7 +41,7 @@ pub(crate) fn to_postfix<'a>(
         line_pos,
     } in token_iter
     {
-        match token_type {
+        match &token_type {
             Name(name) => {
                 if let Some(value) = parse_name(
                     &args,
@@ -164,7 +164,6 @@ pub(crate) fn to_postfix<'a>(
 
         last_token = Some(token_type.clone());
     }
-
     /* After the while loop, pop the remaining items from the operator stack into the output queue. */
     // while there are tokens on the operator stack:
     while let Some(token) = operator_stack.pop_back() {
@@ -211,16 +210,16 @@ fn parse_num(
 }
 
 pub(crate) fn shunting_yard<'a>(
-    mut output_queue: VecDeque<Symbol<'a>>,
+    output_queue: &mut VecDeque<Symbol<'a>>,
 ) -> Result<Tree<Symbol<'a>>, CASError> {
     let mut tree_stack: Vec<TreeNodeRef<Symbol<'a>>> = vec![];
     //temporary stack for constructing the tree
 
     while let Some(symbol) = output_queue.pop_front() {
-        let mut args = VecDeque::new();
+        let mut args = vec![];
         for _ in 0..symbol.symbol_type.num_args() {
             if let Some(arg) = tree_stack.pop() {
-                args.push_front(arg);
+                args.push(arg);
             } else {
                 return Err(CASError {
                     line_pos: symbol.line_pos,

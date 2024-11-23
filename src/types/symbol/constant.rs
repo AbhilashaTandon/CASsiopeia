@@ -25,6 +25,8 @@ pub(crate) enum ResConst {
     Tau,
     I,
     C, //for indefinite integration
+    Inf,
+    NegInf,
 }
 
 pub(crate) const RESERVED_CONSTANTS: phf::Map<&'static str, ResConst> = phf_map! {
@@ -37,6 +39,8 @@ pub(crate) const RESERVED_CONSTANTS: phf::Map<&'static str, ResConst> = phf_map!
     "ϕ" => ResConst::Phi,
     "τ" => ResConst::Tau,
     "C" => ResConst::C,
+    "∞" => ResConst::Inf,
+    "-∞" => ResConst::NegInf,
 };
 
 impl Display for ResConst {
@@ -51,6 +55,8 @@ impl Display for ResConst {
                 ResConst::Tau => "τ",
                 ResConst::I => "i",
                 ResConst::C => "C",
+                ResConst::Inf => "∞",
+                ResConst::NegInf => "-∞",
             },
         )
     }

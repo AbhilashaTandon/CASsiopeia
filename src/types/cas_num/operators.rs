@@ -109,7 +109,7 @@ fn addition_finite(lhs: &CASNum, rhs: &CASNum) -> CASNum {
                 } else {
                     carry = 0;
                 }
-                let new_digit: DigitType = sum.try_into().unwrap();
+                let new_digit: DigitType = sum as u64;
                 digits.push_back(new_digit);
             }
 
@@ -316,7 +316,7 @@ fn multiplication_finite(lhs: &CASNum, rhs: &CASNum) -> CASNum {
     }
 
     while carry > 0 {
-        digits.push_back((carry & bit_mask).try_into().unwrap());
+        digits.push_back((carry & bit_mask) as u64);
         carry >>= NUM_BITS;
     }
 

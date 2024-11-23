@@ -30,22 +30,23 @@ impl<'a> Var<'a> {
             });
         }
 
-        if self.expr.root.is_none() {
-            return Err(CASErrorKind::UnknownSymbol { symbol: func_name });
-        }
         let mut args_map: HashMap<&'_ str, CASNum> = HashMap::new();
         for (name, value) in zip(self.args, arg_vals) {
             args_map.insert(name, value);
         }
-        let mut expression = self.expr.root.unwrap();
-        apply(&mut expression, args_map);
-        Ok(Tree {
-            root: Some(expression),
-        })
+        match self.expr.root {
+            None => Err(CASErrorKind::UnknownSymbol { symbol: func_name }),
+            Some(mut expression) => {
+                apply(&mut expression, &args_map);
+                Ok(Tree {
+                    root: Some(expression),
+                })
+            }
+        }
     }
 }
 
-fn apply<'a>(expr: &mut TreeNodeRef<SymbolType<'a>>, args: HashMap<&'a str, CASNum>) {
+fn apply<'a>(expr: &mut TreeNodeRef<SymbolType<'a>>, args: &HashMap<&'a str, CASNum>) {
     if expr.children.is_empty() {
         if let SymbolType::Variable { name } = expr.data {
             if let Some(value) = args.get(name) {
@@ -57,8 +58,7 @@ fn apply<'a>(expr: &mut TreeNodeRef<SymbolType<'a>>, args: HashMap<&'a str, CASN
         }
     } else {
         for child in &mut expr.children {
-            apply(child, args.clone());
-            //TODO: get rid of this clone
+            apply(child, args);
         }
     }
 }

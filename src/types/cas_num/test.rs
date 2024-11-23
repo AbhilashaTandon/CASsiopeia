@@ -1,15 +1,10 @@
 #[cfg(test)]
 use std::collections::VecDeque;
 
-use crate::types::cas_num::literal;
-use crate::types::cas_num::Sign;
 
-use crate::types::cas_num::CASValue::Finite;
-use crate::types::cas_num::CASValue::Infinite;
 
 use super::super::CASNum;
 
-use rand::RngCore;
 
 fn comparison(a: i128, b: i128) -> bool {
     CASNum::from(a).partial_cmp(&CASNum::from(b)) == Some(a.cmp(&b))
@@ -791,8 +786,6 @@ fn multiplication_tests() {
     assert_eq!(num_wrong, 0);
 }
 
-use rand::prelude::*;
-use rand_chacha::ChaCha8Rng;
 #[test]
 
 fn conversion_tests_reverse() {
@@ -809,7 +802,7 @@ fn conversion_tests_reverse() {
         //
         let cas_num = CASNum::from(float);
         //
-        let reconstructed: f64 = cas_num.clone().into();
+        let reconstructed: f64 = cas_num.into();
         if reconstructed != float {
             num_wrong += 1;
         }

@@ -4,11 +4,6 @@
 // use std::io::prelude::*;
 // use std::path::Path;
 
-mod algebra;
-mod parser;
-mod scanner;
-pub(crate) mod types;
-
 fn main() {
     //cli stuff
     // let args: Vec<String> = env::args().collect();

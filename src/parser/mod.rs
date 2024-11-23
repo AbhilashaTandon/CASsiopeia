@@ -17,5 +17,5 @@ pub(crate) fn parse_expr<'a>(
     var_table: &'a VarTable<'a>,
     args: Vec<&str>,
 ) -> Result<Tree<Symbol<'a>>, CASError> {
-    return shunting_yard(to_postfix(tokens, var_table, args)?);
+    return shunting_yard(&mut to_postfix(tokens, var_table, args)?);
 }

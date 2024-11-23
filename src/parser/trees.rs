@@ -1,4 +1,3 @@
-use std::collections::VecDeque;
 use std::fmt::{Display, Error};
 
 use crate::types::cas_error::CASErrorKind;
@@ -10,7 +9,7 @@ pub(crate) type TreeNodeRef<T> = Box<TreeNode<T>>;
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub(crate) struct TreeNode<T> {
     pub(crate) data: T,
-    pub(crate) children: VecDeque<TreeNodeRef<T>>,
+    pub(crate) children: Vec<TreeNodeRef<T>>,
 }
 
 #[derive(PartialEq, Eq, Hash, Debug)]
@@ -34,7 +33,7 @@ impl<T> From<T> for TreeNode<T> {
     fn from(value: T) -> Self {
         TreeNode {
             data: value,
-            children: VecDeque::new(),
+            children: vec![],
         }
     }
 }
@@ -49,21 +48,21 @@ impl<T> From<TreeNode<T>> for Tree<T> {
 
 impl<T> TreeNode<T> {
     pub(crate) fn add_child(&mut self, child: TreeNode<T>) {
-        self.children.push_back(Box::new(child));
+        self.children.push(Box::new(child));
     }
 
     pub(crate) fn add_children(&mut self, children: Vec<TreeNode<T>>) {
         for child in children {
-            self.children.push_back(Box::new(child));
+            self.children.push(Box::new(child));
         }
     }
 }
 
 pub(crate) fn construct_node<T>(data: T, children: Vec<T>) -> TreeNode<T> {
     let node_data = data;
-    let mut node_children = VecDeque::new();
+    let mut node_children = vec![];
     for child in children {
-        node_children.push_back(Box::new(TreeNode::from(child)));
+        node_children.push(Box::new(TreeNode::from(child)));
     }
     TreeNode {
         data: node_data,
@@ -80,7 +79,7 @@ pub(crate) fn construct_tree<T>(data: T, children: Vec<TreeNode<T>>) -> Tree<T> 
 impl<Symbol: std::fmt::Display> Display for Tree<Symbol> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.root {
-            Some(root_node) => print_tree_node(f, root_node, "".to_string(), true),
+            Some(root_node) => print_tree_node(f, root_node, &mut "".to_string(), true),
             None => Err(Error),
         }
     }
@@ -90,21 +89,21 @@ impl<Symbol: std::fmt::Display> Display for Tree<Symbol> {
 fn print_tree_node<Symbol: std::fmt::Display>(
     f: &mut std::fmt::Formatter<'_>,
     node: &TreeNode<Symbol>,
-    mut indent: String,
+    indent: &mut String,
     last: bool,
 ) -> std::fmt::Result {
     write!(f, "{}", indent)?;
     if last {
         write!(f, "└─")?;
-        indent += " ";
+        *indent += " ";
     } else {
         write!(f, "├─")?;
-        indent += "| ";
+        *indent += "| ";
     }
     writeln!(f, " {}", node.data)?;
 
     for (idx, child) in node.children.iter().enumerate() {
-        print_tree_node(f, child, indent.clone(), idx == node.children.len() - 1)?
+        print_tree_node(f, child, indent, idx == node.children.len() - 1)?
     }
     Ok(())
 }

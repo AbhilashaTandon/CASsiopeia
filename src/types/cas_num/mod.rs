@@ -52,7 +52,7 @@ const INDETERMINATE: CASNum = CASNum {
     sign: Sign::Pos,
 };
 
-const ZERO: CASNum = CASNum {
+pub(crate) const ZERO: CASNum = CASNum {
     value: CASValue::Finite {
         digits: VecDeque::new(),
         exp: 0,

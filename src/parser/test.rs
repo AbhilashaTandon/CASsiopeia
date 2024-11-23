@@ -34,7 +34,7 @@ mod test {
     fn test_parser<'a>(
         expression: &'a str,
         desired_result: PostFix,
-        var_table: &Option<VarTable<'a>>,
+        var_table: Option<&VarTable<'a>>,
     ) {
         let map = match var_table {
             Some(map) => map,
@@ -79,7 +79,7 @@ mod test {
             (Operator(Add), 2),
         ]);
 
-        test_parser("2 + 2", Ok(symbols_to_postfix(symbols)), &None);
+        test_parser("2 + 2", Ok(symbols_to_postfix(symbols)), None);
     }
     #[test]
     fn no_expression() {
@@ -88,7 +88,7 @@ mod test {
             line_pos: 0,
         });
 
-        test_parser("", err, &None);
+        test_parser("", err, None);
     }
 
     #[test]
@@ -98,28 +98,28 @@ mod test {
             line_pos: 0,
         });
 
-        test_parser("(2 +", err, &None);
+        test_parser("(2 +", err, None);
 
         let err = Err(CASError {
             kind: CASErrorKind::MismatchedParentheses,
             line_pos: 3,
         });
 
-        test_parser("2 +)", err, &None);
+        test_parser("2 +)", err, None);
 
         let err = Err(CASError {
             kind: CASErrorKind::MismatchedParentheses,
             line_pos: 2,
         });
 
-        test_parser("())()()))", err, &None);
+        test_parser("())()()))", err, None);
 
         let err = Err(CASError {
             kind: CASErrorKind::MismatchedParentheses,
             line_pos: 6,
         });
 
-        test_parser("[][][]][", err, &None);
+        test_parser("[][][]][", err, None);
     }
 
     #[test]
@@ -132,7 +132,7 @@ mod test {
         test_parser(
             "x = 2",
             err,
-            &Some(HashMap::from([(
+            Some(&HashMap::from([(
                 "x",
                 Var {
                     expr: Tree::from(SymbolType::Num {
@@ -154,7 +154,7 @@ mod test {
         test_parser(
             "x + 2",
             err,
-            &Some(HashMap::from([(
+            Some(&HashMap::from([(
                 "y",
                 Var {
                     expr: Tree::from(SymbolType::Num {
@@ -175,7 +175,7 @@ mod test {
         test_parser(
             "y + 2",
             err,
-            &Some(HashMap::from([(
+            Some(&HashMap::from([(
                 "x",
                 Var {
                     expr: Tree::from(SymbolType::Num {
@@ -212,7 +212,7 @@ mod test {
             (Operator(Add), 2),
         ]);
 
-        test_parser("2 + 3 * 5.05", Ok(symbols_to_postfix(symbols)), &None);
+        test_parser("2 + 3 * 5.05", Ok(symbols_to_postfix(symbols)), None);
 
         let symbols = VecDeque::from([
             (
@@ -242,7 +242,7 @@ mod test {
             .map(|(symbol_type, line_pos)| make_symbol(symbol_type.clone(), *line_pos))
             .collect();
 
-        test_parser("230 * 0.012 ^ 23.2", Ok(postfix), &None);
+        test_parser("230 * 0.012 ^ 23.2", Ok(postfix), None);
 
         let symbols = VecDeque::from([
             (
@@ -267,7 +267,7 @@ mod test {
             (Operator(Add), 2),
         ]);
 
-        test_parser("2 + (3 * 5.05)", Ok(symbols_to_postfix(symbols)), &None);
+        test_parser("2 + (3 * 5.05)", Ok(symbols_to_postfix(symbols)), None);
 
         let symbols = VecDeque::from([
             (
@@ -292,7 +292,7 @@ mod test {
             (Operator(Mult), 8),
         ]);
 
-        test_parser("(2 + 3) * 5.05", Ok(symbols_to_postfix(symbols)), &None);
+        test_parser("(2 + 3) * 5.05", Ok(symbols_to_postfix(symbols)), None);
     }
 
     #[test]
@@ -304,7 +304,7 @@ mod test {
             1,
         )]);
 
-        test_parser("-2", Ok(symbols_to_postfix(symbols)), &None);
+        test_parser("-2", Ok(symbols_to_postfix(symbols)), None);
 
         let symbols = VecDeque::from([(
             Num {
@@ -313,7 +313,7 @@ mod test {
             2,
         )]);
 
-        test_parser("- 2", Ok(symbols_to_postfix(symbols)), &None);
+        test_parser("- 2", Ok(symbols_to_postfix(symbols)), None);
 
         let symbols = VecDeque::from([
             (
@@ -331,7 +331,7 @@ mod test {
             (Operator(Add), 4),
         ]);
 
-        test_parser("- 2 + 3", Ok(symbols_to_postfix(symbols)), &None);
+        test_parser("- 2 + 3", Ok(symbols_to_postfix(symbols)), None);
 
         let symbols = VecDeque::from([(Variable { name: "x" }, 1), (Operator(Neg), 0)]);
 
@@ -345,11 +345,11 @@ mod test {
             },
         )]));
 
-        test_parser("-x", Ok(symbols_to_postfix(symbols)), &var_table);
+        test_parser("-x", Ok(symbols_to_postfix(symbols)), var_table.as_ref());
 
         let symbols = VecDeque::from([(Variable { name: "x" }, 2), (Operator(Neg), 0)]);
 
-        test_parser("- x", Ok(symbols_to_postfix(symbols)), &var_table);
+        test_parser("- x", Ok(symbols_to_postfix(symbols)), var_table.as_ref());
 
         let symbols = VecDeque::from([
             (Variable { name: "x" }, 2),
@@ -363,7 +363,11 @@ mod test {
             (Operator(Add), 4),
         ]);
 
-        test_parser("- x + 3", Ok(symbols_to_postfix(symbols)), &var_table);
+        test_parser(
+            "- x + 3",
+            Ok(symbols_to_postfix(symbols)),
+            var_table.as_ref(),
+        );
 
         let symbols = VecDeque::from([
             (
@@ -381,7 +385,7 @@ mod test {
             (Operator(Add), 4),
         ]);
 
-        test_parser("- 2 + -3", Ok(symbols_to_postfix(symbols)), &None);
+        test_parser("- 2 + -3", Ok(symbols_to_postfix(symbols)), None);
 
         let symbols = VecDeque::from([
             (
@@ -399,7 +403,7 @@ mod test {
             (Operator(Sub), 4),
         ]);
 
-        test_parser("- 2 - 3", Ok(symbols_to_postfix(symbols)), &None);
+        test_parser("- 2 - 3", Ok(symbols_to_postfix(symbols)), None);
     }
 
     #[test]
@@ -411,7 +415,7 @@ mod test {
             line_pos: 0,
         });
 
-        test_parser("f(2, 3, 4)", err, &None);
+        test_parser("f(2, 3, 4)", err, None);
 
         let var_table = Some(HashMap::from([(
             "f",
@@ -452,7 +456,11 @@ mod test {
             ),
         ]);
 
-        test_parser("f(2, 3, 4)", Ok(symbols_to_postfix(symbols)), &var_table);
+        test_parser(
+            "f(2, 3, 4)",
+            Ok(symbols_to_postfix(symbols)),
+            var_table.as_ref(),
+        );
 
         let symbols = VecDeque::from([
             (
@@ -493,7 +501,11 @@ mod test {
             },
         )]));
 
-        test_parser("foo(2, 3, 4)", Ok(symbols_to_postfix(symbols)), &var_table);
+        test_parser(
+            "foo(2, 3, 4)",
+            Ok(symbols_to_postfix(symbols)),
+            var_table.as_ref(),
+        );
 
         let symbols = VecDeque::from([
             (Variable { name: "x" }, 12),
@@ -577,7 +589,7 @@ mod test {
         test_parser(
             "foo(bar(baz(x)), y)",
             Ok(symbols_to_postfix(symbols)),
-            &var_table,
+            var_table.as_ref(),
         );
 
         let var_table = Some(HashMap::from([
@@ -630,7 +642,7 @@ mod test {
             line_pos: 17,
         });
 
-        test_parser("foo(bar(baz(x)), y)", err, &var_table);
+        test_parser("foo(bar(baz(x)), y)", err, var_table.as_ref());
     }
 
     #[test]
@@ -700,7 +712,11 @@ mod test {
             ),
         ]));
 
-        test_parser("foo(x, y)", Ok(symbols_to_postfix(symbols)), &var_table);
+        test_parser(
+            "foo(x, y)",
+            Ok(symbols_to_postfix(symbols)),
+            var_table.as_ref(),
+        );
     }
 
     #[test]
@@ -762,7 +778,7 @@ mod test {
         test_parser(
             "2*-(1+2)^-(2+5*-(2+400))",
             Ok(symbols_to_postfix(symbols)),
-            &None,
+            None,
         );
     }
 }
