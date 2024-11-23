@@ -1,9 +1,11 @@
+use std::cell::RefCell;
 use std::collections::VecDeque;
+use std::rc::Rc;
 
 use super::trees::{Tree, TreeNode, TreeNodeRef};
 use super::vars::{Var, VarTable};
 
-pub(crate) type PostFix<'a> = Result<VecDeque<Symbol<'a>>, CASError>;
+pub(crate) type PostFix<'a> = Result<VecDeque<Symbol>, CASError>;
 
 use crate::types::cas_error::{CASError, CASErrorKind};
 use crate::types::symbol::constant::Const;
@@ -18,9 +20,9 @@ use crate::types::token::TokenType::{self, *};
 use std::collections::HashMap;
 
 pub(crate) fn to_postfix<'a>(
-    tokens: &'a [Token],
+    tokens: Vec<Token>,
     var_table: &'a VarTable<'a>,
-    args: Vec<&str>,
+    args: Vec<String>,
 ) -> PostFix<'a> {
     let mut token_iter: std::iter::Peekable<std::slice::Iter<'_, Token>> = tokens.iter().peekable();
 
@@ -45,7 +47,7 @@ pub(crate) fn to_postfix<'a>(
             Name(name) => {
                 if let Some(value) = parse_name(
                     &args,
-                    name,
+                    name.to_string(),
                     &mut output_queue,
                     var_table,
                     &mut operator_stack,
@@ -182,8 +184,8 @@ pub(crate) fn to_postfix<'a>(
 }
 
 fn parse_num(
-    operator_stack: &mut VecDeque<Symbol<'_>>,
-    output_queue: &mut VecDeque<Symbol<'_>>,
+    operator_stack: &mut VecDeque<Symbol>,
+    output_queue: &mut VecDeque<Symbol>,
     number: &super::CASNum,
     line_pos: &usize,
 ) {
@@ -209,10 +211,8 @@ fn parse_num(
     }
 }
 
-pub(crate) fn shunting_yard<'a>(
-    output_queue: &mut VecDeque<Symbol<'a>>,
-) -> Result<Tree<Symbol<'a>>, CASError> {
-    let mut tree_stack: Vec<TreeNodeRef<Symbol<'a>>> = vec![];
+pub(crate) fn shunting_yard(output_queue: &mut VecDeque<Symbol>) -> Result<Tree<Symbol>, CASError> {
+    let mut tree_stack: Vec<TreeNodeRef<Symbol>> = vec![];
     //temporary stack for constructing the tree
 
     while let Some(symbol) = output_queue.pop_front() {
@@ -227,10 +227,10 @@ pub(crate) fn shunting_yard<'a>(
                 });
             }
         }
-        tree_stack.push(Box::new(TreeNode {
+        tree_stack.push(Rc::from(RefCell::from(TreeNode {
             data: symbol,
             children: args,
-        }));
+        })));
     }
 
     return match tree_stack.len() {
@@ -242,25 +242,25 @@ pub(crate) fn shunting_yard<'a>(
         //if there are no tokens in tree stack no expression was given
         1 => {
             return Ok(Tree {
-                root: Some(tree_stack.first().unwrap().clone()),
+                root: tree_stack.first().unwrap().clone(),
                 //TODO: get rid of this clone
             });
         }
         _ => Err(CASError {
-            line_pos: tree_stack[1].data.line_pos,
+            line_pos: tree_stack[1].borrow().data.line_pos,
             kind: CASErrorKind::NoExpressionGiven,
         }),
         //if there are multiple
     };
 }
 
-fn parse_right_paren<'a>(
-    operator_stack: &mut VecDeque<Symbol<'a>>,
-    output_queue: &mut VecDeque<Symbol<'a>>,
+fn parse_right_paren(
+    operator_stack: &mut VecDeque<Symbol>,
+    output_queue: &mut VecDeque<Symbol>,
     line_pos: usize,
 ) -> Option<CASError> {
     loop {
-        let top_of_stack: Option<&Symbol<'a>> = operator_stack.back();
+        let top_of_stack: Option<&Symbol> = operator_stack.back();
         match top_of_stack {
             Some(symbol) => match &symbol.symbol_type {
                 SymbolType::Operator(o2) => match o2 {
@@ -329,10 +329,10 @@ fn parse_right_paren<'a>(
     None
 }
 
-fn parse_numeric_operator<'a>(
-    operator_stack: &mut VecDeque<Symbol<'a>>,
+fn parse_numeric_operator(
+    operator_stack: &mut VecDeque<Symbol>,
     o1: &Operator,
-    output_queue: &mut VecDeque<Symbol<'a>>,
+    output_queue: &mut VecDeque<Symbol>,
     line_pos: usize,
 ) -> Option<CASError> {
     while let Some(sym) = operator_stack.back() {
@@ -375,23 +375,23 @@ fn parse_numeric_operator<'a>(
     None
 }
 
-fn parse_name<'a>(
-    args: &[&str],
-    name: &'a String,
-    output_queue: &mut VecDeque<Symbol<'a>>,
-    var_table: &HashMap<&str, Var<'a>>,
-    operator_stack: &mut VecDeque<Symbol<'a>>,
+fn parse_name(
+    args: &[String],
+    name: String,
+    output_queue: &mut VecDeque<Symbol>,
+    var_table: &HashMap<String, Var>,
+    operator_stack: &mut VecDeque<Symbol>,
     line_pos: usize,
 ) -> Option<CASError> {
     //unknown variable name
     let name_symbol = Symbol {
-        symbol_type: SymbolType::Variable { name },
+        symbol_type: SymbolType::Variable { name: name.clone() },
         line_pos,
     };
-    if args.contains(&name.as_str()) {
+    if args.contains(&name) {
         output_queue.push_back(name_symbol);
         //if the token is a number put it into the output queue
-    } else if let Some(var) = var_table.get(name as &str) {
+    } else if let Some(var) = var_table.get(&name) {
         match var.args.len() {
             0 => {
                 output_queue.push_back(name_symbol);

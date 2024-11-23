@@ -5,20 +5,20 @@ use crate::types::{cas_error::CASErrorKind, cas_num::CASNum, symbol::SymbolType}
 use super::trees::{Tree, TreeNodeRef};
 
 #[derive(PartialEq, Debug)]
-pub(crate) struct Var<'a> {
-    pub(crate) expr: Tree<SymbolType<'a>>,
-    pub(crate) args: Box<[&'a str]>, //if args is empty it is a numeric or symbolic variable, 2, 3, pi, x, etc.
+pub(crate) struct Var {
+    pub(crate) expr: Tree<SymbolType>,
+    pub(crate) args: Vec<String>, //if args is empty it is a numeric or symbolic variable, 2, 3, pi, x, etc.
 }
 
 //table storing predefined variables (numericals and functions)
-pub(crate) type VarTable<'a> = HashMap<&'a str, Var<'a>>;
+pub(crate) type VarTable<'a> = HashMap<String, Var>;
 
-impl<'a> Var<'a> {
+impl<'a> Var {
     pub(crate) fn apply<'b>(
-        self,
+        mut self,
         func_name: String,
         arg_vals: Box<[CASNum]>,
-    ) -> Result<Tree<SymbolType<'b>>, CASErrorKind>
+    ) -> Result<Tree<SymbolType>, CASErrorKind>
     where
         'a: 'b,
     {
@@ -30,34 +30,31 @@ impl<'a> Var<'a> {
             });
         }
 
-        let mut args_map: HashMap<&'_ str, CASNum> = HashMap::new();
+        let mut args_map: HashMap<String, CASNum> = HashMap::new();
         for (name, value) in zip(self.args, arg_vals) {
             args_map.insert(name, value);
         }
-        match self.expr.root {
-            None => Err(CASErrorKind::UnknownSymbol { symbol: func_name }),
-            Some(mut expression) => {
-                apply(&mut expression, &args_map);
-                Ok(Tree {
-                    root: Some(expression),
-                })
-            }
-        }
+
+        apply(&mut self.expr.root, &args_map);
+        Ok(Tree {
+            root: self.expr.root,
+        })
     }
 }
 
-fn apply<'a>(expr: &mut TreeNodeRef<SymbolType<'a>>, args: &HashMap<&'a str, CASNum>) {
-    if expr.children.is_empty() {
-        if let SymbolType::Variable { name } = expr.data {
+fn apply(expr: &mut TreeNodeRef<SymbolType>, args: &HashMap<String, CASNum>) {
+    //replaces variables in expression with values given in args
+    if expr.borrow().children.is_empty() {
+        if let SymbolType::Variable { name } = &expr.borrow().data {
             if let Some(value) = args.get(name) {
-                expr.data = SymbolType::Num {
+                expr.borrow_mut().data = SymbolType::Num {
                     value: value.clone(),
                     //TODO: get rid of this clone
                 };
             }
         }
     } else {
-        for child in &mut expr.children {
+        for child in &mut expr.borrow_mut().children {
             apply(child, args);
         }
     }

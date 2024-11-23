@@ -13,9 +13,9 @@ pub(crate) mod vars;
 //this makes it easier for functions since we can ensure they're given the right number of arguments
 
 pub(crate) fn parse_expr<'a>(
-    tokens: &'a [Token],
+    tokens: Vec<Token>,
     var_table: &'a VarTable<'a>,
-    args: Vec<&str>,
-) -> Result<Tree<Symbol<'a>>, CASError> {
-    return shunting_yard(&mut to_postfix(tokens, var_table, args)?);
+    args: Vec<String>,
+) -> Result<Tree<Symbol>, CASError> {
+    shunting_yard(&mut to_postfix(tokens, var_table, args)?)
 }

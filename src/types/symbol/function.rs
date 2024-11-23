@@ -3,12 +3,12 @@ use std::fmt::Display;
 use phf_macros::phf_map;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) enum Func<'a> {
+pub(crate) enum Func {
     ResFun(ResFun),
-    Function { num_args: usize, name: &'a str },
+    Function { num_args: usize, name: String },
 }
 
-impl<'a> Display for Func<'a> {
+impl Display for Func {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Func::ResFun(res_fun) => write!(f, "{}", res_fun), //use resfun display

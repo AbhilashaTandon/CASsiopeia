@@ -2,13 +2,13 @@ use std::fmt::Display;
 
 use phf_macros::phf_map;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Const<'a> {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum Const {
     ResConst(ResConst),
-    Const { name: &'a str },
+    Const { name: String },
 }
 
-impl<'a> Display for Const<'a> {
+impl Display for Const {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Const::ResConst(res_const) => write!(f, "{}", res_const),

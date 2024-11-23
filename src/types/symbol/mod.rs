@@ -12,23 +12,23 @@ pub(crate) mod operator;
 
 #[derive(Debug, PartialEq, Clone)]
 
-pub(crate) enum SymbolType<'a> {
+pub(crate) enum SymbolType {
     //type of tokens of output of parsing
-    Variable { name: &'a str },
+    Variable { name: String },
     Operator(Operator),
-    Function(Func<'a>),
+    Function(Func),
     Num { value: CASNum },
-    Const(Const<'a>),
+    Const(Const),
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub(crate) struct Symbol<'a> {
-    pub(crate) symbol_type: SymbolType<'a>,
+pub(crate) struct Symbol {
+    pub(crate) symbol_type: SymbolType,
     pub(crate) line_pos: usize,
 }
 //since the variable table is a hash map we can store variables and functions with their names and still have constant lookups
 
-impl SymbolType<'_> {
+impl SymbolType {
     pub(crate) fn num_args(&self) -> usize {
         match self {
             SymbolType::Variable { .. } | SymbolType::Num { .. } | SymbolType::Const { .. } => 0,
@@ -40,7 +40,7 @@ impl SymbolType<'_> {
     }
 }
 
-impl Display for SymbolType<'_> {
+impl Display for SymbolType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             SymbolType::Variable { name } => write!(f, "{}", name),
@@ -52,13 +52,13 @@ impl Display for SymbolType<'_> {
     }
 }
 
-impl Symbol<'_> {
+impl Symbol {
     pub(crate) fn num_args(&self) -> usize {
         self.symbol_type.num_args()
     }
 }
 
-impl Display for Symbol<'_> {
+impl Display for Symbol {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.symbol_type)
     }

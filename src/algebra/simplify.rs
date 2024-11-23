@@ -1,3 +1,7 @@
+use std::{cell::RefCell, rc::Rc};
+
+use num_traits::Zero;
+
 ///Contains functionality for simplifying mathematical expressions. i.e.
 /// ```
 /// x + x => x * 2
@@ -6,62 +10,77 @@
 /// ```
 use crate::{
     parser::trees::{Tree, TreeNode},
-    types::symbol::Symbol,
+    types::{
+        cas_num::ZERO,
+        symbol::{Symbol, SymbolType},
+    },
 };
 
+use crate::types::symbol::operator::Operator;
 use crate::types::symbol::SymbolType::*;
 
-fn simplify(expr: &mut Tree<Symbol<'_>>) {
-    // if let Some(*root_node) = expr.root {
-    // simplify_rec(&mut *root_node);
-    // }
+impl Tree<Symbol> {
+    fn simplify(&mut self) {
+        TreeNode::<Symbol>::simplify(&mut self.root.borrow_mut());
+    }
+}
+impl TreeNode<Symbol> {
+    fn simplify(&mut self) {
+        for child in &self.children {
+            Self::simplify(&mut child.borrow_mut());
+        }
+
+        match self.data.symbol_type {
+            SymbolType::Operator(Operator::Add) => simplify_add(self),
+            SymbolType::Operator(Operator::Sub) => simplify_sub(self),
+            SymbolType::Operator(Operator::Mult) => simplify_mult(self),
+            SymbolType::Operator(Operator::Div) => simplify_div(self),
+            _ => {}
+        };
+
+        todo!();
+    }
 }
 
-fn simplify_rec<'a>(node: &mut TreeNode<Symbol<'a>>) -> TreeNode<Symbol<'a>> {
-    // node.children = node
-    //     .children
-    //     .iter()
-    //     .map(|child| Box::new(simplify_rec(**child)))
-    //     .collect();
+fn simplify_add(node: &mut TreeNode<Symbol>) {
+    let mut args: Vec<Rc<RefCell<TreeNode<Symbol>>>> = vec![];
 
-    // node = match node.data.symbol_type {
-    //     Operator(Add) => simplify_add(node),
-    //     Operator(Sub) => simplify_sub(node),
-    //     Operator(Mult) => simplify_mult(node),
-    //     Operator(Div) => simplify_div(node),
-    //     _ => node,
-    // };
+    for child in &node.children {
+        let TreeNode {
+            data: Symbol { symbol_type, .. },
+            children,
+        } = &child.borrow().to_owned();
 
-    // return node;
+        if *symbol_type == (Num { value: ZERO }) {
+            continue;
+        }
+        //adding 0 does nothing
 
-    todo!();
-}
-
-fn simplify_add(mut node: TreeNode<Symbol<'_>>) -> TreeNode<Symbol<'_>> {
-    let children = vec![];
-
-    for child in node.children {
-        match child.data.symbol_type {
+        match symbol_type {
+            SymbolType::Operator(Operator::Add) => {
+                args.extend(children.clone());
+            }
+            //a + (b + c) = a + b + c
             Variable { name } => todo!(),
-            Operator(operator) => todo!(),
             Function(func) => todo!(),
             Num { value } => todo!(),
             Const(_) => todo!(),
+
+            _ => todo!(),
         }
     }
 
-    node.children = children;
-    node
+    node.children = args;
 }
 
-fn simplify_sub(node: TreeNode<Symbol<'_>>) -> TreeNode<Symbol<'_>> {
+fn simplify_sub(node: &mut TreeNode<Symbol>) {
     todo!();
 }
 
-fn simplify_mult(node: TreeNode<Symbol<'_>>) -> TreeNode<Symbol<'_>> {
+fn simplify_mult(node: &mut TreeNode<Symbol>) {
     todo!();
 }
 
-fn simplify_div(node: TreeNode<Symbol<'_>>) -> TreeNode<Symbol<'_>> {
+fn simplify_div(node: &mut TreeNode<Symbol>) {
     todo!();
 }
