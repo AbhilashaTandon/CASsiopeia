@@ -1,4 +1,6 @@
+use std::cell::RefCell;
 use std::collections::VecDeque;
+use std::rc::Rc;
 
 use super::trees::{Tree, TreeNode, TreeNodeRef};
 use super::vars::{Var, VarTable};
@@ -17,14 +19,12 @@ use crate::types::token::Token;
 use crate::types::token::TokenType::{self, *};
 use std::collections::HashMap;
 
-pub(crate) fn to_postfix<'a>(
-    tokens: &'a [Token],
-    var_table: &'a VarTable<'a>,
+pub(crate) fn into_postfix<'a>(
+    tokens: Vec<Token>,
+    var_table: &VarTable<'a>,
     args: Vec<&str>,
 ) -> PostFix<'a> {
-    let mut token_iter: std::iter::Peekable<std::slice::Iter<'_, Token>> = tokens.iter().peekable();
-
-    if token_iter.peek().is_none() {
+    if tokens.is_empty() {
         //if tokens has length 0
         return Err(CASError {
             kind: CASErrorKind::NoExpressionGiven,
@@ -34,14 +34,14 @@ pub(crate) fn to_postfix<'a>(
 
     let mut output_queue: VecDeque<Symbol> = VecDeque::new();
     let mut operator_stack: VecDeque<Symbol> = VecDeque::new();
-    let mut last_token: Option<TokenType> = None;
+    let mut last_token: Option<&TokenType> = None;
 
     for Token {
         token_type,
         line_pos,
-    } in token_iter
+    } in tokens
     {
-        match &token_type {
+        match token_type {
             Name(name) => {
                 if let Some(value) = parse_name(
                     &args,
@@ -49,21 +49,21 @@ pub(crate) fn to_postfix<'a>(
                     &mut output_queue,
                     var_table,
                     &mut operator_stack,
-                    *line_pos,
+                    line_pos,
                 ) {
                     return Err(value);
                 }
             }
             Num(number) => {
-                parse_num(&mut operator_stack, &mut output_queue, number, line_pos);
+                parse_num(&mut operator_stack, &mut output_queue, &number, &line_pos);
 
                 //if the token is a number put it into the output queue
             }
 
             Const(name) => {
                 output_queue.push_back(Symbol {
-                    symbol_type: SymbolType::Const(Const::ResConst(*name)),
-                    line_pos: *line_pos,
+                    symbol_type: SymbolType::Const(Const::ResConst(name)),
+                    line_pos: line_pos,
                 });
                 if let Some(Symbol {
                     symbol_type: SymbolType::Operator(Neg),
@@ -74,8 +74,8 @@ pub(crate) fn to_postfix<'a>(
                 }
             }
             ResFun(name) => operator_stack.push_back(Symbol {
-                symbol_type: SymbolType::Function(Func::ResFun(*name)),
-                line_pos: *line_pos,
+                symbol_type: SymbolType::Function(Func::ResFun(name)),
+                line_pos: line_pos,
             }),
 
             Operator(o1) => match o1 {
@@ -83,22 +83,22 @@ pub(crate) fn to_postfix<'a>(
                 | GreaterEqual => {
                     if let Some(value) = parse_numeric_operator(
                         &mut operator_stack,
-                        o1,
+                        &o1,
                         &mut output_queue,
-                        *line_pos,
+                        line_pos,
                     ) {
                         return Err(value);
                     }
                 }
 
                 LeftParen | LeftBracket => operator_stack.push_back(Symbol {
-                    symbol_type: SymbolType::Operator(*o1),
-                    line_pos: *line_pos,
+                    symbol_type: SymbolType::Operator(o1),
+                    line_pos: line_pos,
                 }),
 
                 RightParen | RightBracket => {
                     if let Some(value) =
-                        parse_right_paren(&mut operator_stack, &mut output_queue, *line_pos)
+                        parse_right_paren(&mut operator_stack, &mut output_queue, line_pos)
                     {
                         return Err(value);
                     }
@@ -118,7 +118,7 @@ pub(crate) fn to_postfix<'a>(
                 Assign => {
                     return Err(CASError {
                         kind: CASErrorKind::AssignmentInExpression,
-                        line_pos: *line_pos,
+                        line_pos: line_pos,
                     });
                 }
                 Sub | Neg => match last_token {
@@ -129,13 +129,13 @@ pub(crate) fn to_postfix<'a>(
                     | Some(Operator(RightParen)) => {
                         operator_stack.push_back(Symbol {
                             symbol_type: SymbolType::Operator(Sub),
-                            line_pos: *line_pos,
+                            line_pos: line_pos,
                         });
                     }
                     Some(Eof) => {
                         return Err(CASError {
                             kind: CASErrorKind::SyntaxError,
-                            line_pos: *line_pos,
+                            line_pos: line_pos,
                         });
                     }
                     Some(ResFun(f)) => {
@@ -145,13 +145,13 @@ pub(crate) fn to_postfix<'a>(
                                 args_needed: f.num_args(),
                                 func_name: f.to_string(),
                             },
-                            line_pos: *line_pos,
+                            line_pos: line_pos,
                         })
                     }
                     Some(Operator(_)) | None => {
                         operator_stack.push_back(Symbol {
                             symbol_type: SymbolType::Operator(Neg),
-                            line_pos: *line_pos,
+                            line_pos: line_pos,
                         });
                     }
                 },
@@ -162,7 +162,7 @@ pub(crate) fn to_postfix<'a>(
             }
         }
 
-        last_token = Some(token_type.clone());
+        last_token = Some(&token_type);
     }
     /* After the while loop, pop the remaining items from the operator stack into the output queue. */
     // while there are tokens on the operator stack:
@@ -227,30 +227,32 @@ pub(crate) fn shunting_yard<'a>(
                 });
             }
         }
-        tree_stack.push(Box::new(TreeNode {
+        tree_stack.push(Rc::new(RefCell::new(TreeNode {
             data: symbol,
             children: args,
-        }));
+        })));
     }
 
-    return match tree_stack.len() {
-        0 => Err(CASError {
+    if tree_stack.len() > 1 {
+        return Err(CASError {
+            line_pos: tree_stack[1].borrow().data.line_pos,
+            kind: CASErrorKind::NoExpressionGiven,
+        });
+    }
+
+    return match tree_stack.first() {
+        None => Err(CASError {
             line_pos: 0,
             kind: CASErrorKind::NoExpressionGiven,
         }),
 
         //if there are no tokens in tree stack no expression was given
-        1 => {
+        Some(root_node) => {
             return Ok(Tree {
-                root: Some(tree_stack.first().unwrap().clone()),
+                root: root_node.clone(),
                 //TODO: get rid of this clone
             });
-        }
-        _ => Err(CASError {
-            line_pos: tree_stack[1].data.line_pos,
-            kind: CASErrorKind::NoExpressionGiven,
-        }),
-        //if there are multiple
+        } //if there are multiple
     };
 }
 
@@ -377,7 +379,7 @@ fn parse_numeric_operator<'a>(
 
 fn parse_name<'a>(
     args: &[&str],
-    name: &'a String,
+    name: String,
     output_queue: &mut VecDeque<Symbol<'a>>,
     var_table: &HashMap<&str, Var<'a>>,
     operator_stack: &mut VecDeque<Symbol<'a>>,
@@ -385,13 +387,13 @@ fn parse_name<'a>(
 ) -> Option<CASError> {
     //unknown variable name
     let name_symbol = Symbol {
-        symbol_type: SymbolType::Variable { name },
+        symbol_type: SymbolType::Variable { name: name },
         line_pos,
     };
     if args.contains(&name.as_str()) {
         output_queue.push_back(name_symbol);
         //if the token is a number put it into the output queue
-    } else if let Some(var) = var_table.get(name as &str) {
+    } else if let Some(var) = var_table.get(&name as &str) {
         match var.args.len() {
             0 => {
                 output_queue.push_back(name_symbol);
@@ -406,7 +408,10 @@ fn parse_name<'a>(
 
             //if the token is a number put it into the output queue
             x => operator_stack.push_back(Symbol {
-                symbol_type: SymbolType::Function(Func::Function { num_args: x, name }),
+                symbol_type: SymbolType::Function(Func::Function {
+                    num_args: x,
+                    name: &name,
+                }),
                 line_pos,
             }),
             //if the token is a function push it onto the operator stack

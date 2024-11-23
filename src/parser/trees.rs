@@ -1,22 +1,23 @@
+use std::cell::RefCell;
 use std::fmt::{Display, Error};
+use std::rc::Rc;
 
 use crate::types::cas_error::CASErrorKind;
 
 use crate::types::symbol::Symbol;
 
-pub(crate) type TreeNodeRef<T> = Box<TreeNode<T>>;
+pub(crate) type TreeNodeRef<T> = Rc<RefCell<TreeNode<T>>>;
 
-#[derive(PartialEq, Eq, Hash, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub(crate) struct TreeNode<T> {
     pub(crate) data: T,
     pub(crate) children: Vec<TreeNodeRef<T>>,
 }
 
-#[derive(PartialEq, Eq, Hash, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub(crate) struct Tree<T> {
     //expression
-    pub(crate) root: Option<TreeNodeRef<T>>,
-    //option allows us to have empty trees
+    pub(crate) root: TreeNodeRef<T>,
 }
 
 pub(crate) type Parsing<'a> = Result<Tree<Symbol<'a>>, CASErrorKind>;
@@ -24,7 +25,7 @@ pub(crate) type Parsing<'a> = Result<Tree<Symbol<'a>>, CASErrorKind>;
 impl<T> From<T> for Tree<T> {
     fn from(value: T) -> Self {
         Tree {
-            root: Some(Box::new(TreeNode::from(value))),
+            root: Rc::new(RefCell::new(TreeNode::from(value))),
         }
     }
 }
@@ -41,19 +42,19 @@ impl<T> From<T> for TreeNode<T> {
 impl<T> From<TreeNode<T>> for Tree<T> {
     fn from(value: TreeNode<T>) -> Self {
         Tree {
-            root: Some(Box::new(value)),
+            root: Rc::new(RefCell::new(value)),
         }
     }
 }
 
 impl<T> TreeNode<T> {
     pub(crate) fn add_child(&mut self, child: TreeNode<T>) {
-        self.children.push(Box::new(child));
+        self.children.push(Rc::new(RefCell::new(child)));
     }
 
     pub(crate) fn add_children(&mut self, children: Vec<TreeNode<T>>) {
         for child in children {
-            self.children.push(Box::new(child));
+            self.children.push(Rc::new(RefCell::new(child)));
         }
     }
 }
@@ -62,7 +63,7 @@ pub(crate) fn construct_node<T>(data: T, children: Vec<T>) -> TreeNode<T> {
     let node_data = data;
     let mut node_children = vec![];
     for child in children {
-        node_children.push(Box::new(TreeNode::from(child)));
+        node_children.push(Rc::new(RefCell::new(TreeNode::from(child))));
     }
     TreeNode {
         data: node_data,
@@ -78,10 +79,7 @@ pub(crate) fn construct_tree<T>(data: T, children: Vec<TreeNode<T>>) -> Tree<T> 
 
 impl<Symbol: std::fmt::Display> Display for Tree<Symbol> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match &self.root {
-            Some(root_node) => print_tree_node(f, root_node, &mut "".to_string(), true),
-            None => Err(Error),
-        }
+        print_tree_node(f, &self.root.borrow(), &mut "".to_string(), true)
     }
 }
 
@@ -103,7 +101,7 @@ fn print_tree_node<Symbol: std::fmt::Display>(
     writeln!(f, " {}", node.data)?;
 
     for (idx, child) in node.children.iter().enumerate() {
-        print_tree_node(f, child, indent, idx == node.children.len() - 1)?
+        print_tree_node(f, &child.borrow(), indent, idx == node.children.len() - 1)?
     }
     Ok(())
 }

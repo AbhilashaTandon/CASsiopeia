@@ -1,10 +1,14 @@
 #[cfg(test)]
 use std::collections::VecDeque;
 
+use rand::RngCore;
+use rand::SeedableRng;
+use rand_chacha::ChaCha8Rng;
 
+use crate::types::cas_num::{CASValue::*, Sign::*};
 
 use super::super::CASNum;
-
+use super::literal;
 
 fn comparison(a: i128, b: i128) -> bool {
     CASNum::from(a).partial_cmp(&CASNum::from(b)) == Some(a.cmp(&b))
@@ -94,7 +98,7 @@ fn conversion_tests() {
                 digits: VecDeque::from([1]),
                 exp: 0
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     );
     assert_eq!(
@@ -104,7 +108,7 @@ fn conversion_tests() {
                 digits: VecDeque::from([1]),
                 exp: 0
             },
-            sign: Sign::Neg,
+            sign: Neg,
         },
     );
     assert_eq!(
@@ -114,7 +118,7 @@ fn conversion_tests() {
                 digits: VecDeque::from([523563]),
                 exp: 0
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     );
     assert_eq!(
@@ -124,7 +128,7 @@ fn conversion_tests() {
                 digits: VecDeque::from([6531]),
                 exp: 0
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     );
 
@@ -135,7 +139,7 @@ fn conversion_tests() {
                 digits: VecDeque::from([154]),
                 exp: 0
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     );
     assert_eq!(
@@ -145,7 +149,7 @@ fn conversion_tests() {
                 digits: VecDeque::from([145]),
                 exp: 0
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     );
 }
@@ -159,14 +163,14 @@ fn conversion_tests_float() {
                 digits: VecDeque::from([35184372088832]),
                 exp: -1,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
         CASNum {
             value: Finite {
                 digits: VecDeque::from([35184372088832]),
                 exp: -1,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
     assert!(test_conversion(
@@ -176,14 +180,14 @@ fn conversion_tests_float() {
                 digits: VecDeque::from([79913407049891840]),
                 exp: -2,
             },
-            sign: Sign::Neg,
+            sign: Neg,
         },
         CASNum {
             value: Finite {
                 digits: VecDeque::from([79913407049891840]),
                 exp: -2,
             },
-            sign: Sign::Neg,
+            sign: Neg,
         },
     ));
     assert!(test_conversion(
@@ -193,14 +197,14 @@ fn conversion_tests_float() {
                 digits: VecDeque::from([354204549120]),
                 exp: -2,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
         CASNum {
             value: Finite {
                 digits: VecDeque::from([354204549120]),
                 exp: -2,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
     assert!(test_conversion(
@@ -210,14 +214,14 @@ fn conversion_tests_float() {
                 digits: VecDeque::from([997444354048]),
                 exp: 1,
             },
-            sign: Sign::Neg,
+            sign: Neg,
         },
         CASNum {
             value: Finite {
                 digits: VecDeque::from([997444354048]),
                 exp: 1,
             },
-            sign: Sign::Neg,
+            sign: Neg,
         },
     ));
     assert!(test_conversion(
@@ -227,14 +231,14 @@ fn conversion_tests_float() {
                 digits: VecDeque::from([]),
                 exp: 0,
             },
-            sign: Sign::Neg,
+            sign: Neg,
         },
         CASNum {
             value: Finite {
                 digits: VecDeque::from([]),
                 exp: 0,
             },
-            sign: Sign::Neg,
+            sign: Neg,
         },
     ));
     assert!(test_conversion(
@@ -244,14 +248,14 @@ fn conversion_tests_float() {
                 digits: VecDeque::from([4611686018427387904, 902341]),
                 exp: 0,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
         CASNum {
             value: Finite {
                 digits: VecDeque::from([4670715600119529472, 902341]),
                 exp: 0,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
     assert!(test_conversion(
@@ -261,14 +265,14 @@ fn conversion_tests_float() {
                 digits: VecDeque::from([4323455642275676160, 0239402]),
                 exp: 0,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
         CASNum {
             value: Finite {
                 digits: VecDeque::from([4318240747745705984, 0239402]),
                 exp: 0,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
     assert!(test_conversion(
@@ -278,14 +282,14 @@ fn conversion_tests_float() {
                 digits: VecDeque::from([10922003152559407104, 55]),
                 exp: 0,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
         CASNum {
             value: Finite {
                 digits: VecDeque::from([10922003152559407104, 55]),
                 exp: 0,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
     assert!(test_conversion(
@@ -295,28 +299,28 @@ fn conversion_tests_float() {
                 digits: VecDeque::from([]),
                 exp: 0,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
         CASNum {
             value: Finite {
                 digits: VecDeque::from([56019041081957608]),
                 exp: -13,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
     assert!(test_conversion(
         6.2938409230490e102,
         CASNum {
             value: Infinite,
-            sign: Sign::Pos,
+            sign: Pos,
         },
         CASNum {
             value: Finite {
                 digits: VecDeque::from([11491643866163970048, 2946572]),
                 exp: 5,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
     assert!(test_conversion(
@@ -326,14 +330,14 @@ fn conversion_tests_float() {
                 digits: VecDeque::from([9223372036854775808]),
                 exp: -1,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
         CASNum {
             value: Finite {
                 digits: VecDeque::from([9223372036854775808]),
                 exp: -1,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
 
@@ -344,14 +348,14 @@ fn conversion_tests_float() {
                 digits: VecDeque::from([354204549120]),
                 exp: -2,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
         CASNum {
             value: Finite {
                 digits: VecDeque::from([354204549120]),
                 exp: -2,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
 
@@ -362,14 +366,14 @@ fn conversion_tests_float() {
                 digits: VecDeque::from([]),
                 exp: 0,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
         CASNum {
             value: Finite {
                 digits: VecDeque::from([576460752303423488, 199583080902304]),
                 exp: -6,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
 
@@ -377,14 +381,14 @@ fn conversion_tests_float() {
         7.891780781773763e127,
         CASNum {
             value: Infinite,
-            sign: Sign::Pos,
+            sign: Pos,
         },
         CASNum {
             value: Finite {
                 digits: VecDeque::from([13344165695898779648, 2002888061698]),
                 exp: 6,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
 
@@ -395,14 +399,14 @@ fn conversion_tests_float() {
                 digits: VecDeque::from([]),
                 exp: 0,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
         CASNum {
             value: Finite {
                 digits: VecDeque::from([17822545243984101376, 1193]),
                 exp: -11,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
 
@@ -413,14 +417,14 @@ fn conversion_tests_float() {
                 digits: VecDeque::from([20007336349270016]),
                 exp: -2,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
         CASNum {
             value: Finite {
                 digits: VecDeque::from([20007336349270016]),
                 exp: -2,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
 
@@ -431,14 +435,14 @@ fn conversion_tests_float() {
                 digits: VecDeque::from([15060037153926938624, 56173]),
                 exp: 0,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
         CASNum {
             value: Finite {
                 digits: VecDeque::from([15060037153926938624, 56173]),
                 exp: 0,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
 }
@@ -541,7 +545,7 @@ fn addition_float_tests() {
                 digits: VecDeque::from([]),
                 exp: 0,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
 
@@ -553,7 +557,7 @@ fn addition_float_tests() {
                 digits: VecDeque::from([1]),
                 exp: 0,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
 
@@ -565,7 +569,7 @@ fn addition_float_tests() {
                 digits: VecDeque::from([1]),
                 exp: 0,
             },
-            sign: Sign::Neg,
+            sign: Neg,
         },
     ));
 
@@ -577,7 +581,7 @@ fn addition_float_tests() {
                 digits: VecDeque::from([]),
                 exp: 0,
             },
-            sign: Sign::Neg,
+            sign: Neg,
         },
     ));
 
@@ -589,7 +593,7 @@ fn addition_float_tests() {
                 digits: VecDeque::from([0]),
                 exp: 0,
             },
-            sign: Sign::Neg,
+            sign: Neg,
         },
     ));
 
@@ -601,7 +605,7 @@ fn addition_float_tests() {
                 digits: VecDeque::from([99]),
                 exp: 0,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
 
@@ -610,7 +614,7 @@ fn addition_float_tests() {
         f64::INFINITY,
         CASNum {
             value: Infinite,
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
 
@@ -619,7 +623,7 @@ fn addition_float_tests() {
         f64::NEG_INFINITY,
         CASNum {
             value: Infinite,
-            sign: Sign::Neg,
+            sign: Neg,
         },
     ));
 
@@ -631,7 +635,7 @@ fn addition_float_tests() {
                 digits: VecDeque::from([18015665146877181952, 68]),
                 exp: 0,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
 }
@@ -646,7 +650,7 @@ fn subtraction_float_tests() {
                 digits: VecDeque::from([]),
                 exp: 0,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
 
@@ -658,7 +662,7 @@ fn subtraction_float_tests() {
                 digits: VecDeque::from([1]),
                 exp: 0,
             },
-            sign: Sign::Neg,
+            sign: Neg,
         },
     ));
 
@@ -670,7 +674,7 @@ fn subtraction_float_tests() {
                 digits: VecDeque::from([1]),
                 exp: 0,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
 
@@ -682,7 +686,7 @@ fn subtraction_float_tests() {
                 digits: VecDeque::from([2]),
                 exp: 0,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
 
@@ -694,7 +698,7 @@ fn subtraction_float_tests() {
                 digits: VecDeque::from([101]),
                 exp: 0,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
 
@@ -706,7 +710,7 @@ fn subtraction_float_tests() {
                 digits: VecDeque::from([3828341158241632256, 42]),
                 exp: 0,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
 
@@ -718,7 +722,7 @@ fn subtraction_float_tests() {
                 digits: VecDeque::from([3828341158241632256, 42]),
                 exp: 0,
             },
-            sign: Sign::Neg,
+            sign: Neg,
         },
     ));
 
@@ -730,7 +734,7 @@ fn subtraction_float_tests() {
                 digits: VecDeque::from([18015665146877181952, 68]),
                 exp: 0,
             },
-            sign: Sign::Neg,
+            sign: Neg,
         },
     ));
 
@@ -742,7 +746,7 @@ fn subtraction_float_tests() {
                 digits: VecDeque::from([18015665146877181952, 68]),
                 exp: 0,
             },
-            sign: Sign::Pos,
+            sign: Pos,
         },
     ));
 
@@ -754,7 +758,7 @@ fn subtraction_float_tests() {
                 digits: VecDeque::from([18426736737360281600, 15060037153926938623, 56173]),
                 exp: 0,
             },
-            sign: Sign::Neg,
+            sign: Neg,
         },
     ));
 }

@@ -9,39 +9,33 @@ use crate::{
     types::symbol::Symbol,
 };
 
+use crate::types::symbol::operator::Operator::*;
+
 use crate::types::symbol::SymbolType::*;
 
-fn simplify(expr: &mut Tree<Symbol<'_>>) {
-    // if let Some(*root_node) = expr.root {
-    // simplify_rec(&mut *root_node);
-    // }
+fn simplify<'a>(expr: &'a mut Tree<Symbol<'a>>) {
+    simplify_rec(&mut expr.root);
 }
 
-fn simplify_rec<'a>(node: &mut TreeNode<Symbol<'a>>) -> TreeNode<Symbol<'a>> {
-    // node.children = node
-    //     .children
-    //     .iter()
-    //     .map(|child| Box::new(simplify_rec(**child)))
-    //     .collect();
+fn simplify_rec<'a>(node: &'a mut TreeNode<Symbol<'a>>) {
+    for mut child in node.children {
+        simplify_rec(&mut child);
+    }
 
-    // node = match node.data.symbol_type {
-    //     Operator(Add) => simplify_add(node),
-    //     Operator(Sub) => simplify_sub(node),
-    //     Operator(Mult) => simplify_mult(node),
-    //     Operator(Div) => simplify_div(node),
-    //     _ => node,
-    // };
-
-    // return node;
-
-    todo!();
+    match node.data.symbol_type {
+        Operator(Add) => simplify_add(node),
+        Operator(Sub) => simplify_sub(node),
+        Operator(Mult) => simplify_mult(node),
+        Operator(Div) => simplify_div(node),
+        _ => {}
+    };
 }
 
-fn simplify_add(mut node: TreeNode<Symbol<'_>>) -> TreeNode<Symbol<'_>> {
+fn simplify_add<'a>(node: &'a mut TreeNode<Symbol<'a>>) {
     let children = vec![];
 
-    for child in node.children {
-        match child.data.symbol_type {
+    for child in &node.children {
+        match &child.data.symbol_type {
             Variable { name } => todo!(),
             Operator(operator) => todo!(),
             Function(func) => todo!(),
@@ -51,17 +45,16 @@ fn simplify_add(mut node: TreeNode<Symbol<'_>>) -> TreeNode<Symbol<'_>> {
     }
 
     node.children = children;
-    node
 }
 
-fn simplify_sub(node: TreeNode<Symbol<'_>>) -> TreeNode<Symbol<'_>> {
+fn simplify_sub(node: &mut TreeNode<Symbol<'_>>) {
     todo!();
 }
 
-fn simplify_mult(node: TreeNode<Symbol<'_>>) -> TreeNode<Symbol<'_>> {
+fn simplify_mult(node: &mut TreeNode<Symbol<'_>>) {
     todo!();
 }
 
-fn simplify_div(node: TreeNode<Symbol<'_>>) -> TreeNode<Symbol<'_>> {
+fn simplify_div(node: &mut TreeNode<Symbol<'_>>) {
     todo!();
 }

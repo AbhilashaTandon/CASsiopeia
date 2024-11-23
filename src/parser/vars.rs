@@ -14,14 +14,11 @@ pub(crate) struct Var<'a> {
 pub(crate) type VarTable<'a> = HashMap<&'a str, Var<'a>>;
 
 impl<'a> Var<'a> {
-    pub(crate) fn apply<'b>(
-        self,
+    pub(crate) fn apply(
+        mut self,
         func_name: String,
         arg_vals: Box<[CASNum]>,
-    ) -> Result<Tree<SymbolType<'b>>, CASErrorKind>
-    where
-        'a: 'b,
-    {
+    ) -> Result<Tree<SymbolType<'a>>, CASErrorKind> {
         if arg_vals.len() != self.args.len() {
             return Err(CASErrorKind::WrongNumberOfArgs {
                 args_given: arg_vals.len(),
@@ -34,30 +31,23 @@ impl<'a> Var<'a> {
         for (name, value) in zip(self.args, arg_vals) {
             args_map.insert(name, value);
         }
-        match self.expr.root {
-            None => Err(CASErrorKind::UnknownSymbol { symbol: func_name }),
-            Some(mut expression) => {
-                apply(&mut expression, &args_map);
-                Ok(Tree {
-                    root: Some(expression),
-                })
-            }
-        }
+        apply(&mut self.expr.root, &args_map);
+        Ok(self.expr)
     }
 }
 
 fn apply<'a>(expr: &mut TreeNodeRef<SymbolType<'a>>, args: &HashMap<&'a str, CASNum>) {
-    if expr.children.is_empty() {
-        if let SymbolType::Variable { name } = expr.data {
+    if expr.borrow().children.is_empty() {
+        if let SymbolType::Variable { name } = expr.borrow().data {
             if let Some(value) = args.get(name) {
-                expr.data = SymbolType::Num {
+                expr.borrow_mut().data = SymbolType::Num {
                     value: value.clone(),
                     //TODO: get rid of this clone
                 };
             }
         }
     } else {
-        for child in &mut expr.children {
+        for child in &mut expr.borrow_mut().children {
             apply(child, args);
         }
     }
