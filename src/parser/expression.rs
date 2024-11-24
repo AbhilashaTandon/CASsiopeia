@@ -2,9 +2,10 @@ use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::rc::Rc;
 
-use super::trees::{Tree, TreeNode, TreeNodeRef};
 use super::vars::{Var, VarTable};
-
+use slab_tree::node::NodeMut;
+use slab_tree::tree::Tree;
+use slab_tree::TreeBuilder;
 pub(crate) type PostFix<'a> = Result<VecDeque<Symbol>, CASError>;
 
 use crate::types::cas_error::{CASError, CASErrorKind};
@@ -212,7 +213,7 @@ fn parse_num(
 }
 
 pub(crate) fn shunting_yard(output_queue: &mut VecDeque<Symbol>) -> Result<Tree<Symbol>, CASError> {
-    let mut tree_stack: Vec<TreeNodeRef<Symbol>> = vec![];
+    let mut tree_stack: Vec<Tree<Symbol>> = vec![];
     //temporary stack for constructing the tree
 
     while let Some(symbol) = output_queue.pop_front() {
@@ -226,6 +227,15 @@ pub(crate) fn shunting_yard(output_queue: &mut VecDeque<Symbol>) -> Result<Tree<
                     kind: CASErrorKind::SyntaxError,
                 });
             }
+        }
+        let mut tree: Tree<Symbol> = TreeBuilder::new().with_root(symbol);
+        let mut node = tree.get_mut(tree.root_id().unwrap()).unwrap();
+        for arg in args {
+            let arg_parent = arg
+                .get_mut(arg.root_id().unwrap())
+                .unwrap()
+                .parent()
+                .unwrap();
         }
         tree_stack.push(Rc::from(RefCell::from(TreeNode {
             data: symbol,

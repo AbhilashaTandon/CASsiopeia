@@ -1,12 +1,10 @@
-use expression::{shunting_yard, to_postfix};
-use trees::Tree;
-use vars::VarTable;
-
 use crate::types::{cas_error::CASError, cas_num::CASNum, symbol::Symbol, token::Token};
+use expression::{shunting_yard, to_postfix};
+use slab_tree::tree::Tree;
+use vars::VarTable;
 
 mod expression;
 mod test;
-pub(crate) mod trees;
 pub(crate) mod vars;
 
 //here we're mixing semantic parsing with syntactic parsing
