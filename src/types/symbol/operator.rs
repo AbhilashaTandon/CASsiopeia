@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use phf_macros::phf_map;
 
-#[derive(Clone, PartialEq, Debug, Copy)]
+#[derive(Hash, Clone, PartialEq, Debug, Eq, Copy)]
 
 pub(crate) enum Operator {
     Add,

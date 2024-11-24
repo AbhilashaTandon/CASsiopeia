@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use num_traits::Zero;
 
@@ -45,11 +45,12 @@ impl TreeNode<Symbol> {
 fn simplify_add(node: &mut TreeNode<Symbol>) {
     let mut args: Vec<Rc<RefCell<TreeNode<Symbol>>>> = vec![];
 
-    for child in &node.children {
+    let mut arg_counts: HashMap<TreeNode<Symbol>, u32> = HashMap::new();
+    for arg in &node.children {
         let TreeNode {
             data: Symbol { symbol_type, .. },
             children,
-        } = &child.borrow().to_owned();
+        } = &arg.borrow().to_owned();
 
         if *symbol_type == (Num { value: ZERO }) {
             continue;
@@ -59,14 +60,15 @@ fn simplify_add(node: &mut TreeNode<Symbol>) {
         match symbol_type {
             SymbolType::Operator(Operator::Add) => {
                 args.extend(children.clone());
-            }
+                for child in children {
+                    *arg_counts.entry(child.into_inner()).or_insert(0) += 1;
+                    //adds 1 to entry if it exists, and creates it if not
+                }
+            } //reduce
             //a + (b + c) = a + b + c
-            Variable { name } => todo!(),
-            Function(func) => todo!(),
-            Num { value } => todo!(),
-            Const(_) => todo!(),
-
-            _ => todo!(),
+            _ => {
+                arg_counts.entry(arg.into_inner());
+            }
         }
     }
 

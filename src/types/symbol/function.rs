@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use phf_macros::phf_map;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Hash, Debug, Clone, PartialEq, Eq)]
 pub(crate) enum Func {
     ResFun(ResFun),
     Function { num_args: usize, name: String },
@@ -17,7 +17,7 @@ impl Display for Func {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, Copy, PartialEq, Eq)]
 pub(crate) enum ResFun {
     Sqrt,
     Cbrt,

@@ -5,7 +5,7 @@ use std::rc::Rc;
 use crate::types::cas_error::CASErrorKind;
 
 use crate::types::symbol::Symbol;
-
+use std::hash::Hash;
 pub(crate) type TreeNodeRef<T> = Rc<RefCell<TreeNode<T>>>;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
@@ -18,6 +18,21 @@ pub(crate) struct TreeNode<T> {
 pub(crate) struct Tree<T> {
     //expression
     pub(crate) root: TreeNodeRef<T>,
+}
+
+impl Hash for TreeNode<Symbol> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.data.hash(state);
+        for child in &self.children {
+            child.borrow().hash(state);
+        }
+    }
+}
+
+impl Hash for Tree<Symbol> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.root.borrow().hash(state);
+    }
 }
 
 pub(crate) type Parsing<'a> = Result<Tree<Symbol>, CASErrorKind>;

@@ -15,19 +15,19 @@ mod literal;
 mod operators;
 mod test;
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, Copy)]
 enum Sign {
     Pos,
     Neg,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Hash, Eq)]
 pub(crate) struct CASNum {
     pub(crate) value: CASValue,
     pub(self) sign: Sign,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub(crate) enum CASValue {
     Finite {
         digits: VecDeque<DigitType>, //little endian

@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use phf_macros::phf_map;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) enum Const {
     ResConst(ResConst),
     Const { name: String },
@@ -17,7 +17,7 @@ impl Display for Const {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub(crate) enum ResConst {
     Pi,
     Phi,

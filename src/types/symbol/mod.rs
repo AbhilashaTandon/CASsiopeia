@@ -5,12 +5,12 @@ use function::Func;
 use operator::Operator;
 
 use constant::Const;
-
+use std::hash::Hash;
 pub(crate) mod constant;
 pub(crate) mod function;
 pub(crate) mod operator;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Eq, Hash)]
 
 pub(crate) enum SymbolType {
     //type of tokens of output of parsing
@@ -21,12 +21,23 @@ pub(crate) enum SymbolType {
     Const(Const),
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone, Eq)]
 pub(crate) struct Symbol {
     pub(crate) symbol_type: SymbolType,
     pub(crate) line_pos: usize,
 }
 //since the variable table is a hash map we can store variables and functions with their names and still have constant lookups
+impl PartialEq for Symbol {
+    fn eq(&self, other: &Self) -> bool {
+        self.symbol_type == other.symbol_type
+    }
+}
+
+impl Hash for Symbol {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.symbol_type.hash(state);
+    }
+}
 
 impl SymbolType {
     pub(crate) fn num_args(&self) -> usize {
