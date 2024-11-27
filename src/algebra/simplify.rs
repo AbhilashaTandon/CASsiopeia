@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, ops::Mul, rc::Rc};
 
 use num_traits::Zero;
 
@@ -9,9 +9,9 @@ use num_traits::Zero;
 /// etc.
 /// ```
 use crate::{
-    parser::trees::{Tree, TreeNode},
+    parser::trees::{Tree, TreeNode, TreeNodeRef},
     types::{
-        cas_num::ZERO,
+        cas_num::{CASNum, ZERO},
         symbol::{Symbol, SymbolType},
     },
 };
@@ -21,13 +21,13 @@ use crate::types::symbol::SymbolType::*;
 
 impl Tree<Symbol> {
     fn simplify(&mut self) {
-        TreeNode::<Symbol>::simplify(&mut self.root.borrow_mut());
+        TreeNode::<Symbol>::simplify(&mut self.root.0.borrow_mut());
     }
 }
 impl TreeNode<Symbol> {
     fn simplify(&mut self) {
         for child in &self.children {
-            Self::simplify(&mut child.borrow_mut());
+            Self::simplify(&mut child.0.borrow_mut());
         }
 
         match self.data.symbol_type {
@@ -43,14 +43,14 @@ impl TreeNode<Symbol> {
 }
 
 fn simplify_add(node: &mut TreeNode<Symbol>) {
-    let mut args: Vec<Rc<RefCell<TreeNode<Symbol>>>> = vec![];
+    let mut args = vec![];
 
-    let mut arg_counts: HashMap<TreeNode<Symbol>, u32> = HashMap::new();
+    let mut arg_counts: HashMap<TreeNodeRef<Symbol>, u32> = HashMap::new();
     for arg in &node.children {
         let TreeNode {
             data: Symbol { symbol_type, .. },
             children,
-        } = &arg.borrow().to_owned();
+        } = &arg.0.borrow().to_owned();
 
         if *symbol_type == (Num { value: ZERO }) {
             continue;
@@ -61,28 +61,117 @@ fn simplify_add(node: &mut TreeNode<Symbol>) {
             SymbolType::Operator(Operator::Add) => {
                 args.extend(children.clone());
                 for child in children {
-                    *arg_counts.entry(child.into_inner()).or_insert(0) += 1;
+                    *arg_counts.entry(child.clone()).or_insert(0) += 1;
                     //adds 1 to entry if it exists, and creates it if not
                 }
             } //reduce
             //a + (b + c) = a + b + c
             _ => {
-                arg_counts.entry(arg.into_inner());
+                arg_counts.entry(arg.clone());
             }
+        }
+    }
+
+    for (item, count) in arg_counts {
+        if count == 1 {
+            args.push(item);
+        } else {
+            //if the same expr occurs multiple times, replace it w multiplication
+            //a + a + a -> 3 * a
+            let coeff = TreeNode::from(Symbol {
+                symbol_type: Num {
+                    value: CASNum::from(count),
+                },
+                line_pos: item.0.borrow().data.line_pos,
+            });
+            let mult = TreeNodeRef::new(Symbol {
+                symbol_type: Operator(Operator::Mult),
+                line_pos: item.0.borrow().data.line_pos,
+            });
+            mult.0.borrow_mut().children.push(item);
+
+            mult.0.borrow_mut().add_children(vec![coeff]);
+            args.push(mult);
         }
     }
 
     node.children = args;
 }
 
-fn simplify_sub(node: &mut TreeNode<Symbol>) {
-    todo!();
-}
+fn simplify_sub(node: &mut TreeNode<Symbol>) {}
 
 fn simplify_mult(node: &mut TreeNode<Symbol>) {
-    todo!();
+    let mut args = vec![];
+
+    let mut arg_counts: HashMap<TreeNodeRef<Symbol>, u32> = HashMap::new();
+    for arg in &node.children {
+        let TreeNode {
+            data: Symbol { symbol_type, .. },
+            children,
+        } = &arg.0.borrow().to_owned();
+
+        if *symbol_type
+            == (Num {
+                value: CASNum::from(1),
+            })
+        {
+            continue;
+        }
+        //multiplying by 1 does nothing
+        else if *symbol_type == (Num { value: ZERO }) {
+            args = vec![TreeNodeRef::new(Symbol {
+                symbol_type: Num { value: ZERO },
+                line_pos: arg.0.borrow().data.line_pos,
+            })];
+            break;
+        }
+
+        match symbol_type {
+            SymbolType::Operator(Operator::Mult) => {
+                args.extend(children.clone());
+                for child in children {
+                    *arg_counts.entry(child.clone()).or_insert(0) += 1;
+                    //adds 1 to entry if it exists, and creates it if not
+                }
+            } //reduce
+            //a * (b * c) = a * b * c
+            _ => {
+                arg_counts.entry(arg.clone());
+            }
+        }
+    }
+
+    if args.len() == 1 {
+        //if multiplying by 0
+        //this is messy fix this logic later
+        node.children == args;
+        return;
+    }
+
+    for (item, count) in arg_counts {
+        if count == 1 {
+            args.push(item);
+        } else {
+            //if the same expr occurs multiple times, replace it w exponentiation
+            //a * a * a -> a ^ 3
+            let coeff = TreeNode::from(Symbol {
+                symbol_type: Num {
+                    value: CASNum::from(count),
+                },
+                line_pos: item.0.borrow().data.line_pos,
+            });
+            let exp = TreeNodeRef::new(Symbol {
+                symbol_type: Operator(Operator::Exp),
+                line_pos: item.0.borrow().data.line_pos,
+            });
+            exp.0.borrow_mut().children.push(item);
+
+            exp.0.borrow_mut().add_children(vec![coeff]);
+            args.push(exp);
+        }
+    }
+
+    node.children = args;
 }
 
-fn simplify_div(node: &mut TreeNode<Symbol>) {
-    todo!();
-}
+fn simplify_div(node: &mut TreeNode<Symbol>) {}

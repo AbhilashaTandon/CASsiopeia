@@ -227,10 +227,10 @@ pub(crate) fn shunting_yard(output_queue: &mut VecDeque<Symbol>) -> Result<Tree<
                 });
             }
         }
-        tree_stack.push(Rc::from(RefCell::from(TreeNode {
+        tree_stack.push(TreeNodeRef::new_from_node(TreeNode {
             data: symbol,
             children: args,
-        })));
+        }));
     }
 
     return match tree_stack.len() {
@@ -247,7 +247,7 @@ pub(crate) fn shunting_yard(output_queue: &mut VecDeque<Symbol>) -> Result<Tree<
             });
         }
         _ => Err(CASError {
-            line_pos: tree_stack[1].borrow().data.line_pos,
+            line_pos: tree_stack[1].0.borrow().data.line_pos,
             kind: CASErrorKind::NoExpressionGiven,
         }),
         //if there are multiple

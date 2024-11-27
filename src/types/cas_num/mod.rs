@@ -75,6 +75,10 @@ impl CASNum {
         }
     }
 
+    fn is_zero(&self) -> bool {
+        self.value.is_zero()
+    }
+
     fn compare_finite(&self, other: &CASNum) -> Ordering {
         match (self.value.is_zero(), other.value.is_zero()) {
             (true, true) => return Equal, //0 == 0

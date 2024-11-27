@@ -3,9 +3,19 @@ a + 0 -> a
 a + a -> 2 * a
 a + (-a) -> 0
 m * a + n * a -> (m + n) * a
+a + (b - a) -> b
 
 a - 0 -> a
 0 - a -> -1 * a
 a - a -> 0
 m * a - n * a -> (m - n) * a
+
+a * 0 -> 0
+a * 1 -> a
+a * a -> a ^ 2
+a * (b / a) -> b (a != 0), NaN a = 0
+a ^ m * a ^ n -> a ^ (m + n)
+
+
+
 
