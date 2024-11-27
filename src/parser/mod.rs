@@ -1,4 +1,4 @@
-use expression::{shunting_yard, to_postfix};
+use expression::{into_postfix, shunting_yard};
 use trees::Tree;
 use vars::VarTable;
 
@@ -17,5 +17,5 @@ pub(crate) fn parse_expr<'a>(
     var_table: &'a VarTable<'a>,
     args: Vec<String>,
 ) -> Result<Tree<Symbol>, CASError> {
-    shunting_yard(&mut to_postfix(tokens, var_table, args)?)
+    shunting_yard(&mut into_postfix(tokens, var_table, args)?)
 }

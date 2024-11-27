@@ -6,7 +6,7 @@ mod test {
 
     use crate::{
         parser::{
-            expression::{to_postfix, PostFix},
+            expression::{into_postfix, PostFix},
             trees::Tree,
             vars::{Var, VarTable},
             CASNum,
@@ -48,7 +48,7 @@ mod test {
             }
             assert!(false);
         } else if let Ok(tokens) = tokens {
-            let post_fix = to_postfix(tokens, map, vec![]);
+            let post_fix = into_postfix(tokens, map, vec![]);
 
             assert_eq!(post_fix, desired_result);
         }

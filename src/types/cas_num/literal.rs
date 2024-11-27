@@ -21,7 +21,7 @@ pub(super) fn parse_lit(
 {
     //we don't match unary minus or plus
 
-    let mut num: &CASNum = &CASNum::from(0);
+    let mut num = CASNum::from(0);
 
     let mut int: String = if first_char.is_ascii_digit() {
         first_char.to_string()
@@ -127,8 +127,8 @@ pub(super) fn parse_lit(
 
     //splits int into chunks of 19 digits or less, with remainder at front
 
-    let mut power = &CASNum::from(1);
-    let factor = &CASNum::from(10000000000000000000_u64);
+    let mut power = CASNum::from(1);
+    let factor = CASNum::from(10000000000000000000_u64);
 
     for chunk in chunks.iter() {
         let chunk_val = chunk.parse::<u64>();
@@ -139,8 +139,8 @@ pub(super) fn parse_lit(
             }));
         }
 
-        num += &(CASNum::from(chunk_val.unwrap()) * power);
-        power *= factor;
+        num += (CASNum::from(chunk_val.unwrap()) * power.clone());
+        power *= factor.clone();
     }
     //if it has 19 base 10 digits or less we can ensure it is less than the max u64 size
     //we parse each chunk as a u64, convert it to a CASNum, multiply it by a power of 10, and add it to an accumulator

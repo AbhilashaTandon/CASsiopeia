@@ -24,11 +24,8 @@ impl Neg for CASNum {
     }
 }
 
-impl<'a, 'b> AddAssign<&'b CASNum> for &'a CASNum
-where
-    'b: 'a,
-{
-    fn add_assign(&mut self, rhs: &'b CASNum) {
+impl AddAssign<CASNum> for CASNum {
+    fn add_assign(&mut self, rhs: CASNum) {
         *self = match (&self, &rhs) {
             (
                 CASNum {

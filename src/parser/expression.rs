@@ -19,14 +19,12 @@ use crate::types::token::Token;
 use crate::types::token::TokenType::{self, *};
 use std::collections::HashMap;
 
-pub(crate) fn to_postfix<'a>(
+pub(crate) fn into_postfix<'a>(
     tokens: Vec<Token>,
     var_table: &'a VarTable<'a>,
     args: Vec<String>,
 ) -> PostFix<'a> {
-    let mut token_iter: std::iter::Peekable<std::slice::Iter<'_, Token>> = tokens.iter().peekable();
-
-    if token_iter.peek().is_none() {
+    if tokens.is_empty() {
         //if tokens has length 0
         return Err(CASError {
             kind: CASErrorKind::NoExpressionGiven,
@@ -36,14 +34,14 @@ pub(crate) fn to_postfix<'a>(
 
     let mut output_queue: VecDeque<Symbol> = VecDeque::new();
     let mut operator_stack: VecDeque<Symbol> = VecDeque::new();
-    let mut last_token: Option<TokenType> = None;
+    let mut last_token: Option<&TokenType> = None;
 
     for Token {
         token_type,
         line_pos,
-    } in token_iter
+    } in &tokens
     {
-        match &token_type {
+        match token_type {
             Name(name) => {
                 if let Some(value) = parse_name(
                     &args,
@@ -57,7 +55,7 @@ pub(crate) fn to_postfix<'a>(
                 }
             }
             Num(number) => {
-                parse_num(&mut operator_stack, &mut output_queue, number, line_pos);
+                parse_num(&mut operator_stack, &mut output_queue, &number, &line_pos);
 
                 //if the token is a number put it into the output queue
             }
@@ -85,7 +83,7 @@ pub(crate) fn to_postfix<'a>(
                 | GreaterEqual => {
                     if let Some(value) = parse_numeric_operator(
                         &mut operator_stack,
-                        o1,
+                        &o1,
                         &mut output_queue,
                         *line_pos,
                     ) {
@@ -164,7 +162,7 @@ pub(crate) fn to_postfix<'a>(
             }
         }
 
-        last_token = Some(token_type.clone());
+        last_token = Some(&token_type);
     }
     /* After the while loop, pop the remaining items from the operator stack into the output queue. */
     // while there are tokens on the operator stack:
@@ -233,14 +231,21 @@ pub(crate) fn shunting_yard(output_queue: &mut VecDeque<Symbol>) -> Result<Tree<
         }));
     }
 
-    return match tree_stack.len() {
-        0 => Err(CASError {
+    if tree_stack.len() > 1 {
+        return Err(CASError {
+            line_pos: tree_stack[1].0.borrow().data.line_pos,
+            kind: CASErrorKind::NoExpressionGiven,
+        });
+    }
+
+    return match tree_stack.first() {
+        None => Err(CASError {
             line_pos: 0,
             kind: CASErrorKind::NoExpressionGiven,
         }),
 
         //if there are no tokens in tree stack no expression was given
-        1 => {
+        Some(root_node) => {
             return Ok(Tree {
                 root: tree_stack.first().unwrap().clone(),
                 //TODO: get rid of this clone
