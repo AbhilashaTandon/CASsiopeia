@@ -126,21 +126,27 @@ pub(super) fn parse_lit(
     chunks.push(current);
 
     //splits int into chunks of 19 digits or less, with remainder at front
+    //a 19 digit number is smaller than the largest CASNum, so it will never overflow
 
     let mut power = CASNum::from(1);
     let factor = CASNum::from(10000000000000000000_u64);
 
     for chunk in chunks.iter() {
         let chunk_val = chunk.parse::<u64>();
-        if chunk_val.is_err() {
-            return Some(Err(CASError {
-                line_pos: *line_pos,
-                kind: CASErrorKind::MalformedNumericLiteral { lit },
-            }));
+        match chunk_val {
+            Err(_) => {
+                return Some(Err(CASError {
+                    line_pos: *line_pos,
+                    kind: CASErrorKind::MalformedNumericLiteral { lit },
+                }));
+            }
+            Ok(value) => {
+                let mut chunk_num = CASNum::from(value);
+                chunk_num *= &power;
+                num += &chunk_num;
+                power *= &factor;
+            }
         }
-
-        num += (CASNum::from(chunk_val.unwrap()) * power.clone());
-        power *= factor.clone();
     }
     //if it has 19 base 10 digits or less we can ensure it is less than the max u64 size
     //we parse each chunk as a u64, convert it to a CASNum, multiply it by a power of 10, and add it to an accumulator

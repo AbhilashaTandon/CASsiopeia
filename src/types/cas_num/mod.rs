@@ -22,6 +22,9 @@ enum Sign {
 }
 
 #[derive(Clone, Hash, Eq)]
+///An arbitrary precision floating point number type used internally.
+///
+/// Contains two members, value which is a [CASValue], and sign which is a [Sign].
 pub(crate) struct CASNum {
     pub(crate) value: CASValue,
     pub(self) sign: Sign,

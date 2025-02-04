@@ -4,7 +4,7 @@ use crate::types::CASNum;
 use function::Func;
 use operator::Operator;
 
-use constant::Const;
+use constant::{Const, ResConst};
 use std::hash::Hash;
 pub(crate) mod constant;
 pub(crate) mod function;
@@ -36,6 +36,35 @@ impl PartialEq for Symbol {
 impl Hash for Symbol {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.symbol_type.hash(state);
+    }
+}
+
+impl PartialOrd for SymbolType {
+    /** Compares SymbolTypes, used for sorting arguments of commutative operators.
+     *
+     * The enum variants of SymbolType are sorted as below:
+     *
+     * Num
+     * Const
+     * Function
+     * Variable
+     * Operator
+     *
+     * Variables, functions, and constants are sorted lexicographically by their name, nums are sorted by value, and operators are sorted by precedence from lowest to highest.
+     *
+     * Note that in practice, when expressions are simplified arguments of multiplication are sorted in ascending order, while arguments of addition are sorted in descending order. This imitates the way polynomials are traditionally formatted:
+     *
+     * 3 * x ^ 2 + 2 * x + 5
+     *
+     * # Examples
+     *
+     * ```
+     * ```
+     */
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        use crate::types::symbol::Const::ResConst;
+        use crate::types::symbol::ResConst::*;
+        todo!()
     }
 }
 

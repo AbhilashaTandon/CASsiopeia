@@ -19,7 +19,11 @@ pub(crate) enum TokenType {
     ResFun(ResFun),     //reserved function
     Eof,                //end of file
 }
+/** */
 #[derive(Debug, Clone, PartialEq)]
+/// A type that is used for elements outputted by the scanner/lexer.
+///
+/// The first member is the type of the token, the enum 'TokenType'. The second member is the line number of the file it was found on, used for printing helpful error messages.
 pub(crate) struct Token {
     pub(crate) token_type: TokenType,
     pub(crate) line_pos: usize,

@@ -24,9 +24,9 @@ impl Neg for CASNum {
     }
 }
 
-impl AddAssign<CASNum> for CASNum {
-    fn add_assign(&mut self, rhs: CASNum) {
-        *self = match (&self, &rhs) {
+impl AddAssign<&CASNum> for CASNum {
+    fn add_assign(&mut self, rhs: &CASNum) {
+        *self = match (&self, rhs) {
             (
                 CASNum {
                     value: CASValue::Finite { .. },
@@ -47,15 +47,15 @@ impl AddAssign<CASNum> for CASNum {
             (
                 CASNum {
                     value: CASValue::Finite { .. },
-                    sign: self_sign,
+                    ..
                 },
                 CASNum {
                     value: CASValue::Infinite,
                     sign: other_sign,
                 },
-            ) => match (self_sign, other_sign) {
-                (_, Sign::Pos) => INFINITY,     //finite + inf == inf
-                (_, Sign::Neg) => NEG_INFINITY, //finite + -inf == -inf
+            ) => match other_sign {
+                Sign::Pos => INFINITY,     //finite + inf == inf
+                Sign::Neg => NEG_INFINITY, //finite + -inf == -inf
             },
             (
                 CASNum {
@@ -64,11 +64,11 @@ impl AddAssign<CASNum> for CASNum {
                 },
                 CASNum {
                     value: CASValue::Finite { .. },
-                    sign: other_sign,
+                    ..
                 },
-            ) => match (self_sign, other_sign) {
-                (Sign::Pos, _) => INFINITY,     //inf + finite = inf
-                (Sign::Neg, _) => NEG_INFINITY, //-inf + finite = -inf
+            ) => match self_sign {
+                Sign::Pos => INFINITY,     //inf + finite = inf
+                Sign::Neg => NEG_INFINITY, //-inf + finite = -inf
             },
             (
                 CASNum {
@@ -129,8 +129,8 @@ fn addition_finite(lhs: &CASNum, rhs: &CASNum) -> CASNum {
     }
 }
 
-impl SubAssign<CASNum> for CASNum {
-    fn sub_assign(&mut self, rhs: Self) {
+impl SubAssign<&CASNum> for CASNum {
+    fn sub_assign(&mut self, rhs: &CASNum) {
         *self = match (&self, &rhs) {
             (
                 CASNum {
@@ -144,7 +144,7 @@ impl SubAssign<CASNum> for CASNum {
             ) => {
                 match (self.value.is_zero(), rhs.value.is_zero()) {
                     (true, true) => CASNum::from(0), //0 - 0 == 0
-                    (true, false) => -rhs,           //0 - x == -x
+                    (true, false) => -rhs.clone(),   //0 - x == -x
                     (false, true) => return,         //x - 0 == x
                     (false, false) => subtraction_finite(self, &rhs),
                 }
@@ -152,15 +152,15 @@ impl SubAssign<CASNum> for CASNum {
             (
                 CASNum {
                     value: CASValue::Finite { .. },
-                    sign: self_sign,
+                    ..
                 },
                 CASNum {
                     value: CASValue::Infinite,
                     sign: other_sign,
                 },
-            ) => match (self_sign, other_sign) {
-                (_, Sign::Pos) => NEG_INFINITY, //finite - inf == -inf
-                (_, Sign::Neg) => INFINITY,     //finite - -inf == inf
+            ) => match other_sign {
+                Sign::Pos => NEG_INFINITY, //finite - inf == -inf
+                Sign::Neg => INFINITY,     //finite - -inf == inf
             },
             (
                 CASNum {
@@ -169,11 +169,11 @@ impl SubAssign<CASNum> for CASNum {
                 },
                 CASNum {
                     value: CASValue::Finite { .. },
-                    sign: other_sign,
+                    ..
                 },
-            ) => match (self_sign, other_sign) {
-                (Sign::Pos, _) => INFINITY,     //inf - finite = inf
-                (Sign::Neg, _) => NEG_INFINITY, //-inf - finite = -inf
+            ) => match self_sign {
+                Sign::Pos => INFINITY,     //inf - finite = inf
+                Sign::Neg => NEG_INFINITY, //-inf - finite = -inf
             },
             (
                 CASNum {
@@ -233,8 +233,8 @@ fn subtraction_finite(lhs: &CASNum, rhs: &CASNum) -> CASNum {
     }
 }
 
-impl MulAssign<CASNum> for CASNum {
-    fn mul_assign(&mut self, rhs: Self) {
+impl MulAssign<&CASNum> for CASNum {
+    fn mul_assign(&mut self, rhs: &CASNum) {
         if self.value.is_indeterminate() || rhs.value.is_indeterminate() {
             *self = INDETERMINATE;
             return;
@@ -331,8 +331,8 @@ fn multiplication_finite(lhs: &CASNum, rhs: &CASNum) -> CASNum {
     }
 }
 
-impl DivAssign<CASNum> for CASNum {
-    fn div_assign(&mut self, rhs: Self) {
+impl DivAssign<&CASNum> for CASNum {
+    fn div_assign(&mut self, rhs: &Self) {
         if self.value.is_zero() && rhs.value.is_zero() {
             *self = INDETERMINATE;
             return;
@@ -495,7 +495,7 @@ impl Add<CASNum> for CASNum {
     type Output = CASNum;
 
     fn add(mut self, rhs: CASNum) -> CASNum {
-        self += rhs;
+        self += &rhs;
         self
     }
 }
@@ -504,7 +504,7 @@ impl Sub<CASNum> for CASNum {
     type Output = CASNum;
 
     fn sub(mut self, rhs: CASNum) -> CASNum {
-        self -= rhs;
+        self -= &rhs;
         self
     }
 }
@@ -513,7 +513,7 @@ impl Mul<CASNum> for CASNum {
     type Output = CASNum;
 
     fn mul(mut self, rhs: CASNum) -> CASNum {
-        self *= rhs;
+        self *= &rhs;
         self
     }
 }
@@ -522,7 +522,7 @@ impl Div<CASNum> for CASNum {
     type Output = CASNum;
 
     fn div(mut self, rhs: CASNum) -> CASNum {
-        self /= rhs;
+        self /= &rhs;
         self
     }
 }

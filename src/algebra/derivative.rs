@@ -27,6 +27,7 @@ impl Tree<Symbol> {
         TreeNode::<Symbol>::derivative(&mut self.root.0.borrow_mut(), wrt);
     }
 }
+
 impl TreeNode<Symbol> {
     fn derivative(&mut self, wrt: &Var) {
         for child in &self.children {

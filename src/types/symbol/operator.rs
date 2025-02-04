@@ -47,6 +47,28 @@ pub(crate) fn precedence(op: &Operator) -> u8 {
     }
 }
 
+pub(crate) fn commutative(op: &Operator) -> bool {
+    match op {
+        Operator::Add | Operator::Mult | Operator::Equal | Operator::NotEqual => true,
+        Operator::Sub
+        | Operator::Div
+        | Operator::Exp
+        | Operator::Less
+        | Operator::Greater
+        | Operator::LessEqual
+        | Operator::GreaterEqual => false,
+        Operator::LeftBracket
+        | Operator::LeftParen
+        | Operator::RightBracket
+        | Operator::RightParen => false,
+        Operator::Neg => false, //commutativity doesn't make sense for unary ops
+        Operator::Comma => false, //function arguments can't be swapped around
+        Operator::Assign => false, //a = b does a different thing than b = a
+    }
+}
+
+//TODO: find some way of making a double ended map for this idk
+
 pub(crate) static OPERATORS: phf::Map<&'static str, Operator> = phf_map! {
     "+" => Operator::Add,
     "-" => Operator::Sub,

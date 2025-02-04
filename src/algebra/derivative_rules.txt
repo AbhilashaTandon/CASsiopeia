@@ -1,0 +1,15 @@
+
+(a + b + ...)' -> a' + b' + ...
+(a - b - ...)' -> a' - b' - ...
+(-a)' -> -(a')
+(a * b * c * ...) -> a' * b * c * ... + a * b' * c * ... + a * b * c' * ...
+(a / b) -> (a' * b - a * b') / b^2
+
+a ^ b = exp(ln(a^b)) = exp(b * ln(a))
+
+(a ^ b)' = exp(b * ln(a))' = exp(b * ln(a)) * (b * ln(a))' = exp(b * ln(a)) * (b' * ln(a) + b * ln(a)') = a^b * (b / a * a' + b' * ln(a))
+
+(a ^ b)' -> (a ^ b) * (b / a * a' + b' * ln(a))
+
+f(g(x))' -> f'(g(x)) * g'(x) * x'
+

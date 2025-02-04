@@ -2,6 +2,9 @@ use std::fmt::Display;
 
 use phf_macros::phf_map;
 
+//TODO: possibly add ability to annotate functions with (commutative, associative, etc)
+//or maybe make way to derive them
+
 #[derive(Hash, Debug, Clone, PartialEq, Eq)]
 pub(crate) enum Func {
     ResFun(ResFun),
