@@ -1,14 +1,14 @@
 #[cfg(test)]
 use std::collections::VecDeque;
 
-use rand::RngCore;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 
-use crate::types::cas_num::{CASValue::*, Sign::*};
-
+use super::super::cas_num::CASValue::*;
+use super::super::cas_num::Sign::*;
 use super::super::CASNum;
 use super::literal;
+use rand::RngCore;
 
 fn comparison(a: i128, b: i128) -> bool {
     CASNum::from(a).partial_cmp(&CASNum::from(b)) == Some(a.cmp(&b))
@@ -18,7 +18,7 @@ fn addition(a: i128, b: i128) -> bool {
     let _a_casnum = CASNum::from(a);
     let _b_casnum = CASNum::from(b);
     let mut sum_1 = CASNum::from(a + b);
-    let mut sum_2 = CASNum::from(a) + &CASNum::from(b);
+    let mut sum_2 = CASNum::from(a) + CASNum::from(b);
     sum_1.value = sum_1.value.normalize();
     sum_2.value = sum_2.value.normalize();
     sum_1 == sum_2
@@ -26,7 +26,7 @@ fn addition(a: i128, b: i128) -> bool {
 
 fn subtraction(a: i128, b: i128) -> bool {
     let mut sum_1 = CASNum::from(a - b);
-    let mut sum_2 = CASNum::from(a) - &CASNum::from(b);
+    let mut sum_2 = CASNum::from(a) - CASNum::from(b);
     sum_1.value = sum_1.value.normalize();
     sum_2.value = sum_2.value.normalize();
     sum_1 == sum_2
@@ -34,7 +34,7 @@ fn subtraction(a: i128, b: i128) -> bool {
 
 fn multiplication(a: i128, b: i128) -> bool {
     let prod_1 = CASNum::from(a * b);
-    let prod_2 = CASNum::from(a) * &CASNum::from(b);
+    let prod_2 = CASNum::from(a) * CASNum::from(b);
     print!("{:?}\t{:?}\t", prod_1, prod_2,);
     prod_1 == prod_2
 }
@@ -46,13 +46,13 @@ fn comparison_float(a: f32, b: f32) -> bool {
 }
 
 fn addition_float(a: f64, b: f64, result: CASNum) -> bool {
-    let mut sum = CASNum::from(a) + &CASNum::from(b);
+    let mut sum = CASNum::from(a) + CASNum::from(b);
     sum.value = sum.value.normalize();
     if sum != result {
         return false;
     }
 
-    sum = CASNum::from(a as f32) + &CASNum::from(b as f32);
+    sum = CASNum::from(a as f32) + CASNum::from(b as f32);
     sum.value = sum.value.normalize();
 
     if sum != result {
@@ -62,14 +62,14 @@ fn addition_float(a: f64, b: f64, result: CASNum) -> bool {
 }
 
 fn subtraction_float(a: f64, b: f64, result: CASNum) -> bool {
-    let mut sum = CASNum::from(a) - &CASNum::from(b);
+    let mut sum = CASNum::from(a) - CASNum::from(b);
     sum.value = sum.value.normalize();
 
     if sum != result {
         return false;
     }
 
-    sum = CASNum::from(a as f32) - &CASNum::from(b as f32);
+    sum = CASNum::from(a as f32) - CASNum::from(b as f32);
     sum.value = sum.value.normalize();
     if sum != result {
         return false;
@@ -877,7 +877,7 @@ fn multiplication_int_tests() {
         let int_2: u64 = rng.next_u32() as u64;
 
         let rust_product = CASNum::from(int_1 * int_2);
-        let my_product = CASNum::from(int_1) * &CASNum::from(int_2);
+        let my_product = CASNum::from(int_1) * CASNum::from(int_2);
 
         if rust_product != my_product {
             num_wrong += 1;
@@ -900,7 +900,7 @@ fn multiplication_float_tests() {
         let casnum_2 = CASNum::from(float_2);
 
         let rust_product = CASNum::from(float_1 * float_2);
-        let my_product = casnum_1.clone() * &casnum_2;
+        let my_product = casnum_1 * casnum_2;
 
         if float_1.is_nan() || float_2.is_nan() {
             if !my_product.value.is_indeterminate() {
@@ -916,8 +916,8 @@ fn multiplication_float_tests() {
                 "{:e}\t{:e}\t{:?}\t{:?}\t{:?}\t{:?}",
                 float_1,
                 float_2,
-                casnum_1.value,
-                casnum_2.value,
+                CASNum::from(float_1),
+                CASNum::from(float_2),
                 rust_product.value.exp().unwrap(),
                 my_product.value.exp().unwrap()
             );
@@ -965,7 +965,7 @@ fn div_single_tests() {
             let quotient = dividend.clone() / divisor;
             let remainder = dividend.clone() % divisor;
 
-            let reconstructed = quotient.clone() * &CASNum::from(divisor) + &remainder;
+            let reconstructed = quotient.clone() * CASNum::from(divisor) + remainder;
             if dividend != reconstructed {
                 num_wrong += 1;
             }
@@ -984,11 +984,11 @@ fn div_by_u64() {
         let num_3 = CASNum::from(rng.next_u64());
         let divisor = rng.next_u64();
 
-        let dividend = num_1 * &num_2 * &num_3;
+        let dividend = num_1 * num_2 * num_3;
         let quotient = dividend.clone() / divisor;
         let remainder = dividend.clone() % divisor;
 
-        if dividend != (quotient.clone() * &CASNum::from(divisor) + &remainder) {
+        if dividend != (quotient.clone() * CASNum::from(divisor) + remainder) {
             num_wrong += 1;
         }
     }

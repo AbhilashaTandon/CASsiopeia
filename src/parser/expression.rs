@@ -5,7 +5,7 @@ use std::rc::Rc;
 use super::trees::{Tree, TreeNode, TreeNodeRef};
 use super::vars::{Var, VarTable};
 
-pub(crate) type PostFix<'a> = Result<VecDeque<Symbol<'a>>, CASError>;
+pub(crate) type PostFix<'a> = Result<VecDeque<Symbol>, CASError>;
 
 use crate::types::cas_error::{CASError, CASErrorKind};
 use crate::types::symbol::constant::Const;
@@ -21,8 +21,8 @@ use std::collections::HashMap;
 
 pub(crate) fn into_postfix<'a>(
     tokens: Vec<Token>,
-    var_table: &VarTable<'a>,
-    args: Vec<&str>,
+    var_table: &'a VarTable<'a>,
+    args: Vec<String>,
 ) -> PostFix<'a> {
     if tokens.is_empty() {
         //if tokens has length 0
@@ -39,17 +39,17 @@ pub(crate) fn into_postfix<'a>(
     for Token {
         token_type,
         line_pos,
-    } in tokens
+    } in &tokens
     {
         match token_type {
             Name(name) => {
                 if let Some(value) = parse_name(
                     &args,
-                    name,
+                    name.to_string(),
                     &mut output_queue,
                     var_table,
                     &mut operator_stack,
-                    line_pos,
+                    *line_pos,
                 ) {
                     return Err(value);
                 }
@@ -62,8 +62,8 @@ pub(crate) fn into_postfix<'a>(
 
             Const(name) => {
                 output_queue.push_back(Symbol {
-                    symbol_type: SymbolType::Const(Const::ResConst(name)),
-                    line_pos: line_pos,
+                    symbol_type: SymbolType::Const(Const::ResConst(*name)),
+                    line_pos: *line_pos,
                 });
                 if let Some(Symbol {
                     symbol_type: SymbolType::Operator(Neg),
@@ -74,8 +74,8 @@ pub(crate) fn into_postfix<'a>(
                 }
             }
             ResFun(name) => operator_stack.push_back(Symbol {
-                symbol_type: SymbolType::Function(Func::ResFun(name)),
-                line_pos: line_pos,
+                symbol_type: SymbolType::Function(Func::ResFun(*name)),
+                line_pos: *line_pos,
             }),
 
             Operator(o1) => match o1 {
@@ -85,20 +85,20 @@ pub(crate) fn into_postfix<'a>(
                         &mut operator_stack,
                         &o1,
                         &mut output_queue,
-                        line_pos,
+                        *line_pos,
                     ) {
                         return Err(value);
                     }
                 }
 
                 LeftParen | LeftBracket => operator_stack.push_back(Symbol {
-                    symbol_type: SymbolType::Operator(o1),
-                    line_pos: line_pos,
+                    symbol_type: SymbolType::Operator(*o1),
+                    line_pos: *line_pos,
                 }),
 
                 RightParen | RightBracket => {
                     if let Some(value) =
-                        parse_right_paren(&mut operator_stack, &mut output_queue, line_pos)
+                        parse_right_paren(&mut operator_stack, &mut output_queue, *line_pos)
                     {
                         return Err(value);
                     }
@@ -118,7 +118,7 @@ pub(crate) fn into_postfix<'a>(
                 Assign => {
                     return Err(CASError {
                         kind: CASErrorKind::AssignmentInExpression,
-                        line_pos: line_pos,
+                        line_pos: *line_pos,
                     });
                 }
                 Sub | Neg => match last_token {
@@ -129,13 +129,13 @@ pub(crate) fn into_postfix<'a>(
                     | Some(Operator(RightParen)) => {
                         operator_stack.push_back(Symbol {
                             symbol_type: SymbolType::Operator(Sub),
-                            line_pos: line_pos,
+                            line_pos: *line_pos,
                         });
                     }
                     Some(Eof) => {
                         return Err(CASError {
                             kind: CASErrorKind::SyntaxError,
-                            line_pos: line_pos,
+                            line_pos: *line_pos,
                         });
                     }
                     Some(ResFun(f)) => {
@@ -145,13 +145,13 @@ pub(crate) fn into_postfix<'a>(
                                 args_needed: f.num_args(),
                                 func_name: f.to_string(),
                             },
-                            line_pos: line_pos,
+                            line_pos: *line_pos,
                         })
                     }
                     Some(Operator(_)) | None => {
                         operator_stack.push_back(Symbol {
                             symbol_type: SymbolType::Operator(Neg),
-                            line_pos: line_pos,
+                            line_pos: *line_pos,
                         });
                     }
                 },
@@ -182,8 +182,8 @@ pub(crate) fn into_postfix<'a>(
 }
 
 fn parse_num(
-    operator_stack: &mut VecDeque<Symbol<'_>>,
-    output_queue: &mut VecDeque<Symbol<'_>>,
+    operator_stack: &mut VecDeque<Symbol>,
+    output_queue: &mut VecDeque<Symbol>,
     number: &super::CASNum,
     line_pos: &usize,
 ) {
@@ -209,10 +209,8 @@ fn parse_num(
     }
 }
 
-pub(crate) fn shunting_yard<'a>(
-    output_queue: &mut VecDeque<Symbol<'a>>,
-) -> Result<Tree<Symbol<'a>>, CASError> {
-    let mut tree_stack: Vec<TreeNodeRef<Symbol<'a>>> = vec![];
+pub(crate) fn shunting_yard(output_queue: &mut VecDeque<Symbol>) -> Result<Tree<Symbol>, CASError> {
+    let mut tree_stack: Vec<TreeNodeRef<Symbol>> = vec![];
     //temporary stack for constructing the tree
 
     while let Some(symbol) = output_queue.pop_front() {
@@ -227,15 +225,15 @@ pub(crate) fn shunting_yard<'a>(
                 });
             }
         }
-        tree_stack.push(Rc::new(RefCell::new(TreeNode {
+        tree_stack.push(TreeNodeRef::new_from_node(TreeNode {
             data: symbol,
             children: args,
-        })));
+        }));
     }
 
     if tree_stack.len() > 1 {
         return Err(CASError {
-            line_pos: tree_stack[1].borrow().data.line_pos,
+            line_pos: tree_stack[1].0.borrow().data.line_pos,
             kind: CASErrorKind::NoExpressionGiven,
         });
     }
@@ -249,20 +247,25 @@ pub(crate) fn shunting_yard<'a>(
         //if there are no tokens in tree stack no expression was given
         Some(root_node) => {
             return Ok(Tree {
-                root: root_node.clone(),
+                root: tree_stack.first().unwrap().clone(),
                 //TODO: get rid of this clone
             });
-        } //if there are multiple
+        }
+        _ => Err(CASError {
+            line_pos: tree_stack[1].0.borrow().data.line_pos,
+            kind: CASErrorKind::NoExpressionGiven,
+        }),
+        //if there are multiple
     };
 }
 
-fn parse_right_paren<'a>(
-    operator_stack: &mut VecDeque<Symbol<'a>>,
-    output_queue: &mut VecDeque<Symbol<'a>>,
+fn parse_right_paren(
+    operator_stack: &mut VecDeque<Symbol>,
+    output_queue: &mut VecDeque<Symbol>,
     line_pos: usize,
 ) -> Option<CASError> {
     loop {
-        let top_of_stack: Option<&Symbol<'a>> = operator_stack.back();
+        let top_of_stack: Option<&Symbol> = operator_stack.back();
         match top_of_stack {
             Some(symbol) => match &symbol.symbol_type {
                 SymbolType::Operator(o2) => match o2 {
@@ -331,10 +334,10 @@ fn parse_right_paren<'a>(
     None
 }
 
-fn parse_numeric_operator<'a>(
-    operator_stack: &mut VecDeque<Symbol<'a>>,
+fn parse_numeric_operator(
+    operator_stack: &mut VecDeque<Symbol>,
     o1: &Operator,
-    output_queue: &mut VecDeque<Symbol<'a>>,
+    output_queue: &mut VecDeque<Symbol>,
     line_pos: usize,
 ) -> Option<CASError> {
     while let Some(sym) = operator_stack.back() {
@@ -377,23 +380,23 @@ fn parse_numeric_operator<'a>(
     None
 }
 
-fn parse_name<'a>(
-    args: &[&str],
+fn parse_name(
+    args: &[String],
     name: String,
-    output_queue: &mut VecDeque<Symbol<'a>>,
-    var_table: &HashMap<&str, Var<'a>>,
-    operator_stack: &mut VecDeque<Symbol<'a>>,
+    output_queue: &mut VecDeque<Symbol>,
+    var_table: &HashMap<String, Var>,
+    operator_stack: &mut VecDeque<Symbol>,
     line_pos: usize,
 ) -> Option<CASError> {
     //unknown variable name
     let name_symbol = Symbol {
-        symbol_type: SymbolType::Variable { name: name },
+        symbol_type: SymbolType::Variable { name: name.clone() },
         line_pos,
     };
-    if args.contains(&name.as_str()) {
+    if args.contains(&name) {
         output_queue.push_back(name_symbol);
         //if the token is a number put it into the output queue
-    } else if let Some(var) = var_table.get(&name as &str) {
+    } else if let Some(var) = var_table.get(&name) {
         match var.args.len() {
             0 => {
                 output_queue.push_back(name_symbol);
@@ -408,10 +411,7 @@ fn parse_name<'a>(
 
             //if the token is a number put it into the output queue
             x => operator_stack.push_back(Symbol {
-                symbol_type: SymbolType::Function(Func::Function {
-                    num_args: x,
-                    name: &name,
-                }),
+                symbol_type: SymbolType::Function(Func::Function { num_args: x, name }),
                 line_pos,
             }),
             //if the token is a function push it onto the operator stack

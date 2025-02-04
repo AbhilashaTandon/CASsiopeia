@@ -2,3 +2,4 @@
 src/tempCodeRunnerFile.rs
 .vscode/
 .misc
+Cargo.lock

@@ -54,7 +54,7 @@ mod test {
         }
     }
 
-    fn make_symbol(symbol_type: SymbolType<'_>, line_pos: usize) -> Symbol<'_> {
+    fn make_symbol(symbol_type: SymbolType, line_pos: usize) -> Symbol {
         Symbol {
             symbol_type,
             line_pos,
@@ -133,20 +133,20 @@ mod test {
             "x = 2",
             err,
             Some(&HashMap::from([(
-                "x",
+                String::from("x").to_string(),
                 Var {
                     expr: Tree::from(SymbolType::Num {
                         value: CASNum::from(2),
                     }),
 
-                    args: Box::new([]),
+                    args: vec![],
                 },
             )])),
         );
 
         let err = Err(CASError {
             kind: CASErrorKind::UnknownSymbol {
-                symbol: "x".to_string(),
+                symbol: String::from("x").to_string(),
             },
             line_pos: 0,
         });
@@ -155,19 +155,19 @@ mod test {
             "x + 2",
             err,
             Some(&HashMap::from([(
-                "y",
+                String::from(String::from("y")),
                 Var {
                     expr: Tree::from(SymbolType::Num {
                         value: CASNum::from(2),
                     }),
-                    args: Box::new([]),
+                    args: vec![],
                 },
             )])),
         );
 
         let err = Err(CASError {
             kind: CASErrorKind::UnknownSymbol {
-                symbol: "y".to_string(),
+                symbol: String::from("y").to_string(),
             },
             line_pos: 0,
         });
@@ -176,12 +176,12 @@ mod test {
             "y + 2",
             err,
             Some(&HashMap::from([(
-                "x",
+                String::from(String::from("x")),
                 Var {
                     expr: Tree::from(SymbolType::Num {
                         value: CASNum::from(2),
                     }),
-                    args: Box::new([]),
+                    args: vec![],
                 },
             )])),
         );
@@ -333,26 +333,47 @@ mod test {
 
         test_parser("- 2 + 3", Ok(symbols_to_postfix(symbols)), None);
 
-        let symbols = VecDeque::from([(Variable { name: "x" }, 1), (Operator(Neg), 0)]);
+        let symbols = VecDeque::from([
+            (
+                Variable {
+                    name: String::from(String::from("x")),
+                },
+                1,
+            ),
+            (Operator(Neg), 0),
+        ]);
 
         let var_table = Some(HashMap::from([(
-            "x",
+            String::from("x").to_string(),
             Var {
                 expr: Tree::from(SymbolType::Num {
                     value: CASNum::from(2),
                 }),
-                args: Box::new([]),
+                args: vec![],
             },
         )]));
 
         test_parser("-x", Ok(symbols_to_postfix(symbols)), var_table.as_ref());
 
-        let symbols = VecDeque::from([(Variable { name: "x" }, 2), (Operator(Neg), 0)]);
+        let symbols = VecDeque::from([
+            (
+                Variable {
+                    name: String::from(String::from("x")),
+                },
+                2,
+            ),
+            (Operator(Neg), 0),
+        ]);
 
         test_parser("- x", Ok(symbols_to_postfix(symbols)), var_table.as_ref());
 
         let symbols = VecDeque::from([
-            (Variable { name: "x" }, 2),
+            (
+                Variable {
+                    name: String::from(String::from("x")),
+                },
+                2,
+            ),
             (Operator(Neg), 0),
             (
                 Num {
@@ -410,7 +431,7 @@ mod test {
     fn functions() {
         let err = Err(CASError {
             kind: CASErrorKind::UnknownSymbol {
-                symbol: "f".to_owned(),
+                symbol: String::from("f").to_owned(),
             },
             line_pos: 0,
         });
@@ -418,13 +439,17 @@ mod test {
         test_parser("f(2, 3, 4)", err, None);
 
         let var_table = Some(HashMap::from([(
-            "f",
+            String::from(String::from("f")),
             Var {
                 expr: Tree::from(SymbolType::Num {
                     value: CASNum::from(2),
                 }),
 
-                args: Box::new(["x", "y", "z"]),
+                args: vec![
+                    String::from(String::from("x")),
+                    String::from(String::from("y")),
+                    String::from(String::from("z")),
+                ],
             },
         )]));
 
@@ -450,7 +475,7 @@ mod test {
             (
                 Function(Func::Function {
                     num_args: 3,
-                    name: "f",
+                    name: String::from(String::from("f")),
                 }),
                 0,
             ),
@@ -484,20 +509,24 @@ mod test {
             (
                 Function(Func::Function {
                     num_args: 3,
-                    name: "foo",
+                    name: String::from(String::from("foo")),
                 }),
                 2,
             ),
         ]);
 
         let var_table = Some(HashMap::from([(
-            "foo",
+            String::from(String::from("foo")),
             Var {
                 expr: Tree::from(SymbolType::Num {
                     value: CASNum::from(2),
                 }),
 
-                args: Box::new(["a", "b", "c"]),
+                args: vec![
+                    String::from(String::from("a")),
+                    String::from(String::from("b")),
+                    String::from(String::from("c")),
+                ],
             },
         )]));
 
@@ -508,26 +537,36 @@ mod test {
         );
 
         let symbols = VecDeque::from([
-            (Variable { name: "x" }, 12),
+            (
+                Variable {
+                    name: String::from(String::from("x")),
+                },
+                12,
+            ),
             (
                 Function(Func::Function {
                     num_args: 1,
-                    name: "baz",
+                    name: String::from(String::from("baz")),
                 }),
                 10,
             ),
             (
                 Function(Func::Function {
                     num_args: 1,
-                    name: "bar",
+                    name: String::from(String::from("bar")),
                 }),
                 6,
             ),
-            (Variable { name: "y" }, 17),
+            (
+                Variable {
+                    name: String::from(String::from("y")),
+                },
+                17,
+            ),
             (
                 Function(Func::Function {
                     num_args: 2,
-                    name: "foo",
+                    name: String::from(String::from("foo")),
                 }),
                 2,
             ),
@@ -535,53 +574,56 @@ mod test {
 
         let var_table = Some(HashMap::from([
             (
-                "foo",
+                String::from(String::from("foo")),
                 Var {
                     expr: Tree::from(SymbolType::Num {
                         value: CASNum::from(2),
                     }),
 
-                    args: Box::new(["a", "b"]),
+                    args: vec![
+                        String::from(String::from("a")),
+                        String::from(String::from("b")),
+                    ],
                 },
             ),
             (
-                "bar",
+                String::from(String::from("bar")),
                 Var {
                     expr: Tree::from(SymbolType::Num {
                         value: CASNum::from(1),
                     }),
 
-                    args: Box::new(["a"]),
+                    args: vec![String::from(String::from("a"))],
                 },
             ),
             (
-                "baz",
+                String::from(String::from("baz")),
                 Var {
                     expr: Tree::from(SymbolType::Num {
                         value: CASNum::from(1),
                     }),
 
-                    args: Box::new(["a"]),
+                    args: vec![String::from("a")],
                 },
             ),
             (
-                "x",
+                String::from(String::from("x")),
                 Var {
                     expr: Tree::from(SymbolType::Num {
                         value: CASNum::from(2),
                     }),
 
-                    args: Box::new([]),
+                    args: vec![],
                 },
             ),
             (
-                "y",
+                String::from(String::from("y")),
                 Var {
                     expr: Tree::from(SymbolType::Num {
                         value: CASNum::from(2),
                     }),
 
-                    args: Box::new([]),
+                    args: vec![],
                 },
             ),
         ]));
@@ -594,50 +636,50 @@ mod test {
 
         let var_table = Some(HashMap::from([
             (
-                "foo",
+                String::from("foo"),
                 Var {
                     expr: Tree::from(SymbolType::Num {
                         value: CASNum::from(2),
                     }),
 
-                    args: Box::new(["a", "b"]),
+                    args: vec![String::from("a"), String::from("b")],
                 },
             ),
             (
-                "bar",
+                String::from("bar"),
                 Var {
                     expr: Tree::from(SymbolType::Num {
                         value: CASNum::from(1),
                     }),
 
-                    args: Box::new(["a"]),
+                    args: vec![String::from("a")],
                 },
             ),
             (
-                "baz",
+                String::from("baz"),
                 Var {
                     expr: Tree::from(SymbolType::Num {
                         value: CASNum::from(1),
                     }),
 
-                    args: Box::new(["a"]),
+                    args: vec![String::from("a")],
                 },
             ),
             (
-                "x",
+                String::from("x"),
                 Var {
                     expr: Tree::from(SymbolType::Num {
                         value: CASNum::from(2),
                     }),
 
-                    args: Box::new([]),
+                    args: vec![],
                 },
             ),
         ]));
 
         let err = Err(CASError {
             kind: CASErrorKind::UnknownSymbol {
-                symbol: "y".to_string(),
+                symbol: String::from("y").to_string(),
             },
             line_pos: 17,
         });
@@ -648,12 +690,22 @@ mod test {
     #[test]
     fn argument_order() {
         let symbols = VecDeque::from([
-            (Variable { name: "x" }, 4),
-            (Variable { name: "y" }, 7),
+            (
+                Variable {
+                    name: String::from("x"),
+                },
+                4,
+            ),
+            (
+                Variable {
+                    name: String::from("y"),
+                },
+                7,
+            ),
             (
                 Function(Func::Function {
                     num_args: 2,
-                    name: "foo",
+                    name: String::from("foo"),
                 }),
                 2,
             ),
@@ -661,53 +713,53 @@ mod test {
 
         let var_table = Some(HashMap::from([
             (
-                "foo",
+                String::from("foo"),
                 Var {
                     expr: Tree::from(SymbolType::Num {
                         value: CASNum::from(2),
                     }),
 
-                    args: Box::new(["a", "b"]),
+                    args: vec![String::from("a"), String::from("b")],
                 },
             ),
             (
-                "bar",
+                String::from("bar"),
                 Var {
                     expr: Tree::from(SymbolType::Num {
                         value: CASNum::from(1),
                     }),
 
-                    args: Box::new(["a"]),
+                    args: vec![String::from("a")],
                 },
             ),
             (
-                "baz",
+                String::from("baz"),
                 Var {
                     expr: Tree::from(SymbolType::Num {
                         value: CASNum::from(1),
                     }),
 
-                    args: Box::new(["a"]),
+                    args: vec![String::from("a")],
                 },
             ),
             (
-                "x",
+                String::from("x"),
                 Var {
                     expr: Tree::from(SymbolType::Num {
                         value: CASNum::from(2),
                     }),
 
-                    args: Box::new([]),
+                    args: vec![],
                 },
             ),
             (
-                "y",
+                String::from("y"),
                 Var {
                     expr: Tree::from(SymbolType::Num {
                         value: CASNum::from(2),
                     }),
 
-                    args: Box::new([]),
+                    args: vec![],
                 },
             ),
         ]));

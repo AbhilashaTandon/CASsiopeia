@@ -15,19 +15,22 @@ mod literal;
 mod operators;
 mod test;
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, Copy)]
 enum Sign {
     Pos,
     Neg,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Hash, Eq)]
+///An arbitrary precision floating point number type used internally.
+///
+/// Contains two members, value which is a [CASValue], and sign which is a [Sign].
 pub(crate) struct CASNum {
     pub(crate) value: CASValue,
     pub(self) sign: Sign,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub(crate) enum CASValue {
     Finite {
         digits: VecDeque<DigitType>, //little endian
@@ -73,6 +76,10 @@ impl CASNum {
             sign: Sign::Pos,
             value: self.value.clone(),
         }
+    }
+
+    fn is_zero(&self) -> bool {
+        self.value.is_zero()
     }
 
     fn compare_finite(&self, other: &CASNum) -> Ordering {

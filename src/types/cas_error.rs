@@ -3,7 +3,7 @@ use std::fmt::Display;
 use super::token::Token;
 
 #[derive(Clone, PartialEq, Debug)]
- pub(crate) enum CASErrorKind {
+pub(crate) enum CASErrorKind {
     NoError,
     SyntaxError,
     TypeError,
@@ -22,7 +22,7 @@ use super::token::Token;
     WrongNumberOfArgs{
         args_given: usize,
         args_needed: usize,
-        func_name:String
+        func_name: String
     },
     InvalidCharacter{
         chr: char
