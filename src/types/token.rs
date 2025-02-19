@@ -10,6 +10,15 @@ use super::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
+/// An enum that is a component of Token that represents the types outputted by the scanner.
+///
+/// It contains 6 variants:
+/// - Name is the name of a variable
+/// - Num is an arbitrary precision floating point number
+/// - Operator is one of the built in operators
+/// - Constant is one of the built in mathematical constants like pi or e
+/// - ResFun is one of the built in functions
+/// - Eof represents the end of a phrase
 pub(crate) enum TokenType {
     //type of tokens outputted by scanner
     Name(String), //variable name
@@ -21,7 +30,7 @@ pub(crate) enum TokenType {
 }
 /** */
 #[derive(Debug, Clone, PartialEq)]
-/// A type that is used for elements outputted by the scanner/lexer.
+/// A struct that is used for elements outputted by the scanner/lexer.
 ///
 /// The first member is the type of the token, the enum 'TokenType'. The second member is the line number of the file it was found on, used for printing helpful error messages.
 pub(crate) struct Token {

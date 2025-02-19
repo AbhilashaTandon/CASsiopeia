@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::types::CASNum;
 use function::Func;
-use operator::Operator;
+use operator::{precedence, Operator};
 
 use constant::{Const, ResConst};
 use std::hash::Hash;
@@ -38,11 +38,19 @@ impl Hash for Symbol {
         self.symbol_type.hash(state);
     }
 }
-
+fn get_id(sym: &SymbolType) -> u32 {
+    return match sym {
+        SymbolType::Num { value } => 1,
+        SymbolType::Const(_) => 2,
+        SymbolType::Function(func) => 3,
+        SymbolType::Variable { name } => 4,
+        SymbolType::Operator(operator) => 5,
+    };
+}
 impl PartialOrd for SymbolType {
     /** Compares SymbolTypes, used for sorting arguments of commutative operators.
      *
-     * The enum variants of SymbolType are sorted as below:
+     * The enum variants of SymbolType are sorted as below
      *
      * Num
      * Const
@@ -61,10 +69,35 @@ impl PartialOrd for SymbolType {
      * ```
      * ```
      */
+
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         use crate::types::symbol::Const::ResConst;
         use crate::types::symbol::ResConst::*;
-        todo!()
+
+        let self_id = get_id(self);
+        let other_id: u32 = get_id(other);
+
+        if (self_id < other_id) {
+            return Some(std::cmp::Ordering::Less);
+        } else if (self_id > other_id) {
+            return Some(std::cmp::Ordering::Greater);
+        } else {
+            return match (self, other) {
+                (SymbolType::Num { value }, SymbolType::Num { value: other_value }) => {
+                    value.partial_cmp(other_value)
+                }
+                (SymbolType::Const(_), SymbolType::Const(_))
+                | (SymbolType::Function(_), SymbolType::Function(_))
+                | (SymbolType::Variable { name: _ }, SymbolType::Variable { name: _ }) => {
+                    self.to_string().partial_cmp(&other.to_string())
+                }
+
+                (SymbolType::Operator(op), SymbolType::Operator(other_op)) => {
+                    precedence(op).partial_cmp(&precedence(other_op))
+                }
+                _ => None,
+            };
+        }
     }
 }
 
