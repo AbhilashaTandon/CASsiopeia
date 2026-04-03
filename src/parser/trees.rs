@@ -3,8 +3,8 @@ use std::fmt::{Display, Error};
 use std::rc::Rc;
 
 use crate::types::cas_error::CASErrorKind;
-
 use crate::types::symbol::Symbol;
+
 use std::hash::{self, Hash, Hasher};
 // pub(crate) type TreeNodeRef<T> = Rc<RefCell<TreeNode<T>>>;
 
@@ -127,7 +127,7 @@ fn print_tree_node<Symbol: std::fmt::Display>(
         *indent += " ";
     } else {
         write!(f, "├─")?;
-        *indent += "| ";
+        *indent += "│ ";
     }
     writeln!(f, " {}", node.data)?;
 
