@@ -151,7 +151,7 @@ pub(super) fn parse_lit(
     //if it has 19 base 10 digits or less we can ensure it is less than the max u64 size
     //we parse each chunk as a u64, convert it to a CASNum, multiply it by a power of 10, and add it to an accumulator
 
-    todo!();
+    Some(Ok(num))
 }
 
 // fn parse_number(
