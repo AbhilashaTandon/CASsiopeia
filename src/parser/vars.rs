@@ -45,12 +45,11 @@ impl<'a> Var {
 fn apply(expr: &mut TreeNodeRef<SymbolType>, args: &HashMap<String, CASNum>) {
     //replaces variables in expression with values given in args
     if expr.0.borrow().children.is_empty() {
-        if let SymbolType::Variable { name } = &expr.0.borrow().data {
+        if let SymbolType::Variable(name) = &expr.0.borrow().data {
             if let Some(value) = args.get(name) {
-                expr.0.borrow_mut().data = SymbolType::Num {
-                    value: value.clone(),
-                    //TODO: get rid of this clone
-                };
+                expr.0.borrow_mut().data = SymbolType::Num(
+                    value.clone(), //TODO: get rid of this clone
+                );
             }
         }
     } else {

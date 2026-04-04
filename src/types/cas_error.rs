@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use super::token::Token;
+use crate::types::symbol::Symbol;
 
 #[derive(Clone, PartialEq, Debug)]
 pub(crate) enum CASErrorKind {
@@ -28,7 +28,7 @@ pub(crate) enum CASErrorKind {
         chr: char
     },
     CommandInExpression{
-        command: Token
+        command: Symbol
     },
 }
 
@@ -75,7 +75,7 @@ impl CASErrorKind{
 }
 
 
-pub(crate) fn print_error(err: CASError, line: &str, line_num: usize) {
+pub(crate) fn print_error(err: &CASError, line: &str, line_num: usize) {
     eprintln!("{} on line {}.", err.kind, line_num + 1);
     //we number lines starting w 1 instead of 0
     eprintln!("{}", line);

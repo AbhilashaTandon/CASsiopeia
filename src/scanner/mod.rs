@@ -1,34 +1,35 @@
 use std::iter::{Enumerate, Peekable};
 use std::str;
 
+use crate::types;
 use crate::types::cas_error::{CASError, CASErrorKind};
 use crate::types::symbol::constant::RESERVED_CONSTANTS;
-use crate::types::symbol::function::RESERVED_FUNCTIONS;
-use crate::types::symbol::operator::*;
-
-use crate::types::token::TokenType::*;
-use crate::types::token::{Token, TokenType};
+use crate::types::symbol::function::{Func, RESERVED_FUNCTIONS};
+use crate::types::symbol::{self, operator::*, Symbol, SymbolType};
 
 mod test;
 
-pub(crate) type Tokenization = Result<Vec<Token>, Vec<CASError>>;
+pub(crate) type Tokenization = Result<Vec<Symbol>, Vec<CASError>>;
 
 pub(crate) fn tokenize(line_of_code: &str) -> Tokenization {
-    //splits file into tokens
+    //splits file into symbols
     let mut char_iter: Peekable<Enumerate<str::Chars>> =
-        line_of_code.chars().enumerate().peekable(); //peekable to look forward for multichar tokens
+        line_of_code.chars().enumerate().peekable(); //peekable to look forward for multichar symbols
 
-    let mut tokens: Vec<Token> = vec![];
+    let mut symbols: Vec<Symbol> = vec![];
     let mut errors: Vec<CASError> = vec![];
 
     while char_iter.peek().is_some() {
         //while not at the end of file
-        let current_token: Result<Token, CASError> = get_token(&mut char_iter);
-        match current_token {
-            Ok(Token {
-                token_type: Eof, ..
-            }) => {}
-            Ok(token) => tokens.push(token),
+        let current_symbol: Result<Symbol, CASError> = get_symbol(&mut char_iter);
+        match current_symbol {
+            Ok(Symbol {
+                symbol_type: SymbolType::EOF,
+                ..
+            }) => {
+                break;
+            }
+            Ok(symbol) => symbols.push(symbol),
             Err(err) => {
                 if char_iter.peek().is_some() {
                     errors.push(err);
@@ -41,22 +42,28 @@ pub(crate) fn tokenize(line_of_code: &str) -> Tokenization {
             }
         }
     }
-    //add token for end of file if not already present
+    if (symbols.is_empty()) {
+        errors.push(CASError {
+            line_pos: 0,
+            kind: CASErrorKind::NoExpressionGiven,
+        });
+    }
+    //add symbol for end of file if not already present
     match errors.len() {
-        0 => Ok(tokens),
+        0 => Ok(symbols),
         _ => Err(errors),
     }
 }
 
-fn get_token(iter: &mut Peekable<Enumerate<str::Chars>>) -> Result<Token, CASError> {
+fn get_symbol(iter: &mut Peekable<Enumerate<str::Chars>>) -> Result<Symbol, CASError> {
     let mut next_char;
     let mut line_pos;
 
     match iter.next() {
         None => {
             //END OF FILE
-            return Ok(Token {
-                token_type: Eof,
+            return Ok(Symbol {
+                symbol_type: SymbolType::EOF,
                 line_pos: iter.count(),
             });
         }
@@ -68,7 +75,7 @@ fn get_token(iter: &mut Peekable<Enumerate<str::Chars>>) -> Result<Token, CASErr
 
     //minus 1 since peek is following char
 
-    //what we're doing here is trying to parse these, if we succeed we return the token, if we fail it must be something else
+    //what we're doing here is trying to parse these, if we succeed we return the symbol, if we fail it must be something else
 
     //WHITESPACE
     if let Some(value) = skip_over_whitespace(&mut next_char, iter, &mut line_pos) {
@@ -102,18 +109,18 @@ fn parse_number(
     next_char: char,
     iter: &mut Peekable<Enumerate<str::Chars>>,
     line_pos: &mut usize,
-) -> Option<Result<Token, CASError>> {
+) -> Option<Result<Symbol, CASError>> {
     //parses numerical literals like 3.4, 1234, -1523
 
     //minus 1 since peek is following char
 
     if next_char.is_numeric() || next_char == '.' {
-        let token_type = match get_next_number(next_char, iter, line_pos) {
+        let symbol_type = match get_next_number(next_char, iter, line_pos) {
             //check if its a float, int, or something that cant be either
-            Ok(Token {
-                token_type: Num(number),
+            Ok(Symbol {
+                symbol_type: SymbolType::Num(number),
                 ..
-            }) => Num(number),
+            }) => SymbolType::Num(number),
 
             Err(lit) => {
                 return Some(Err(CASError {
@@ -128,8 +135,8 @@ fn parse_number(
                 }))
             }
         };
-        return Some(Ok(Token {
-            token_type,
+        return Some(Ok(Symbol {
+            symbol_type,
             line_pos: *line_pos,
         }));
     }
@@ -140,7 +147,7 @@ fn get_next_number(
     chr: char,
     iter: &mut Peekable<Enumerate<str::Chars>>,
     line_pos: &mut usize,
-) -> Result<Token, String> {
+) -> Result<Symbol, String> {
     let mut num: String = chr.to_string();
 
     while let Some(&(_, chr)) = iter.peek() {
@@ -153,15 +160,15 @@ fn get_next_number(
     }
     let int_parse = num.parse::<i64>();
     if let Ok(int) = int_parse {
-        return Ok(Token {
-            token_type: Num(int.into()),
+        return Ok(Symbol {
+            symbol_type: SymbolType::Num(int.into()),
             line_pos: *line_pos,
         });
     }
     let float_parse = num.parse::<f64>();
     match float_parse {
-        Ok(float) => Ok(Token {
-            token_type: Num(float.into()),
+        Ok(float) => Ok(Symbol {
+            symbol_type: SymbolType::Num(float.into()),
             line_pos: *line_pos,
         }),
         Err(_) => Err(num),
@@ -170,8 +177,8 @@ fn get_next_number(
     let parse : Result<CASNum, Error> = num_lit::parse_lit(num);
     match parse {
         Ok(x) => {
-            return Ok(Token {
-                token_type: Num(x),
+            return Ok(Symbol {
+                symbol_type: Num(x),
                 line_pos: *line_pos,
             })
         }
@@ -183,7 +190,7 @@ fn skip_over_whitespace(
     next_char: &mut char,
     iter: &mut Peekable<Enumerate<str::Chars>>,
     line_pos: &mut usize,
-) -> Option<Token> {
+) -> Option<Symbol> {
     //minus 1 since peek is following char
     while next_char.is_whitespace() {
         //should never be '\n' or '\r' since we parse one line at a time
@@ -193,8 +200,8 @@ fn skip_over_whitespace(
             *next_char = chr;
         } else {
             //at end of file
-            return Some(Token {
-                token_type: Eof,
+            return Some(Symbol {
+                symbol_type: SymbolType::EOF,
                 line_pos: iter.count(),
             });
         }
@@ -206,21 +213,22 @@ fn parse_ops(
     next_char: char,
     iter: &mut Peekable<Enumerate<str::Chars>>,
     line_pos: &mut usize,
-) -> Option<Token> {
+) -> Option<Symbol> {
     //parses operators that are one character
     let one_char = next_char.to_string();
 
     if let Some((_, '=')) = iter.peek() {
         if let Some(op) = OPERATORS.get(&(next_char.to_string() + "=")) {
             iter.next(); //advance iterator if success
-            return Some(Token {
-                token_type: Operator(*op),
+            return Some(Symbol {
+                symbol_type: SymbolType::Operator(*op),
+
                 line_pos: *line_pos + 1,
             });
         }
     }
-    OPERATORS.get(&one_char).map(|op| Token {
-        token_type: Operator(*op),
+    OPERATORS.get(&one_char).map(|op| Symbol {
+        symbol_type: SymbolType::Operator(*op),
         line_pos: *line_pos,
     })
 }
@@ -229,21 +237,21 @@ fn parse_names(
     next_char: char,
     iter: &mut Peekable<Enumerate<str::Chars>>,
     line_pos: &mut usize,
-) -> Option<Token> {
+) -> Option<Symbol> {
     //parses variable or function names or constants (alphabetic chars)
 
     if next_char.is_alphabetic() || next_char == '_' {
-        let mut token_type: TokenType = Eof;
+        let mut symbol_type: SymbolType = SymbolType::EOF;
         let word: String = next_char.to_string() + &get_next_word(iter, line_pos);
         if let Some(func) = RESERVED_FUNCTIONS.get(&word) {
-            token_type = ResFun(*func);
+            symbol_type = SymbolType::Function(Func::ResFun(*func));
         } else if let Some(res_const) = RESERVED_CONSTANTS.get(&word) {
-            token_type = Const(*res_const);
+            symbol_type = SymbolType::Const(symbol::constant::Const::ResConst(*res_const));
         } else {
-            token_type = Name(word);
+            symbol_type = SymbolType::Variable(word);
         }
-        return Some(Token {
-            token_type,
+        return Some(Symbol {
+            symbol_type,
             line_pos: *line_pos,
         });
     }

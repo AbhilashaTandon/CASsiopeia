@@ -232,8 +232,7 @@ impl From<f32> for CASNum {
             //we have to split mantissa in half if it straddles the boundary
             let exp_rem = exp % NUM_BITS;
             mantissa_lower = mantissa << exp_rem;
-            let mantissa_higher_mask: DigitType =
-                ((1 << exp_rem) - 1) << (NUM_BITS - exp_rem);
+            let mantissa_higher_mask: DigitType = ((1 << exp_rem) - 1) << (NUM_BITS - exp_rem);
             //bit mask of exp_rem 1s to extract highest exp_rem bits from mantissa
             mantissa_higher = (mantissa & mantissa_higher_mask) >> (NUM_BITS - exp_rem);
 
@@ -337,8 +336,7 @@ impl From<f64> for CASNum {
             let exp_rem = exp % NUM_BITS;
             mantissa_lower = mantissa << exp_rem;
             if exp_rem != 0 {
-                let mantissa_higher_mask: DigitType =
-                    ((1 << exp_rem) - 1) << (NUM_BITS - exp_rem);
+                let mantissa_higher_mask: DigitType = ((1 << exp_rem) - 1) << (NUM_BITS - exp_rem);
                 //bit mask of exp_rem 1s to extract highest exp_rem bits from mantissa
                 mantissa_higher = (mantissa & mantissa_higher_mask) >> (NUM_BITS - exp_rem);
             } else {
@@ -410,11 +408,7 @@ impl From<CASNum> for f64 {
                 value: CASValue::Finite { mut digits, exp },
                 sign,
             } => {
-                let sign: u64 = if sign == Sign::Neg {
-                    1_u64 << 63
-                } else {
-                    0
-                };
+                let sign: u64 = if sign == Sign::Neg { 1_u64 << 63 } else { 0 };
 
                 let mut exponent: i64 = (exp * 64 + 52) as i64;
 
@@ -438,7 +432,7 @@ impl From<CASNum> for f64 {
                     //if has less than 53 bits we need to extend with next digit
 
                     higher_digit <<= 53_i64 - first_1; //should make first 1 have position 53
-                                                          //has first_1 digits
+                                                       //has first_1 digits
                     if let Some(mut bits) = lower_digit {
                         bits >>= 64 - (53 - first_1);
                         higher_digit |= bits;

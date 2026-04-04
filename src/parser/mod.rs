@@ -2,7 +2,7 @@ use expression::{into_postfix, shunting_yard};
 use trees::Tree;
 use vars::VarTable;
 
-use crate::types::{cas_error::CASError, cas_num::CASNum, symbol::Symbol, token::Token};
+use crate::types::{cas_error::CASError, cas_num::CASNum, symbol::Symbol};
 
 mod expression;
 mod test;
@@ -13,9 +13,9 @@ pub(crate) mod vars;
 //this makes it easier for functions since we can ensure they're given the right number of arguments
 
 pub(crate) fn parse_expr<'a>(
-    tokens: Vec<Token>,
+    symbols: Vec<Symbol>,
     var_table: &'a VarTable<'a>,
     args: Vec<String>,
-) -> Result<Tree<Symbol>, CASError> {
-    shunting_yard(&mut into_postfix(tokens, var_table, args)?)
+) -> Result<Tree<Symbol>, Vec<CASError>> {
+    shunting_yard(&mut into_postfix(&symbols, var_table, args)?)
 }

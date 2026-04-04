@@ -27,15 +27,16 @@ fn expr_matches(exp: &Expression, template: &Expression) -> bool {
         &exp.borrow().data.symbol_type,
         &template.borrow().data.symbol_type,
     ) {
-        (_, crate::types::symbol::SymbolType::Variable { name: temp_name }) => true,
+        (_, crate::types::symbol::SymbolType::Variable(temp_name)) => true,
+
         //a variable can be anything
         (
             crate::types::symbol::SymbolType::Operator(exp_op),
             crate::types::symbol::SymbolType::Operator(temp_op),
         ) => exp_op == temp_op && recurse(exp, template),
         (
-            crate::types::symbol::SymbolType::Num { value: exp_value },
-            crate::types::symbol::SymbolType::Num { value: temp_value },
+            crate::types::symbol::SymbolType::Num(exp_value),
+            crate::types::symbol::SymbolType::Num(temp_value),
         ) => exp_value == temp_value,
         (
             crate::types::symbol::SymbolType::Const(exp_const),

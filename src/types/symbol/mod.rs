@@ -14,11 +14,12 @@ pub(crate) mod operator;
 
 pub(crate) enum SymbolType {
     //type of tokens of output of parsing
-    Variable { name: String },
+    Variable(String),
     Operator(Operator),
     Function(Func),
-    Num { value: CASNum },
+    Num(CASNum),
     Const(Const),
+    EOF,
 }
 
 #[derive(Debug, Clone, Eq)]
@@ -38,13 +39,15 @@ impl Hash for Symbol {
         self.symbol_type.hash(state);
     }
 }
-fn get_id(sym: &SymbolType) -> u32 {
+fn get_precedence(sym: &SymbolType) -> u32 {
     return match sym {
-        SymbolType::Num { value } => 1,
+        SymbolType::Num(value) => 1,
         SymbolType::Const(_) => 2,
         SymbolType::Function(func) => 3,
-        SymbolType::Variable { name } => 4,
+        SymbolType::Variable(name) => 4,
+
         SymbolType::Operator(operator) => 5,
+        SymbolType::EOF => 6,
     };
 }
 impl PartialOrd for SymbolType {
@@ -74,8 +77,8 @@ impl PartialOrd for SymbolType {
         use crate::types::symbol::Const::ResConst;
         use crate::types::symbol::ResConst::*;
 
-        let self_id = get_id(self);
-        let other_id: u32 = get_id(other);
+        let self_id = get_precedence(self);
+        let other_id: u32 = get_precedence(other);
 
         if (self_id < other_id) {
             return Some(std::cmp::Ordering::Less);
@@ -83,12 +86,12 @@ impl PartialOrd for SymbolType {
             return Some(std::cmp::Ordering::Greater);
         } else {
             return match (self, other) {
-                (SymbolType::Num { value }, SymbolType::Num { value: other_value }) => {
+                (SymbolType::Num(value), SymbolType::Num(other_value)) => {
                     value.partial_cmp(other_value)
                 }
                 (SymbolType::Const(_), SymbolType::Const(_))
                 | (SymbolType::Function(_), SymbolType::Function(_))
-                | (SymbolType::Variable { name: _ }, SymbolType::Variable { name: _ }) => {
+                | (SymbolType::Variable(_), SymbolType::Variable(_)) => {
                     self.to_string().partial_cmp(&other.to_string())
                 }
 
@@ -104,7 +107,10 @@ impl PartialOrd for SymbolType {
 impl SymbolType {
     pub(crate) fn num_args(&self) -> usize {
         match self {
-            SymbolType::Variable { .. } | SymbolType::Num { .. } | SymbolType::Const { .. } => 0,
+            SymbolType::Variable { .. }
+            | SymbolType::Num { .. }
+            | SymbolType::Const { .. }
+            | SymbolType::EOF => 0,
             SymbolType::Operator(Operator::Neg) => 1,
             SymbolType::Operator(..) => 2,
             SymbolType::Function(Func::Function { num_args, .. }) => *num_args,
@@ -116,11 +122,12 @@ impl SymbolType {
 impl Display for SymbolType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SymbolType::Variable { name } => write!(f, "{}", name),
+            SymbolType::Variable(name) => write!(f, "{}", name),
             SymbolType::Operator(operator) => write!(f, "{}", operator),
             SymbolType::Function(func) => write!(f, "{}", func),
-            SymbolType::Num { value } => write!(f, "{}", value),
+            SymbolType::Num(value) => write!(f, "{}", value),
             SymbolType::Const(constant) => write!(f, "{}", constant),
+            SymbolType::EOF => write!(f, "\n"),
         }
     }
 }
