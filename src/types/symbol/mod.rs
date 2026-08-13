@@ -22,7 +22,7 @@ pub(crate) enum SymbolType {
     EOF,
 }
 
-#[derive(Debug, Clone, Eq)]
+#[derive(Debug, Clone, Eq, PartialOrd)]
 pub(crate) struct Symbol {
     pub(crate) symbol_type: SymbolType,
     pub(crate) line_pos: usize,
@@ -135,6 +135,13 @@ impl Display for SymbolType {
 impl Symbol {
     pub(crate) fn num_args(&self) -> usize {
         self.symbol_type.num_args()
+    }
+
+    pub(crate) fn new(symbol_type: SymbolType, line_pos: usize) -> Self {
+        return Symbol {
+            symbol_type,
+            line_pos,
+        };
     }
 }
 

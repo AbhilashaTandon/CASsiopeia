@@ -7,7 +7,7 @@ mod test {
     use crate::{
         parser::{
             expression::{into_postfix, PostFix},
-            trees::Tree,
+            trees::AST,
             vars::{Var, VarTable},
             CASNum,
         },
@@ -122,6 +122,8 @@ mod test {
 
     #[test]
     fn var_table() {
+        // testing whether it can correctly forbid assignments in an expression,
+        // since those are dealt with separately
         let err = Err(vec![CASError {
             kind: CASErrorKind::AssignmentInExpression,
             line_pos: 2,
@@ -133,7 +135,7 @@ mod test {
             Some(&HashMap::from([(
                 String::from("x").to_string(),
                 Var {
-                    expr: Tree::from(SymbolType::Num(CASNum::from(2))),
+                    expr: AST::new(Symbol::new(SymbolType::Num(CASNum::from(2)), 4)),
 
                     args: vec![],
                 },
@@ -153,7 +155,7 @@ mod test {
             Some(&HashMap::from([(
                 String::from("y"),
                 Var {
-                    expr: Tree::from(SymbolType::Num(CASNum::from(2))),
+                    expr: AST::new(Symbol::new(SymbolType::Num(CASNum::from(2)), 0)),
                     args: vec![],
                 },
             )])),
@@ -172,7 +174,7 @@ mod test {
             Some(&HashMap::from([(
                 String::from("x"),
                 Var {
-                    expr: Tree::from(SymbolType::Num(CASNum::from(2))),
+                    expr: AST::new(Symbol::new(SymbolType::Num(CASNum::from(2)), 0)),
                     args: vec![],
                 },
             )])),
@@ -250,7 +252,7 @@ mod test {
         let var_table = Some(HashMap::from([(
             String::from("x").to_string(),
             Var {
-                expr: Tree::from(SymbolType::Num(CASNum::from(2))),
+                expr: AST::new(Symbol::new(SymbolType::Num(CASNum::from(2)), 0)),
                 args: vec![],
             },
         )]));
@@ -305,7 +307,7 @@ mod test {
         let var_table = Some(HashMap::from([(
             String::from("f"),
             Var {
-                expr: Tree::from(SymbolType::Num(CASNum::from(2))),
+                expr: AST::new(Symbol::new(SymbolType::Num(CASNum::from(2)), 0)),
 
                 args: vec![String::from("x"), String::from("y"), String::from("z")],
             },
@@ -346,7 +348,7 @@ mod test {
         let var_table = Some(HashMap::from([(
             String::from("foo"),
             Var {
-                expr: Tree::from(SymbolType::Num(CASNum::from(2))),
+                expr: AST::new(Symbol::new(SymbolType::Num(CASNum::from(2)), 0)),
 
                 args: vec![String::from("a"), String::from("b"), String::from("c")],
             },
@@ -388,7 +390,7 @@ mod test {
             (
                 String::from("foo"),
                 Var {
-                    expr: Tree::from(SymbolType::Num(CASNum::from(2))),
+                    expr: AST::new(Symbol::new(SymbolType::Num(CASNum::from(2)), 0)),
 
                     args: vec![String::from("a"), String::from("b")],
                 },
@@ -396,7 +398,7 @@ mod test {
             (
                 String::from("bar"),
                 Var {
-                    expr: Tree::from(SymbolType::Num(CASNum::from(1))),
+                    expr: AST::new(Symbol::new(SymbolType::Num(CASNum::from(1)), 0)),
 
                     args: vec![String::from("a")],
                 },
@@ -404,15 +406,14 @@ mod test {
             (
                 String::from("baz"),
                 Var {
-                    expr: Tree::from(SymbolType::Num(CASNum::from(1))),
-
+                    expr: AST::new(Symbol::new(SymbolType::Num(CASNum::from(1)), 0)),
                     args: vec![String::from("a")],
                 },
             ),
             (
                 String::from("x"),
                 Var {
-                    expr: Tree::from(SymbolType::Num(CASNum::from(2))),
+                    expr: AST::new(Symbol::new(SymbolType::Num(CASNum::from(2)), 0)),
 
                     args: vec![],
                 },
@@ -420,7 +421,7 @@ mod test {
             (
                 String::from("y"),
                 Var {
-                    expr: Tree::from(SymbolType::Num(CASNum::from(2))),
+                    expr: AST::new(Symbol::new(SymbolType::Num(CASNum::from(2)), 0)),
 
                     args: vec![],
                 },
@@ -437,7 +438,7 @@ mod test {
             (
                 String::from("foo"),
                 Var {
-                    expr: Tree::from(SymbolType::Num(CASNum::from(2))),
+                    expr: AST::new(Symbol::new(SymbolType::Num(CASNum::from(2)), 0)),
 
                     args: vec![String::from("a"), String::from("b")],
                 },
@@ -445,7 +446,7 @@ mod test {
             (
                 String::from("bar"),
                 Var {
-                    expr: Tree::from(SymbolType::Num(CASNum::from(1))),
+                    expr: AST::new(Symbol::new(SymbolType::Num(CASNum::from(1)), 0)),
 
                     args: vec![String::from("a")],
                 },
@@ -453,7 +454,7 @@ mod test {
             (
                 String::from("baz"),
                 Var {
-                    expr: Tree::from(SymbolType::Num(CASNum::from(1))),
+                    expr: AST::new(Symbol::new(SymbolType::Num(CASNum::from(1)), 0)),
 
                     args: vec![String::from("a")],
                 },
@@ -461,7 +462,7 @@ mod test {
             (
                 String::from("x"),
                 Var {
-                    expr: Tree::from(SymbolType::Num(CASNum::from(2))),
+                    expr: AST::new(Symbol::new(SymbolType::Num(CASNum::from(2)), 0)),
 
                     args: vec![],
                 },
@@ -496,7 +497,7 @@ mod test {
             (
                 String::from("foo"),
                 Var {
-                    expr: Tree::from(SymbolType::Num(CASNum::from(2))),
+                    expr: AST::new(Symbol::new(SymbolType::Num(CASNum::from(2)), 0)),
 
                     args: vec![String::from("a"), String::from("b")],
                 },
@@ -504,7 +505,7 @@ mod test {
             (
                 String::from("bar"),
                 Var {
-                    expr: Tree::from(SymbolType::Num(CASNum::from(1))),
+                    expr: AST::new(Symbol::new(SymbolType::Num(CASNum::from(1)), 0)),
 
                     args: vec![String::from("a")],
                 },
@@ -512,24 +513,21 @@ mod test {
             (
                 String::from("baz"),
                 Var {
-                    expr: Tree::from(SymbolType::Num(CASNum::from(1))),
-
+                    expr: AST::new(Symbol::new(SymbolType::Num(CASNum::from(1)), 0)),
                     args: vec![String::from("a")],
                 },
             ),
             (
                 String::from("x"),
                 Var {
-                    expr: Tree::from(SymbolType::Num(CASNum::from(2))),
-
+                    expr: AST::new(Symbol::new(SymbolType::Num(CASNum::from(1)), 0)),
                     args: vec![],
                 },
             ),
             (
                 String::from("y"),
                 Var {
-                    expr: Tree::from(SymbolType::Num(CASNum::from(2))),
-
+                    expr: AST::new(Symbol::new(SymbolType::Num(CASNum::from(1)), 0)),
                     args: vec![],
                 },
             ),

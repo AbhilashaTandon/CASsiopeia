@@ -1,5 +1,5 @@
 use expression::{into_postfix, shunting_yard};
-use trees::Tree;
+use trees::AST;
 use vars::VarTable;
 
 use crate::types::{cas_error::CASError, cas_num::CASNum, symbol::Symbol};
@@ -16,6 +16,6 @@ pub(crate) fn parse_expr<'a>(
     symbols: Vec<Symbol>,
     var_table: &'a VarTable<'a>,
     args: Vec<String>,
-) -> Result<Tree<Symbol>, Vec<CASError>> {
+) -> Result<AST, Vec<CASError>> {
     shunting_yard(&mut into_postfix(&symbols, var_table, args)?)
 }

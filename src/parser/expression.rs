@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::rc::Rc;
 
-use super::trees::{Tree, TreeNode, TreeNodeRef};
+use super::trees::{ASTNode, AST};
 use super::vars::{Var, VarTable};
 
 pub(crate) type PostFix<'a> = Result<VecDeque<Symbol>, Vec<CASError>>;
@@ -167,115 +167,6 @@ pub(crate) fn into_postfix<'a>(
                 break;
             }
         }
-        // {
-        //     Variable(name) => {
-        //
-        //     }
-        //     Num(number) => {
-        //
-        //     }
-
-        //     Const(name) => {
-        //         output_queue.push_back(Symbol {
-        //             symbol_type: SymbolType::Const(Const::ResConst(*name)),
-        //             line_pos: *line_pos,
-        //         });
-        //         if let Some(Symbol {
-        //             symbol_type: SymbolType::Operator(Neg),
-        //             ..
-        //         }) = operator_stack.back()
-        //         {
-        //             output_queue.push_back(operator_stack.pop_back().unwrap());
-        //         }
-        //     }
-        //     ResFun(name) => operator_stack.push_back(Symbol {
-        //         symbol_type: SymbolType::Function(Func::ResFun(*name)),
-        //         line_pos: *line_pos,
-        //     }),
-
-        //     Operator(o1) => match o1 {
-        //         Add | Mult | Div | Exp | Less | Greater | Equal | NotEqual | LessEqual
-        //         | GreaterEqual => {
-        //             if let Some(value) = parse_numeric_operator(
-        //                 &mut operator_stack,
-        //                 &o1,
-        //                 &mut output_queue,
-        //                 *line_pos,
-        //             ) {
-        //                 return Err(value);
-        //             }
-        //         }
-
-        //         LeftParen | LeftBracket => operator_stack.push_back(Symbol {
-        //             symbol_type: SymbolType::Operator(*o1),
-        //             line_pos: *line_pos,
-        //         }),
-
-        //         RightParen | RightBracket => {
-        //             if let Some(value) =
-        //                 parse_right_paren(&mut operator_stack, &mut output_queue, *line_pos)
-        //             {
-        //                 return Err(value);
-        //             }
-        //         }
-        //         Comma => {
-        //             while let Some(o2) = operator_stack.pop_back() {
-        //                 if o2.symbol_type == SymbolType::Operator(Operator::LeftParen) {
-        //                     operator_stack.push_back(o2);
-        //                     break;
-        //                 }
-        //                 //while the operator at the top of the operator stack is not a left parenthesis:
-
-        //                 output_queue.push_back(o2);
-        //                 //pop the operator from the operator stack into the output queue
-        //             }
-        //         }
-        //         Assign => {
-        //             return Err(CASError {
-        //                 kind: CASErrorKind::AssignmentInExpression,
-        //                 line_pos: *line_pos,
-        //             });
-        //         }
-        //         Sub | Neg => match last_symbol {
-        //             Some(Variable(_))
-        //             | Some(Num(_ ))
-        //             | Some(Const(_))
-        //             | Some(Operator(RightBracket))
-        //             | Some(Operator(RightParen)) => {
-        //                 operator_stack.push_back(Symbol {
-        //                     symbol_type: SymbolType::Operator(Sub),
-        //                     line_pos: *line_pos,
-        //                 });
-        //             }
-        //             Some(Eof) => {
-        //                 return Err(CASError {
-        //                     kind: CASErrorKind::SyntaxError,
-        //                     line_pos: *line_pos,
-        //                 });
-        //             }
-        //             Some(Func(f)) => {
-        //                 return Err(CASError {
-        //                     kind: CASErrorKind::WrongNumberOfArgs {
-        //                         args_given: 0,
-        //                         args_needed: f.num_args(),
-        //                         func_name: f.to_string(),
-        //                     },
-        //                     line_pos: *line_pos,
-        //                 })
-        //             }
-        //             Some(Operator(_)) | None => {
-        //                 operator_stack.push_back(Symbol {
-        //                     symbol_type: SymbolType::Operator(Neg),
-        //                     line_pos: *line_pos,
-        //                 });
-        //             }
-        //         },
-        //     },
-
-        //     Eof => {
-        //         break;
-        //     }
-        // }
 
         last_symbol = Some(&symbol_type);
     }
@@ -320,17 +211,27 @@ fn parse_num(
     }
 }
 
-pub(crate) fn shunting_yard(
-    output_queue: &mut VecDeque<Symbol>,
-) -> Result<Tree<Symbol>, Vec<CASError>> {
-    let mut tree_stack: Vec<TreeNodeRef<Symbol>> = vec![];
+pub(crate) fn shunting_yard(output_queue: &mut VecDeque<Symbol>) -> Result<AST, Vec<CASError>> {
+    let mut tree_stack: Vec<ASTNode> = vec![];
+    let mut tree: AST = match output_queue.pop_front() {
+        Some(sym) => AST::new(sym),
+        None => {
+            return Err(vec![CASError {
+                line_pos: 0,
+                // this is incorrect since we don't know what line caused the error since
+                // those are attached to symbols, but it is a placeholder for now
+                kind: CASErrorKind::NoExpressionGiven,
+            }]);
+        }
+    };
     //temporary stack for constructing the tree
 
     while let Some(symbol) = output_queue.pop_front() {
-        let mut args = vec![];
+        let mut children = vec![];
         for _ in 0..symbol.symbol_type.num_args() {
             if let Some(arg) = tree_stack.pop() {
-                args.push(arg);
+                children.push(tree.0.len());
+                tree.0.push(arg);
             } else {
                 return Err(vec![CASError {
                     line_pos: symbol.line_pos,
@@ -338,15 +239,15 @@ pub(crate) fn shunting_yard(
                 }]);
             }
         }
-        tree_stack.push(TreeNodeRef::new_from_node(TreeNode {
+        tree_stack.push(ASTNode {
             data: symbol,
-            children: args,
-        }));
+            children,
+        });
     }
 
     if tree_stack.len() > 1 {
         return Err(vec![CASError {
-            line_pos: tree_stack[1].0.borrow().data.line_pos,
+            line_pos: tree_stack[1].data.line_pos,
             kind: CASErrorKind::NoExpressionGiven,
         }]);
     }
@@ -355,20 +256,17 @@ pub(crate) fn shunting_yard(
         None => Err(vec![CASError {
             line_pos: 0,
             kind: CASErrorKind::NoExpressionGiven,
-        }]),
+        }]), //if there are no symbols in tree stack no expression was given
 
-        //if there are no symbols in tree stack no expression was given
         Some(root_node) => {
-            return Ok(Tree {
-                root: tree_stack.first().unwrap().clone(),
-                //TODO: get rid of this clone
-            });
+            return Ok(AST::new(tree_stack.first().unwrap().data.clone()));
         }
+
         _ => Err(vec![CASError {
-            line_pos: tree_stack[1].0.borrow().data.line_pos,
+            line_pos: tree_stack[1].data.line_pos,
             kind: CASErrorKind::NoExpressionGiven,
         }]),
-        //if there are multiple
+        //if there are multiple we have an invalid expression
     };
 }
 
